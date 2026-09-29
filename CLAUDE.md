@@ -1,48 +1,68 @@
-# CLAUDE.md
+# SIRH Socium — Prototype multi-produits (Angular 19)
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Contexte du projet
 
-## Project
+Ce dépôt est le prototype vivant de l'ensemble du SIRH Socium — tous
+les produits (Workspace, Perf, Job, Workflow, Doc, Payroll — la liste
+s'étend avec le temps) dans une seule application Angular, déployée
+sur un seul lien.
 
-SIRH (Système d'Information des Ressources Humaines) prototype for **Socium Design**, built with **Angular 19** (standalone components, SCSS, no SSR). The goal is to explore and validate core HR features before a larger build. There is no real backend: all data comes from mocks in `src/mocks/data/`.
+## Style Angular à respecter strictement
 
-## Commands
+- **Composants standalone uniquement** — jamais de `NgModule`. Ne pas
+  ajouter `standalone: true` explicitement (c'est le défaut en
+  Angular 19), sauf si le style de code du reste du dépôt le fait déjà.
+- **Nouvelle syntaxe de contrôle** dans les templates — `@if`, `@for`,
+  `@switch` — jamais `*ngIf`, `*ngFor`, `*ngSwitch`.
+- **Routes paresseuses** (`loadChildren`) à chaque niveau produit et
+  module — jamais tout importé dans un seul fichier de routes.
+- **Signals** pour l'état des composants quand c'est pertinent
+  (`signal()`, `input()`, `output()`) plutôt que des `@Input`/`@Output`
+  classiques si le reste du code du dépôt utilise déjà ce style.
 
-- `npm install` — install dependencies
-- `npm start` — dev server on http://localhost:4200
-- `npm run build` — production build into `dist/sirh-prototype/`
-- `npm run watch` — development build in watch mode
+## Architecture — Produit → Module → Fonctionnalité
 
-Unit tests are not set up (project generated with `--skip-tests`).
+- Un produit = un dossier sous `src/app/products/<produit>/`, avec son
+  propre fichier `<produit>.routes.ts`
+- Un module = un dossier sous `.../modules/<module>/`, avec son propre
+  `<module>.routes.ts`
+- Une fonctionnalité = un ou plusieurs composants à l'intérieur du
+  dossier du module
 
-## Architecture
+Avant de créer un nouveau produit ou module, vérifie s'il existe déjà.
 
-The app is split into **products**, each lazy-loaded from `src/app/app.routes.ts` via `loadChildren`. Each product owns a `<product>.routes.ts` exporting `<PRODUCT>_ROUTES` and a `modules/` folder with one sub-folder per functional module.
+## Composants — toujours depuis le design system Angular
 
-```
-src/
-├── mocks/data/               # shared fake backend (JSON / TS)
-└── app/
-    ├── app.component.ts      # shell: nav + <router-outlet>
-    ├── app.config.ts         # providers (router)
-    ├── app.routes.ts         # '' → /workspace, lazy products
-    └── products/
-        ├── workspace/        # /workspace : postes, competences, employes, carrieres
-        ├── perf/             # /perf      : formation, evaluation, objectifs
-        ├── job/              # /job       : offres
-        ├── workflow/modules/ # not routed yet
-        ├── doc/modules/      # not routed yet
-        └── payroll/modules/  # not routed yet
-```
+Tous les éléments d'interface viennent de `@socium-ds/angular-components`
+(nom à confirmer une fois le package renommé). Ne jamais improviser un
+composant qui ressemble à un composant du kit sans l'importer
+réellement. Avant d'utiliser un composant, lis sa vraie signature
+d'`@Input`/`input()` dans le code source du package — ne devine jamais
+un nom de prop par analogie avec un équivalent HTML natif.
 
-Each module currently has a placeholder page component: `modules/<module>/<module>-page.component.ts` → `<Module>PageComponent`.
+Si un composant nécessaire n'existe pas dans le kit, signale-le comme
+`GAP-DS` (voir `docs/guidelines.md`) plutôt que de l'inventer.
 
-## Conventions
+## Données — toujours depuis le backend fictif partagé
 
-- **Standalone components only** — never create an `NgModule`.
-- **Lazy loading per product**: a new product gets its own `*.routes.ts` and one `loadChildren` entry in `app.routes.ts`; modules are plain routes inside their product's routes file.
-- **Fake data lives in `src/mocks/data/`**, accessed through services — components never import mock files directly.
-- File/folder names in kebab-case, French domain names without accents (`employes`, `competences`); UI labels keep accents.
-- Detailed conventions: `docs/guidelines.md`.
-- Project documentation (README, docs/) is written in French; keep user-facing docs in French.
-- Remote: `origin` → `https://github.com/Socium-Design/sirh_prototype.git` (private), default branch `main`.
+Toutes les données viennent de `src/mocks/data/` — un jeu de données
+unique et cohérent, partagé par tout le prototype.
+
+## Guidelines complètes
+
+@docs/guidelines.md
+
+## Convention de branches
+
+`feature/<produit>-<module>` — ex. `feature/perf-formation`.
+
+## Convention de commits
+
+`<Produit> > <Module> : description courte`.
+
+## Avant de considérer un module terminé
+
+- [ ] Composants standalone, nouvelle syntaxe de contrôle (`@if`/`@for`)
+- [ ] Routes chargées en `loadChildren`, pas importées en dur
+- [ ] Aucun composant improvisé — tout vient du kit ou est `GAP-DS`
+- [ ] Données depuis `src/mocks/data/`, jamais inventées localement
