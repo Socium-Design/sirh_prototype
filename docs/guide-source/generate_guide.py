@@ -432,6 +432,21 @@ steps([
 ])
 box("warn", "Tant que le paquet n'est pas publié", "<font name='Courier'>npm install</font> sur sirh_prototype échoue en E404 pour tout le monde. Ne fusionnez la branche du prototype qu'après la publication de la v0.1.0.")
 
+h2("9.4 Déploiement Vercel (aperçus de Pull Request)")
+p("Vercel installe les dépendances sur ses propres serveurs, <b>sans votre jeton personnel</b> : tant qu'on ne lui en donne pas un, le déploiement échoue à l'installation avec <font name='Courier'>E401 Unauthorized ... authentication token not provided</font> (c'est le seul effet visible : le build local passe).")
+steps([
+    "Créez un jeton GitHub (classic) avec la seule permission <b>read:packages</b>. Idéalement depuis un compte de service de l'organisation plutôt que le compte d'une personne : un jeton personnel cesse de fonctionner si la personne quitte l'organisation.",
+    "Vercel : projet <b>sirh-prototype</b>, <b>Settings, Environment Variables</b>. Ajoutez une variable nommée <font name='Courier'>NPM_RC</font>, cochée pour Production, Preview et Development, dont la valeur est exactement ces deux lignes :",
+])
+code("""
+@socium-design:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=ghp_XXXXXXXXXXXXXXXXXXXXXXXX
+""")
+steps([
+    "Relancez le déploiement (Deployments, menu « ... », Redeploy) ; l'installation doit maintenant passer.",
+])
+box("warn", "Ne pas mettre le jeton dans le dépôt", "Ne remplacez pas cette méthode par une ligne <font name='Courier'>_authToken=${NPM_TOKEN}</font> dans le fichier <font name='Courier'>.npmrc</font> du dépôt : testé, elle écrase le jeton personnel de chaque développeur et casse leur <font name='Courier'>npm install</font> (E401) dès que la variable n'est pas définie sur leur machine.")
+
 # ───────────────────────────── 10. Dépannage ─────────────────────────────
 h1("10. Dépannage")
 table(
@@ -441,6 +456,7 @@ table(
         ["NG8002 : Can't bind to 'x' since it isn't a known property", "Composant non importé, ou nom de prop faux.", "Ajouter le composant à imports ; relire sa signature dans components.md."],
         ["Un élément projeté (icône, badge, actions) n'apparaît pas", "Marqueur de slot manquant, ou deux éléments projetés dans un même bloc @if.", "Ajouter l'attribut marqueur ; un seul élément par @if."],
         ["Le menu surligne le mauvais item / ne navigue pas", "Entrée absente de navigation.map.ts.", "Ajouter la ligne NAV_ROUTES de l'item."],
+        ["Déploiement Vercel en erreur à l'installation (E401)", "Vercel n'a pas de jeton pour le paquet privé.", "Ajouter la variable NPM_RC dans Vercel (section 9.4), puis Redeploy."],
         ["Port 4200 déjà utilisé", "Un autre ng serve tourne.", "Fermer l'autre terminal, ou : npm start -- --port 4300."],
         ["Les tests ne démarrent pas (Chrome introuvable)", "Chrome non installé.", "Installer Google Chrome, ou définir CHROME_BIN."],
         ["Le build Storybook du design system plante en mémoire", "Heap Node trop petit.", "Utiliser les scripts npm du dépôt (ils fixent NODE_OPTIONS)."],

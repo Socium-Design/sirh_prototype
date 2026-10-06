@@ -39,6 +39,10 @@ Le détail pas à pas est dans [`docs/guide-equipe.pdf`](docs/guide-equipe.pdf).
 npm install
 ```
 
+## Déploiement Vercel
+
+Vercel n'a pas votre jeton : ajouter dans le projet Vercel la variable d'environnement `NPM_RC` (jeton `read:packages`, deux lignes `@socium-design:registry=…` et `//npm.pkg.github.com/:_authToken=…`). Détail : section 9.4 du guide PDF. Ne jamais mettre le jeton dans le `.npmrc` du dépôt.
+
 ## Lancement
 
 ```bash
