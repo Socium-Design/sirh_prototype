@@ -59,6 +59,7 @@
               }
             ],
             "styles": [
+              "node_modules/@socium-design/angular-components/styles.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -68,8 +69,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "1.2MB",
+                  "maximumError": "2MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -123,9 +124,11 @@
               }
             ],
             "styles": [
+              "node_modules/@socium-design/angular-components/styles.css",
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "karmaConfig": "karma.conf.js"
           }
         }
       }
