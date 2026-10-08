@@ -11,6 +11,14 @@ const POSTES: Array<[string, string]> = [
   ['Chef de projet', 'Technologie'], ['Gestionnaire de paie', 'Ressources humaines'], ['Designer UX', 'Produit'],
   ['Analyste financier', 'Finance'], ['Responsable formation', 'Ressources humaines'],
 ];
+const STRUCTURES: Record<string, string> = {
+  Technologie: "Direction des systèmes d'information",
+  Produit: "Direction des systèmes d'information",
+  'Ressources humaines': 'Direction des ressources humaines',
+  Finance: 'Direction administrative et financière',
+};
+/** Site → filiale (les filiales reprennent les entreprises de `session.mock.ts`). */
+const SITES: Array<[string, string]> = [['Dakar', 'Sénégal'], ['Thiès', 'Sénégal'], ['Abidjan', "Côte d'Ivoire"], ['Paris', 'France']];
 
 /** Employés fictifs, partagés par tous les produits (Workspace, Perf, Job…). Ne jamais en inventer d'autres localement. */
 export const EMPLOYES: Employe[] = NOMS.map(([nom, prenom], i) => ({
@@ -21,6 +29,9 @@ export const EMPLOYES: Employe[] = NOMS.map(([nom, prenom], i) => ({
   email: `${prenom}.${nom}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() + '@socium.link',
   poste: POSTES[i % POSTES.length][0],
   departement: POSTES[i % POSTES.length][1],
+  structure: STRUCTURES[POSTES[i % POSTES.length][1]],
+  site: SITES[i % SITES.length][0],
+  filiale: SITES[i % SITES.length][1],
   statut: i % 7 === 3 ? 'Inactif' : 'Actif',
   dateEntree: `${2018 + (i % 7)}-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 27) + 1).padStart(2, '0')}`,
 }));
