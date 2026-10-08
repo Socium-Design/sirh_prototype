@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Claude Code : réglages personnels (les réglages partagés .claude/settings.json et .claude/commands sont versionnés)
+.claude/settings.local.json

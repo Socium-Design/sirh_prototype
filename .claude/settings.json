@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(npm run build)",
+      "Bash(npm run test:ci)",
+      "Bash(npx ng generate *)",
+      "Bash(npx ng build *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git checkout -b feature/*)"
+    ],
+    "deny": [
+      "Edit(./node_modules/**)",
+      "Write(./node_modules/**)",
+      "Read(./.env*)"
+    ]
+  }
+}
