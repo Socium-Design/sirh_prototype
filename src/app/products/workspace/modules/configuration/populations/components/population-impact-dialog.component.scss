@@ -1,0 +1,10 @@
+.impact,
+.impact__liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-md);
+}
+
+.impact__liste {
+  gap: var(--bridges-position-gap-sm);
+}

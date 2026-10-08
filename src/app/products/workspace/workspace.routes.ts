@@ -10,4 +10,8 @@ export const WORKSPACE_ROUTES: Routes = [
   { path: 'competences', component: CompetencesPageComponent, title: 'Compétences' },
   { path: 'employes', component: EmployesPageComponent, title: 'Employés' },
   { path: 'carrieres', component: CarrieresPageComponent, title: 'Carrières' },
+  {
+    path: 'configuration',
+    loadChildren: () => import('./modules/configuration/configuration.routes').then((m) => m.CONFIGURATION_ROUTES),
+  },
 ];

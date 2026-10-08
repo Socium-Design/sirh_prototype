@@ -20,6 +20,12 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/workspace/carrieres')).toBeUndefined();
   });
 
+  it('keeps the menu item of the parent page on its sub-pages', () => {
+    expect(navItemFromUrl('/workspace/configuration/populations/nouvelle')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/populations/pop-1/modifier')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/employes-archives')).toBeUndefined();
+  });
+
   it('highlights the item of a coming-soon page', () => {
     expect(navItemFromUrl('/a-venir/workspace-structures')).toBe('workspace-structures');
   });
