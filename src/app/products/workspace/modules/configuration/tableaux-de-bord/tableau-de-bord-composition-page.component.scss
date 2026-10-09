@@ -10,6 +10,24 @@
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
 
+.espace--infos {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.infos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bridges-position-gap-md);
+}
+
+.infos__criteres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bridges-position-gap-xs);
+}
+
 .composition,
 .section,
 .bibliotheque,

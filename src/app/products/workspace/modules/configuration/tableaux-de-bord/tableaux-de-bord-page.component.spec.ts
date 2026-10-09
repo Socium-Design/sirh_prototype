@@ -41,6 +41,14 @@ describe('TableauxDeBordPageComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-4', 'modifier']);
   });
 
+  it('« Voir détails » depuis le menu ou un clic sur la ligne', () => {
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
+    action('Performance DSI', 'Voir détails')!.click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-4']);
+    ligne('Dashboard RH Global').querySelector('td')!.click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-1']);
+  });
+
   it('recherche par libellé', () => {
     const input = fixture.nativeElement.querySelector('soc-search-bar input') as HTMLInputElement;
     input.value = 'masse';

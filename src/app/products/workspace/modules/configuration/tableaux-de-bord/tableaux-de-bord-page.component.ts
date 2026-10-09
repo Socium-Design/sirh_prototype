@@ -1,6 +1,6 @@
 import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucideLibrary, LucidePencil, LucidePlus } from '@lucide/angular';
+import { LucideEye, LucidePencil, LucidePlus } from '@lucide/angular';
 import {
   SocBadge,
   SocButton,
@@ -41,7 +41,7 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
   selector: 'app-tableaux-de-bord-page',
   imports: [
     SocDataTable, SocDataTableBadge, SocDataTableActions, SocBadge, SocButton, SocButtonLeftIcon, SocTag, SocMenu, SocMenuItem, SocMenuItemIcon,
-    SocTooltip, SocTooltipLabel, SocMessage, SocMessageContent, LucidePlus, LucidePencil, LucideLibrary,
+    SocTooltip, SocTooltipLabel, SocMessage, SocMessageContent, LucidePlus, LucidePencil, LucideEye,
   ],
   styles: `.tableaux__vide { display: block; margin-top: var(--bridges-position-gap-md); }`,
   template: `
@@ -51,8 +51,8 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
 
     <ng-template #actionsMenu let-row let-close="close">
       <soc-menu>
-        <button socMenuItem label="Composer" (click)="close(); composer(row)">
-          <svg lucideLibrary socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
+        <button socMenuItem label="Voir détails" (click)="close(); voirDetails(row)">
+          <svg lucideEye socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
         </button>
         <button socMenuItem label="Modifier" (click)="close(); modifier(row)">
           <svg lucidePencil socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
@@ -78,6 +78,8 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
       [rowKey]="rowKey"
       [searchable]="true"
       (search)="onSearch($event)"
+      [rowClickable]="true"
+      (rowClick)="voirDetails($event)"
       [rowActionsMenu]="actionsMenu"
       [pagination]="pagination()"
       (pageChange)="page.set($event)"
@@ -158,9 +160,9 @@ export class TableauxDeBordPageComponent {
     this.router.navigate(['/workspace/configuration/tableaux-de-bord/nouveau']);
   }
 
-  /** Composition (Bibliothèque) en mode édition. */
-  protected composer(ligne: LigneTableau): void {
-    this.router.navigate(['/workspace/configuration/tableaux-de-bord', ligne.id], { queryParams: { mode: 'edition' } });
+  /** « Voir détails » : la Bibliothèque en lecture seule (bouton « Modifier » pour passer en édition). */
+  protected voirDetails(ligne: LigneTableau): void {
+    this.router.navigate(['/workspace/configuration/tableaux-de-bord', ligne.id]);
   }
 
   protected modifier(ligne: LigneTableau): void {

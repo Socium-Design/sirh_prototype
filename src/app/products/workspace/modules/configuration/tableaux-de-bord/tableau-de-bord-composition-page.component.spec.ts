@@ -1,6 +1,7 @@
 import type { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { TableauxDeBordService } from '../../tableau-de-bord/services/tableaux-de-bord.service';
 import { TableauDeBordCompositionPageComponent } from './tableau-de-bord-composition-page.component';
 
@@ -25,9 +26,10 @@ describe('TableauDeBordCompositionPageComponent (Bibliothèque, édition)', () =
     return [...panneauVisible().querySelectorAll('button[socMenuItem]')].find((b) => b.textContent?.includes(item)) as HTMLButtonElement;
   };
 
-  const ouvrir = (id: string) => {
+  const ouvrir = (id: string, mode: 'edition' | 'lecture' = 'edition') => {
+    const query = convertToParamMap(mode === 'edition' ? { mode } : {});
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id }), queryParamMap: convertToParamMap({ mode: 'edition' }) } } }],
+      providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id }), queryParamMap: query }, queryParamMap: of(query) } }],
     });
     fixture = TestBed.createComponent(TableauDeBordCompositionPageComponent);
     page = fixture.componentInstance as Page;
@@ -147,4 +149,36 @@ describe('TableauDeBordCompositionPageComponent (Bibliothèque, édition)', () =
     tick(300);
     expect(statut).toBe('Actif');
   }));
+
+  describe('« Voir détails » (lecture seule)', () => {
+    it('affiche les informations générales à gauche et les widgets sans Bibliothèque, menus ni sections vides', fakeAsync(() => {
+      ouvrir('tdb-3', 'lecture');
+      const infos = el().querySelector('[data-testid="infos"]')!;
+      expect(infos.textContent).toContain('Dashboard effectifs internationaux');
+      expect(infos.textContent).toContain('Filiales hors Sénégal');
+      expect(infos.textContent).toContain('Filiale est France');
+      expect(infos.textContent).toContain('11 employé(s)');
+      expect(el().querySelector('[data-testid="catalogue"]')).toBeNull();
+      expect(el().querySelectorAll('button[aria-label^="Actions du widget"]').length).toBe(0);
+      expect(el().querySelector('button[aria-label^="Renommer"]')).toBeNull();
+      expect(sectionsAffichees()).toEqual(['Effectifs par pays', 'Mouvements du personnel']);
+      expect(el().querySelector('[data-testid="bibliotheque"]')).toBeNull();
+    }));
+
+    it('« Modifier » (à côté de « Visualiser ») passe en mode édition via l’URL', fakeAsync(() => {
+      ouvrir('tdb-3', 'lecture');
+      const navigate = spyOn(TestBed.inject(Router), 'navigate');
+      const modifier = el().querySelector('[data-testid="modifier"]') as HTMLButtonElement;
+      expect(modifier.closest('soc-tooltip')?.previousElementSibling?.querySelector('[data-testid="visualiser"]')).not.toBeNull();
+      modifier.click();
+      expect(navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { mode: 'edition' } }));
+    }));
+
+    it('« Terminer » revient en lecture seule', fakeAsync(() => {
+      ouvrir('tdb-3');
+      const navigate = spyOn(TestBed.inject(Router), 'navigate');
+      (el().querySelector('[data-testid="terminer"]') as HTMLButtonElement).click();
+      expect(navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { mode: null } }));
+    }));
+  });
 });
