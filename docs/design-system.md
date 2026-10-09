@@ -36,3 +36,36 @@ recherche (`(search)`), la pagination (`[pagination]`, `(pageChange)`, `(pageSiz
 - Un `output()` n'indique pas s'il est écouté : les options sont des booléens explicites (`searchable`, `rowClickable`, `rowActions`, `showBack`).
 - Les panneaux (`soc-popover`, `soc-dialog`, `soc-drawer`, `soc-tooltip`) sont rendus dans `<body>`.
 - Icônes : `@lucide/angular`, dans un slot d'icône du composant (`socButtonLeftIcon`, `socCardIcon`…), `class="size-full"`.
+
+## Composants Labs (expérimentaux)
+
+Le kit publie depuis la 0.2.0 une zone **Labs** : `@socium-design/angular-components/labs`. Ce sont des composants qui
+comblent un `GAP-DS` en attendant une décision de l'équipe design ; ils peuvent changer sans garantie de compatibilité.
+Documentation embarquée : `node_modules/@socium-design/angular-components/labs/README.md` (statut de chaque composant et
+issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/generated/components.md`.
+
+**Quand un composant manque dans le kit :**
+
+1. Chercher dans Labs (README + référence générée).
+2. S'il n'y est pas : ne rien bricoler dans la page — signaler un `GAP-DS` et proposer de le créer dans Labs (dépôt
+   `design_system_angular`) ; attendre l'accord avant de le faire.
+3. Importer les composants Labs **uniquement** depuis `src/app/shared/labs/labs.ts` (jamais
+   `@socium-design/angular-components/labs` directement dans une page) : `grep -r "shared/labs/labs" src` liste tous
+   les usages, à mettre à jour lors d'une promotion (`SocLabsX` → `SocX` depuis le point d'entrée principal).
+4. Ne jamais promouvoir un composant Labs dans le kit officiel : décision de l'équipe design.
+
+| Composant Labs | Utilisé dans |
+|---|---|
+| `soc-labs-workspace-layout` | Composition d'un tableau de bord (barre du haut + 3 colonnes défilant séparément) |
+| `soc-labs-compact-field` | Composition — panneau « Informations » (Libellé, Description, Population) |
+| `soc-labs-pill-toggle` | Composition — statut (Actif / Inactif / Archivé) |
+| `soc-labs-chart-type-chip` | Composition — cartes de graphe et lignes de la Bibliothèque |
+| `soc-labs-drop-zone` | Composition — état vide et emplacement « Ajouter un graphe » (glisser-déposer CDK) |
+| `soc-labs-list-row` | Bibliothèque — lignes du catalogue (ajouté, verrouillé, glisser) |
+| `soc-labs-icon-button` | Composition (retour, menu d'une carte), Bibliothèque (« + », replier une section) |
+| `soc-labs-inline-edit` | Bibliothèque — renommage sur place des sections |
+| `soc-labs-fullscreen-overlay` | Composition — « Prévisualiser » |
+
+**Patron « espace de travail »** — `tableau-de-bord-composition-page.component.ts` : `soc-labs-workspace-layout` comme
+racine de la page (l'hôte de la page prend `height: 100%` de la zone de contenu du shell), `cdkDropListGroup` sur le
+layout pour relier la Bibliothèque (`cdkDrag` sur `soc-labs-list-row`) et la zone centrale (`cdkDropList`).
