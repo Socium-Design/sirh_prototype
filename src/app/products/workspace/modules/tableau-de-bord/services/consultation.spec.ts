@@ -1,23 +1,27 @@
 import { EMPLOYES } from '../../../../../../mocks/data/employes.mock';
-import { POPULATIONS } from '../../../../../../mocks/data/populations.mock';
+import { INDICATEURS } from '../../../../../../mocks/data/indicateurs.mock';
+import { SERIES_INDICATEURS } from '../../../../../../mocks/data/indicateurs-series.mock';
 import { TABLEAUX_DE_BORD } from '../../../../../../mocks/data/tableaux-de-bord.mock';
-import { employesDuPerimetre, tableauxAccessibles } from './consultation';
+import { sectionsConsultation, tableauDuRole } from './consultation';
+import { construireWidgets } from './widgets';
 
 describe('consultation', () => {
-  const absatou = EMPLOYES.find((e) => e.email === 'absatou.diallo@socium.link')!;
-
-  it('admin RH : tous les tableaux actifs, jamais les inactifs ni les archivés', () => {
-    expect(tableauxAccessibles(TABLEAUX_DE_BORD, POPULATIONS, 'admin-rh', absatou, EMPLOYES).map((t) => t.id)).toEqual(['tdb-1', 'tdb-3']);
+  it('chaque rôle consulte le premier tableau actif ouvert à son profil', () => {
+    expect(tableauDuRole(TABLEAUX_DE_BORD, 'admin-rh')?.id).toBe('tdb-1');
+    expect(tableauDuRole(TABLEAUX_DE_BORD, 'manager')?.id).toBe('tdb-3');
+    expect(tableauDuRole(TABLEAUX_DE_BORD, 'direction-generale')?.id).toBe('tdb-2');
+    expect(tableauDuRole(TABLEAUX_DE_BORD.map((t) => ({ ...t, statut: 'Inactif' as const })), 'manager')).toBeUndefined();
   });
 
-  it('manager : seulement les tableaux actifs dont la population le couvre', () => {
-    // Absatou Diallo : RH, Paris, France → couverte par « Filiales hors Sénégal », pas par « Équipe Sénégal ».
-    expect(tableauxAccessibles(TABLEAUX_DE_BORD, POPULATIONS, 'manager', absatou, EMPLOYES).map((t) => t.id)).toEqual(['tdb-3']);
-    expect(tableauxAccessibles(TABLEAUX_DE_BORD, POPULATIONS, 'manager', undefined, EMPLOYES)).toEqual([]);
-  });
-
-  it('périmètre : une filiale ou toutes (vue consolidée)', () => {
-    expect(employesDuPerimetre(EMPLOYES, 'France').every((e) => e.filiale === 'France')).toBeTrue();
-    expect(employesDuPerimetre(EMPLOYES, null).length).toBe(EMPLOYES.length);
+  it('sections : KPI en « Indicateurs clés », puis les graphes par thème, sans section vide', () => {
+    const vues = construireWidgets(TABLEAUX_DE_BORD[0], INDICATEURS, EMPLOYES, SERIES_INDICATEURS);
+    const sections = sectionsConsultation(vues);
+    expect(sections.map((s) => [s.libelle, s.widgets.map((w) => w.indicateur.titre)])).toEqual([
+      ['Indicateurs clés', ['Effectif total', 'Ancienneté moyenne']],
+      ['Effectifs et mouvements', ['Pyramide des âges', 'Répartition H/F', 'Turnover global', 'Turnover par département']],
+      ['Rémunération et absentéisme', ['Masse salariale mensuelle', 'Absences par motif', "Taux d'absentéisme"]],
+    ]);
+    expect(sectionsConsultation(vues.filter((v) => v.indicateur.typeGraphique === 'kpi')).map((s) => s.libelle)).toEqual(['Indicateurs clés']);
+    expect(sectionsConsultation([])).toEqual([]);
   });
 });

@@ -15,28 +15,34 @@ describe('WidgetGraphiqueComponent', () => {
     return fixture.nativeElement as HTMLElement;
   };
 
-  afterEach(() => fixture.destroy());
+  afterEach(() => fixture?.destroy());
 
-  it('affiche un KPI chiffré sans graphique', () => {
-    const el = afficher('kpi', { libelles: [], series: [], valeur: 1234, unite: 'employés' });
-    expect(el.querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s/g, '')).toBe('1234');
+  it('propose les cinq types du catalogue', () => {
+    expect(Object.values(TYPES_GRAPHIQUES).map((t) => t.libelle)).toEqual(['Courbe', 'Histogramme', 'Camembert', 'Barres horiz.', 'Carte KPI']);
+  });
+
+  it('carte KPI : valeur, unité et tendance favorable en vert', () => {
+    const el = afficher('kpi', { libelles: [], series: [], valeur: 1234, unite: 'collaborateurs', tendance: { valeur: 13, periode: 'ce mois', hausseFavorable: true } });
+    expect(el.querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s/g, '')).toBe('1234collaborateurs');
+    const tendance = el.querySelector('[data-testid="tendance"]')!;
+    expect(tendance.textContent?.trim()).toBe('+13 ce mois');
+    expect(tendance.classList).not.toContain('graphique__tendance--defavorable');
     expect(el.querySelector('canvas')).toBeNull();
   });
 
+  it('carte KPI : une hausse défavorable (turnover, délai…) est en rouge', () => {
+    const el = afficher('kpi', { libelles: [], series: [], valeur: 32, unite: 'jours', tendance: { valeur: 4, periode: 'ce mois', hausseFavorable: false } });
+    expect(el.querySelector('[data-testid="tendance"]')?.classList).toContain('graphique__tendance--defavorable');
+  });
+
   it('dessine chaque type Chart.js dans un canvas, avec un texte alternatif', () => {
-    for (const type of (Object.keys(TYPES_GRAPHIQUES) as TypeGraphique[]).filter((t) => TYPES_GRAPHIQUES[t].chartJs && !TYPES_GRAPHIQUES[t].jauge)) {
+    for (const type of (Object.keys(TYPES_GRAPHIQUES) as TypeGraphique[]).filter((t) => TYPES_GRAPHIQUES[t].chartJs)) {
       const el = afficher(type, serie);
       const canvas = el.querySelector('canvas')!;
       expect(Chart.getChart(canvas)).withContext(type).toBeDefined();
       expect(canvas.getAttribute('aria-label')).toBe('Employés : Dakar 6, Paris 5');
       fixture.destroy();
     }
-  });
-
-  it('affiche une jauge avec sa valeur sur le maximum', () => {
-    const el = afficher('jauge', { libelles: [], series: [], valeur: 16, max: 23, unite: 'entretiens' });
-    expect(Chart.getChart(el.querySelector('canvas')!)).toBeDefined();
-    expect(el.querySelector('[data-testid="jauge"]')?.textContent?.trim()).toBe('16 / 23 entretiens (70 %)');
   });
 
   it('redessine quand les données changent et libère le graphique à la destruction', () => {

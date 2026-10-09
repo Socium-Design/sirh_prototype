@@ -5,23 +5,26 @@ import { of } from 'rxjs';
 import { TableauxDeBordService } from '../../tableau-de-bord/services/tableaux-de-bord.service';
 import { TableauDeBordCompositionPageComponent } from './tableau-de-bord-composition-page.component';
 
-type Page = TableauDeBordCompositionPageComponent & Record<string, any>;
+type Page = Record<string, any>;
 
-describe('TableauDeBordCompositionPageComponent (Bibliothèque, édition)', () => {
+describe('TableauDeBordCompositionPageComponent', () => {
   let fixture: ComponentFixture<TableauDeBordCompositionPageComponent>;
   let page: Page;
   const el = () => fixture.nativeElement as HTMLElement;
   const widgets = () => [...el().querySelectorAll('[data-testid="widget"]')] as HTMLElement[];
-  const sectionsAffichees = () => [...el().querySelectorAll('[data-testid="section"] .section__titre')].map((s) => s.textContent?.trim());
-  const indicateur = (titre: string) =>
+  const titresWidgets = () => widgets().map((w) => w.querySelector('soc-card p')?.textContent?.trim());
+  const sections = () => [...el().querySelectorAll('[data-testid="section"]')].map((s) => s.querySelector('.section__titre')?.textContent?.trim() + ' · ' + s.querySelector('soc-badge')?.textContent?.trim());
+  const ligne = (titre: string) =>
     [...el().querySelectorAll('[data-testid="indicateur"], [data-testid="indicateur-indisponible"]')].find((c) => c.textContent?.includes(titre)) as HTMLElement;
+  const modale = () => document.body.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement | null;
   const rafraichir = () => {
+    fixture.detectChanges();
     tick(300);
     fixture.detectChanges();
   };
-  const panneauVisible = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]')].find((p) => p.style.visibility === 'visible')!;
+  const panneauVisible = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]:not([aria-modal])')].find((p) => p.style.visibility === 'visible')!;
   const menu = (titre: string, item: string) => {
-    (widgets().find((w) => w.textContent?.includes(titre))!.querySelector('button[aria-label^="Actions du widget"]') as HTMLButtonElement).click();
+    (widgets().find((w) => w.textContent?.includes(titre))!.querySelector('button[aria-label^="Actions du graphe"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     return [...panneauVisible().querySelectorAll('button[socMenuItem]')].find((b) => b.textContent?.includes(item)) as HTMLButtonElement;
   };
@@ -32,153 +35,210 @@ describe('TableauDeBordCompositionPageComponent (Bibliothèque, édition)', () =
       providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id }), queryParamMap: query }, queryParamMap: of(query) } }],
     });
     fixture = TestBed.createComponent(TableauDeBordCompositionPageComponent);
-    page = fixture.componentInstance as Page;
-    fixture.detectChanges();
+    page = fixture.componentInstance as unknown as Page;
     rafraichir();
   };
 
   afterEach(() => fixture.destroy());
 
-  it('affiche le tableau par section (vides comprises, comme cibles), la répartition et un vrai graphique par widget', fakeAsync(() => {
-    ouvrir('tdb-1');
-    expect(el().querySelector('h1')?.textContent).toContain('Dashboard RH Global');
-    expect(sectionsAffichees()).toEqual(['Effectifs', 'Mouvements du personnel', 'Performance', 'Temps & absences', 'Paie', 'Formation']);
-    const repartition = [...el().querySelectorAll('[data-testid="repartition"] soc-tag')].map((t) => t.textContent?.trim());
-    expect(repartition).toEqual(['Effectifs · 4', 'Mouvements du personnel · 2']);
-    expect(widgets().length).toBe(6);
-    expect(el().querySelectorAll('app-widget-graphique').length).toBe(6);
-  }));
+  describe('Détail (lecture seule)', () => {
+    beforeEach(fakeAsync(() => ouvrir('tdb-3', 'lecture')));
 
-  it('Bibliothèque : sections non vides seulement, indicateur non souscrit grisé et non ajoutable', fakeAsync(() => {
-    ouvrir('tdb-4');
-    const sections = [...el().querySelectorAll('[data-testid="section-catalogue"]')].map((s) => s.getAttribute('ng-reflect-label') ?? s.textContent?.trim().split('\n')[0]);
-    expect(sections.length).toBe(5);
-    const masse = indicateur('Masse salariale');
-    expect(masse.getAttribute('data-testid')).toBe('indicateur-indisponible');
-    expect(masse.textContent).toContain('Non souscrit');
-    expect(document.body.textContent).toContain('Indicateur du produit Payroll, non souscrit');
-    page['ajouter']({ ...page['catalogue']().flatMap((s: any) => s.indicateurs).find((i: any) => i.id === 'ind-masse-salariale') });
-    rafraichir();
-    expect(widgets().length).toBe(2);
-  }));
-
-  it('ajoute un indicateur au clic, dans la section de son indicateur', fakeAsync(() => {
-    ouvrir('tdb-4');
-    (indicateur('Demandes de congés').querySelector('soc-card > div') as HTMLElement).click();
-    rafraichir();
-    expect(widgets().length).toBe(3);
-    expect(el().querySelector('[data-testid="message"]')?.textContent).toContain('« Demandes de congés » ajouté à la section Temps & absences');
-    expect(indicateur('Demandes de congés').textContent).toContain('Ajouté');
-  }));
-
-  it('ajoute un indicateur déposé dans une section (glisser-déposer)', fakeAsync(() => {
-    ouvrir('tdb-4');
-    // Événement CDK minimal : seuls les conteneurs (source ≠ cible) et la donnée de l'élément glissé comptent.
-    const depot = { previousContainer: { data: undefined }, container: { data: 'formation' }, item: { data: 'ind-turnover' } };
-    page['deposer'](depot as unknown as CdkDragDrop<string, unknown, string>);
-    rafraichir();
-    const formation = [...el().querySelectorAll('[data-testid="section"]')].find((s) => s.textContent?.includes('Formation'))!;
-    expect(formation.textContent).toContain('Taux de turnover');
-  }));
-
-  it('modifie un widget dans le panneau latéral : titre, filtres rattachés à la carte', fakeAsync(() => {
-    ouvrir('tdb-4');
-    menu('Entretiens annuels', 'Modifier').click();
-    fixture.detectChanges();
-    expect(el().querySelector('[data-testid="edition-widget"]')).not.toBeNull();
-    expect(el().querySelector('[data-testid="catalogue"]')).toBeNull();
-    page['formWidget'].patchValue({ titre: 'Entretiens DSI', filtres: ['site:Dakar'] });
-    ([...el().querySelectorAll('[data-testid="edition-widget"] button')].find((b) => b.textContent?.trim() === 'Enregistrer') as HTMLButtonElement).click();
-    rafraichir();
-    const carte = widgets().find((w) => w.textContent?.includes('Entretiens DSI'))!;
-    expect(carte.querySelector('[data-testid="filtres"]')?.textContent?.trim()).toBe('Site : Dakar');
-    expect(el().querySelector('[data-testid="catalogue"]')).not.toBeNull();
-  }));
-
-  it('« Réinitialiser » rend le titre du catalogue, et n’est disponible que pour un widget personnalisé', fakeAsync(() => {
-    ouvrir('tdb-1');
-    expect(menu('Effectif actif', 'Réinitialiser').disabled).toBeTrue();
-    menu('Turnover mensuel', 'Réinitialiser').click();
-    rafraichir();
-    expect(widgets().some((w) => w.textContent?.includes('Taux de turnover'))).toBeTrue();
-    expect(widgets().some((w) => w.textContent?.includes('Turnover mensuel'))).toBeFalse();
-  }));
-
-  it('retire un widget', fakeAsync(() => {
-    ouvrir('tdb-4');
-    menu('Objectifs par état', 'Retirer').click();
-    rafraichir();
-    expect(widgets().length).toBe(1);
-  }));
-
-  it('renomme une section', fakeAsync(() => {
-    ouvrir('tdb-4');
-    (el().querySelector('button[aria-label="Renommer la section Performance"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    page['nomSection'].setValue('Perf DSI');
-    ([...document.body.querySelectorAll('[aria-modal="true"] button')].find((b) => b.textContent?.trim() === 'Renommer') as HTMLButtonElement).click();
-    rafraichir();
-    expect(sectionsAffichees()).toContain('Perf DSI');
-  }));
-
-  it('affiche le détail d’un indicateur du catalogue', fakeAsync(() => {
-    ouvrir('tdb-4');
-    (indicateur('Taux de turnover').querySelector('soc-card button') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    const detail = document.body.querySelector('[data-testid="detail-indicateur"]')!;
-    expect(detail.textContent).toContain('Départs du mois / effectif moyen du mois');
-    expect(detail.textContent).toContain('Site, Filiale');
-  }));
-
-  it('« Visualiser » : aperçu sans Bibliothèque ni menus, puis « Activer » devient possible', fakeAsync(() => {
-    ouvrir('tdb-4');
-    const activer = () => el().querySelector('[data-testid="activer"]') as HTMLButtonElement;
-    expect(activer().disabled).toBeTrue();
-    (el().querySelector('[data-testid="visualiser"]') as HTMLButtonElement).click();
-    rafraichir();
-    expect(el().querySelector('[data-testid="catalogue"]')).toBeNull();
-    expect(el().querySelectorAll('button[aria-label^="Actions du widget"]').length).toBe(0);
-    expect(sectionsAffichees()).toEqual(['Performance']);
-    expect(el().textContent).toContain('tel que le verront les employés de « DSI actifs hors Paris »');
-    expect(activer().disabled).toBeFalse();
-    activer().click();
-    rafraichir();
-    expect(el().querySelector('[data-testid="activer"]')).toBeNull();
-    let statut = '';
-    TestBed.inject(TableauxDeBordService).getById('tdb-4').subscribe((t) => (statut = t!.statut));
-    tick(300);
-    expect(statut).toBe('Actif');
-  }));
-
-  describe('« Voir détails » (lecture seule)', () => {
-    it('affiche les informations générales à gauche et les widgets sans Bibliothèque, menus ni sections vides', fakeAsync(() => {
-      ouvrir('tdb-3', 'lecture');
-      const infos = el().querySelector('[data-testid="infos"]')!;
-      expect(infos.textContent).toContain('Dashboard effectifs internationaux');
-      expect(infos.textContent).toContain('Filiales hors Sénégal');
-      expect(infos.textContent).toContain('Filiale est France');
-      expect(infos.textContent).toContain('11 employé(s)');
-      expect(el().querySelector('[data-testid="catalogue"]')).toBeNull();
-      expect(el().querySelectorAll('button[aria-label^="Actions du widget"]').length).toBe(0);
-      expect(el().querySelector('button[aria-label^="Renommer"]')).toBeNull();
-      expect(sectionsAffichees()).toEqual(['Effectifs par pays', 'Mouvements du personnel']);
+    it('badge « Lecture seule », informations à gauche, graphes par section, sans Bibliothèque ni menus', () => {
+      expect(el().querySelector('h1')?.textContent).toContain('Dashboard Managers');
+      expect(el().querySelector('soc-tag')?.textContent?.trim()).toBe('Lecture seule');
+      const infos = el().querySelector('[data-testid="infos"]')!.textContent!;
+      for (const texte of ['INFORMATIONS', 'Libellé', 'Description', 'Population', 'Managers – périmètre hiérarchique', 'Statut', 'Actif', 'Profils', 'Manager']) {
+        expect(infos).withContext(texte).toContain(texte);
+      }
+      expect(el().textContent).toContain('Composition du dashboard · 4 graphe(s)');
+      expect(sections()).toEqual(['Gestion du capital humain · 1 KPI', 'Mouvement du personnel · 1 KPI', 'Absences de mon équipe · 2 KPI']);
       expect(el().querySelector('[data-testid="bibliotheque"]')).toBeNull();
-    }));
+      expect(el().querySelector('button[aria-label^="Actions du graphe"]')).toBeNull();
+      expect(widgets()[0].textContent).toContain('Aucun filtre');
+    });
 
-    it('« Modifier » (à côté de « Visualiser ») passe en mode édition via l’URL', fakeAsync(() => {
-      ouvrir('tdb-3', 'lecture');
+    it('« Modifier » passe en édition (dans l’URL)', () => {
       const navigate = spyOn(TestBed.inject(Router), 'navigate');
-      const modifier = el().querySelector('[data-testid="modifier"]') as HTMLButtonElement;
-      expect(modifier.closest('soc-tooltip')?.previousElementSibling?.querySelector('[data-testid="visualiser"]')).not.toBeNull();
-      modifier.click();
+      (el().querySelector('[data-testid="modifier"]') as HTMLButtonElement).click();
       expect(navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { mode: 'edition' } }));
+    });
+  });
+
+  describe('édition', () => {
+    beforeEach(fakeAsync(() => ouvrir('tdb-3')));
+
+    it('indication, Bibliothèque par sections avec compteur, ✓ si ajouté, cadenas si non souscrit', () => {
+      expect(el().textContent).toContain('Ajouter des graphes depuis la bibliothèque →');
+      const entetes = [...el().querySelectorAll('[data-testid="section-bibliotheque"]')].map((s) => s.textContent!.replace(/\s+/g, ' '));
+      expect(entetes.length).toBe(5);
+      expect(entetes[0]).toContain('Gestion du capital humain');
+      expect(el().querySelector('[data-testid="compteur"]')?.textContent?.trim()).toBe('1/4');
+      expect(ligne('Effectif total').querySelector('[aria-label="Effectif total ajouté"]')).not.toBeNull();
+      expect(ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]')).not.toBeNull();
+      expect(ligne('Coût moyen par embauche').getAttribute('data-testid')).toBe('indicateur-indisponible');
+      expect(ligne('Coût moyen par embauche').textContent).toContain('Produit non souscrit');
+    });
+
+    it('« + » ajoute le graphe dans la section de son indicateur', fakeAsync(() => {
+      (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
+      rafraichir();
+      expect(widgets().length).toBe(5);
+      expect(sections()[0]).toBe('Gestion du capital humain · 2 KPI');
+      expect(ligne('Pyramide des âges').querySelector('[aria-label="Pyramide des âges ajouté"]')).not.toBeNull();
     }));
 
-    it('« Terminer » revient en lecture seule', fakeAsync(() => {
-      ouvrir('tdb-3');
-      const navigate = spyOn(TestBed.inject(Router), 'navigate');
-      (el().querySelector('[data-testid="terminer"]') as HTMLButtonElement).click();
-      expect(navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { mode: null } }));
+    it('glisser-déposer : ajoute l’indicateur déposé dans la composition', fakeAsync(() => {
+      const composition = { data: null };
+      page['deposer']({ item: { data: 'ind-masse-salariale' }, previousContainer: {}, container: composition } as unknown as CdkDragDrop<unknown, unknown, string>);
+      rafraichir();
+      expect(titresWidgets()).toContain('Masse salariale mensuelle');
     }));
+
+    it('recherche dans la Bibliothèque', () => {
+      const input = el().querySelector('[data-testid="bibliotheque"] soc-search-bar input') as HTMLInputElement;
+      input.value = 'turnover';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+      expect([...el().querySelectorAll('[data-testid="indicateur"]')].map((l) => l.querySelector('.ligne__nom')?.textContent?.trim())).toEqual([
+        'Turnover global',
+        'Turnover par département',
+      ]);
+    });
+
+    it('renomme une section directement (Entrée valide, Échap annule)', () => {
+      (el().querySelector('[aria-label="Renommer cette section"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const champ = () => el().querySelector('[data-testid="renommage"]') as HTMLElement;
+      const input = champ().querySelector('input') as HTMLInputElement;
+      input.value = 'Mon équipe';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+      expect(champ()).toBeNull();
+      expect(sections()[0]).toBe('Gestion du capital humain · 1 KPI');
+
+      (el().querySelector('[aria-label="Renommer cette section"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const input2 = champ().querySelector('input') as HTMLInputElement;
+      input2.value = 'Mon équipe';
+      input2.dispatchEvent(new Event('input', { bubbles: true }));
+      input2.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      fixture.detectChanges();
+      expect(sections()[0]).toBe('Mon équipe · 1 KPI');
+    });
+
+    it('menu d’un graphe : « Retirer »', () => {
+      menu("Taux d'absentéisme", 'Retirer').click();
+      fixture.detectChanges();
+      expect(titresWidgets()).not.toContain("Taux d'absentéisme");
+    });
+
+    it('menu d’un graphe : « Modifier » ouvre « Modifier le KPI » et applique titre et filtres', () => {
+      menu('Effectif total', 'Modifier').click();
+      fixture.detectChanges();
+      expect(modale()?.textContent).toContain('Modifier le KPI');
+      expect(modale()?.textContent).toContain('Rechercher et sélectionner des filtres');
+      const dialogue = page['widgetEdite']();
+      expect(dialogue.titre).toBe('Effectif total');
+      page['sauverWidget']({ titre: 'Effectif de l’équipe', description: '', sectionId: 'capital-humain', filtres: ['site:Dakar'] });
+      fixture.detectChanges();
+      expect(modale()).toBeNull();
+      const carte = widgets().find((w) => w.textContent?.includes('Effectif de l’équipe'))!;
+      expect(carte.textContent).toContain('Site : Dakar');
+    });
+
+    it('statut et profils modifiables ; « Enregistrer » persiste puis affiche « Enregistré ✓ »', fakeAsync(() => {
+      const service = TestBed.inject(TableauxDeBordService);
+      const enregistrer = spyOn(service, 'enregistrerComposition').and.callThrough();
+      ([...el().querySelectorAll('[data-testid="infos"] soc-checkbox')].find((c) => c.textContent?.includes('Administrateur RH'))!.querySelector('[role="checkbox"]') as HTMLElement).click();
+      fixture.detectChanges();
+      expect(page['brouillon']().profils).toEqual(['admin-rh', 'manager']);
+      page['changerStatut']('Inactif');
+      fixture.detectChanges();
+
+      const bouton = () => el().querySelector('[data-testid="enregistrer"]') as HTMLButtonElement;
+      expect(bouton().getAttribute('aria-label')).toBe('Enregistrer');
+      bouton().click();
+      rafraichir();
+      expect(enregistrer).toHaveBeenCalledWith('tdb-3', jasmine.objectContaining({ statut: 'Inactif', profils: ['admin-rh', 'manager'] }));
+      expect(bouton().getAttribute('aria-label')).toBe('Enregistré ✓');
+
+      (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(bouton().getAttribute('aria-label')).toBe('Enregistrer');
+    }));
+
+    it('quitter sans changement : pas de confirmation', () => {
+      expect(page['peutQuitter']()).toBeTrue();
+      expect(modale()).toBeNull();
+    });
+
+    it('changements non enregistrés : « Quitter sans enregistrer ? », Rester ou Quitter', fakeAsync(() => {
+      (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const reponses: boolean[] = [];
+      const bouton = (texte: string) => [...modale()!.querySelectorAll('button')].find((b) => b.textContent?.trim() === texte) as HTMLButtonElement;
+
+      page['peutQuitter']().subscribe((r: boolean) => reponses.push(r));
+      fixture.detectChanges();
+      expect(modale()?.textContent).toContain('Quitter sans enregistrer ?');
+      expect(modale()?.textContent).toContain("Les modifications de « Dashboard Managers » n'ont pas été enregistrées.");
+      bouton('Rester sur la page').click();
+      fixture.detectChanges();
+      expect(reponses).toEqual([false]);
+      expect(modale()).toBeNull();
+
+      page['peutQuitter']().subscribe((r: boolean) => reponses.push(r));
+      fixture.detectChanges();
+      bouton('Quitter sans enregistrer').click();
+      expect(reponses).toEqual([false, true]);
+
+      // Une fois enregistré, plus de confirmation ; annuler un changement aussi.
+      (el().querySelector('[data-testid="enregistrer"]') as HTMLButtonElement).click();
+      rafraichir();
+      expect(page['peutQuitter']()).toBeTrue();
+    }));
+
+    it('revenir à l’état enregistré lève la confirmation', () => {
+      (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(page['modifie']()).toBeTrue();
+      menu('Pyramide des âges', 'Retirer').click();
+      fixture.detectChanges();
+      expect(page['peutQuitter']()).toBeTrue();
+    });
+
+    it('« Prévisualiser » : plein écran, KPI en haut puis graphes sur 2 colonnes, données simulées', () => {
+      (el().querySelector('[data-testid="previsualiser"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(el().textContent).toContain('Prévisualisation · Managers – périmètre hiérarchique · 4 KPIs');
+      expect(el().textContent).toContain('Données simulées');
+      const grilles = el().querySelectorAll('[data-testid="apercu"] soc-card-grid');
+      expect(grilles.length).toBe(2);
+      expect(grilles[0].querySelectorAll('app-widget-carte').length).toBe(1);
+      expect(grilles[1].querySelectorAll('app-widget-carte').length).toBe(3);
+      expect(el().textContent).toContain('Retour à la composition');
+    });
   });
+
+  it('composition vide : invite à cliquer dans la bibliothèque ; prévisualisation vide', fakeAsync(() => {
+    ouvrir('tdb-3');
+    page['brouillon'].update((t: any) => ({ ...t, widgets: [] }));
+    fixture.detectChanges();
+    expect(el().querySelector('[data-testid="composition-vide"]')?.textContent).toContain('Cliquez sur un graphe dans la bibliothèque →');
+    page['apercu'].set(true);
+    fixture.detectChanges();
+    expect(el().textContent).toContain('Aucun KPI ajouté — retournez à la bibliothèque pour en ajouter.');
+  }));
+
+  it('revient à la liste si le tableau n’existe pas', fakeAsync(() => {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'x' }), queryParamMap: convertToParamMap({}) }, queryParamMap: of(convertToParamMap({})) } }],
+    });
+    const navigate = spyOn(TestBed.inject(Router), 'navigateByUrl');
+    fixture = TestBed.createComponent(TableauDeBordCompositionPageComponent);
+    rafraichir();
+    expect(navigate).toHaveBeenCalledWith('/workspace/configuration/tableaux-de-bord');
+  }));
 });

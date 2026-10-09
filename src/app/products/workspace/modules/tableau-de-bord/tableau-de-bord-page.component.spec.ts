@@ -1,121 +1,109 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { SessionService } from '../../../../core/session/session.service';
+import { SessionService, type RoleDemo } from '../../../../core/session/session.service';
+import { TableauxDeBordService } from './services/tableaux-de-bord.service';
 import { TableauDeBordPageComponent } from './tableau-de-bord-page.component';
 
 describe('TableauDeBordPageComponent (consultation)', () => {
   let fixture: ComponentFixture<TableauDeBordPageComponent>;
   let session: SessionService;
-  let query: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   const el = () => fixture.nativeElement as HTMLElement;
   const widgets = () => [...el().querySelectorAll('[data-testid="widget"]')] as HTMLElement[];
+  const titres = () => widgets().map((w) => w.querySelector('soc-card p')?.textContent?.trim());
   const sections = () => [...el().querySelectorAll('[data-testid="section"] .section__titre')].map((s) => s.textContent?.trim());
-  const kpi = () => el().querySelector('[data-testid="widget"] [data-testid="kpi"]')?.textContent?.trim();
-  const masquer = (titre: string) => (el().querySelector(`button[aria-label="Masquer le widget ${titre}"]`) as HTMLButtonElement).click();
+  const carte = (titre: string) => widgets().find((w) => w.querySelector('soc-card p')?.textContent?.trim() === titre)!;
   const panneauVisible = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]')].find((p) => p.style.visibility === 'visible')!;
-  const menu = (titre: string) => {
-    (el().querySelector(`button[aria-label="Actions du widget ${titre}"]`) as HTMLButtonElement).click();
-    fixture.detectChanges();
-    return [...panneauVisible().querySelectorAll('button[socMenuItem]')] as HTMLButtonElement[];
-  };
-
-  const ouvrir = (role: 'admin-rh' | 'manager' = 'admin-rh', tableau?: string) => {
-    query = new BehaviorSubject(convertToParamMap(tableau ? { tableau } : {}));
-    TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: query.value }, queryParamMap: query } }],
-    });
-    session = TestBed.inject(SessionService);
-    session.role.set(role);
-    fixture = TestBed.createComponent(TableauDeBordPageComponent);
+  const detecter = () => {
     fixture.detectChanges();
     tick(300);
     fixture.detectChanges();
   };
 
+  const ouvrir = (role: RoleDemo = 'admin-rh', tableau?: string, avant?: () => void) => {
+    const query = new BehaviorSubject(convertToParamMap(tableau ? { tableau } : {}));
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: query.value }, queryParamMap: query } }],
+    });
+    session = TestBed.inject(SessionService);
+    session.role.set(role);
+    avant?.();
+    fixture = TestBed.createComponent(TableauDeBordPageComponent);
+    detecter();
+  };
+
   afterEach(() => fixture.destroy());
 
-  it('affiche le premier tableau accessible, segmenté par section, un vrai graphique par widget', fakeAsync(() => {
+  it('« Mon tableau de bord » + tag « RH », périmètre, population et date des données', fakeAsync(() => {
     ouvrir();
-    expect(el().textContent).toContain('Dashboard RH Global');
-    expect(sections()).toEqual(['Effectifs', 'Mouvements du personnel']);
-    expect(widgets().length).toBe(6);
-    expect(el().querySelectorAll('canvas').length).toBe(5);
+    expect(el().textContent).toContain('Mon tableau de bord');
+    expect(el().querySelector('[data-testid="role"]')?.textContent?.trim()).toBe('RH');
+    expect(el().textContent).toContain('Périmètre : Socium Enterprises · Population : Équipe Sénégal · Données au 09/10/2026');
+    // Plus de sélecteur de tableau, de filiale ni d'œil pour masquer.
+    expect(el().textContent).not.toContain('Vue consolidée');
+    expect(el().querySelector('[aria-label^="Masquer"]')).toBeNull();
   }));
 
-  it('calcule les widgets sur la filiale active, ou toutes en vue consolidée', fakeAsync(() => {
+  it('sections Indicateurs clés / Effectifs et mouvements / Rémunération et absentéisme ; KPI avec tendance', fakeAsync(() => {
     ouvrir();
-    expect(el().querySelector('[data-testid="perimetre"]')?.textContent).toContain('Sénégal');
-    expect(kpi()).toBe('11');
-    session.enterprise.set('fr');
-    fixture.detectChanges();
-    expect(kpi()).toBe('4');
-    session.enterprise.set('groupe');
-    fixture.detectChanges();
-    expect(el().querySelector('[data-testid="perimetre"]')?.textContent).toContain('Vue consolidée');
-    expect(kpi()).toBe('20');
+    expect(sections()).toEqual(['Indicateurs clés', 'Effectifs et mouvements', 'Rémunération et absentéisme']);
+    expect(widgets().length).toBe(9);
+    const effectif = carte('Effectif total');
+    expect(effectif.querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('11 collaborateurs');
+    expect(effectif.querySelector('[data-testid="tendance"]')?.textContent?.trim()).toBe('+13 ce mois');
   }));
 
-  it('masque un widget (œil) et le liste plus bas avec ses filtres, pour le réafficher', fakeAsync(() => {
+  it('le filtre « Rôle » change le tableau, donc les sections affichées', fakeAsync(() => {
     ouvrir();
-    masquer('Turnover mensuel');
+    expect(el().querySelector('soc-select')?.textContent).toContain('Administrateur RH');
+    session.role.set('manager');
     fixture.detectChanges();
-    expect(widgets().length).toBe(5);
-    const masque = el().querySelector('[data-testid="widget-masque"]')!;
-    expect(masque.textContent).toContain('Turnover mensuel');
-    expect(masque.textContent).toContain('Site : Dakar');
-    (masque.querySelector('button[aria-label="Afficher le widget Turnover mensuel"]') as HTMLButtonElement).click();
+    expect(el().querySelector('[data-testid="role"]')?.textContent?.trim()).toBe('Manager');
+    expect(titres()).toEqual(['Effectif total', 'Turnover par département', "Taux d'absentéisme", 'Absences par motif']);
+    expect(el().textContent).toContain('Population : Managers – périmètre hiérarchique');
+    session.role.set('direction-generale');
     fixture.detectChanges();
-    expect(widgets().length).toBe(6);
-    expect(el().querySelector('[data-testid="masques"]')).toBeNull();
+    expect(el().querySelector('[data-testid="role"]')?.textContent?.trim()).toBe('DG');
+    expect(titres()).toContain('Masse salariale mensuelle');
   }));
 
-  it('permet d’aller jusqu’à « 0 KPI », puis de tout réafficher', fakeAsync(() => {
+  it('description tronquée à 96 caractères ; avertissement sur les données classifiées sans historisation', fakeAsync(() => {
     ouvrir();
-    for (const titre of ['Effectif actif', 'Effectif par site', 'Effectif par département', 'Actifs et inactifs', "Évolution de l'effectif", 'Turnover mensuel']) {
-      masquer(titre);
-      fixture.detectChanges();
-    }
-    expect(widgets().length).toBe(0);
-    expect(sections()).toEqual([]);
-    const zero = el().querySelector('[data-testid="zero-kpi"]')!;
-    expect(zero.textContent).toContain('Vous avez masqué tous les widgets');
-    ([...zero.querySelectorAll('button')].find((b) => b.textContent?.includes('Tout réafficher')) as HTMLButtonElement).click();
-    fixture.detectChanges();
-    expect(widgets().length).toBe(6);
+    const sousTitre = carte('Pyramide des âges').querySelectorAll('soc-card p')[1].textContent!.trim();
+    expect(sousTitre.length).toBe(97);
+    expect(sousTitre.endsWith('…')).toBeTrue();
+    expect(carte('Répartition H/F').querySelector('[data-testid="classifie"]')?.textContent).toContain(
+      'Données classifiées sans historisation — affichage temps réel uniquement.',
+    );
+    expect(carte('Pyramide des âges').querySelector('[data-testid="classifie"]')).toBeNull();
   }));
 
-  it('kebab admin RH : « Modifier » mène à la composition dans la Configuration ; « Exporter en PDF » est simulé', fakeAsync(() => {
+  it('menu d’un graphe : « Modifier » seulement, vers la composition dans la Configuration', fakeAsync(() => {
     ouvrir();
     const navigate = spyOn(TestBed.inject(Router), 'navigate');
-    const items = menu('Effectif actif');
-    expect(items.map((b) => b.textContent?.trim())).toEqual(['Modifier', 'Exporter en PDF']);
-    items[1].click();
+    (carte('Effectif total').querySelector('button[aria-label="Actions du graphe Effectif total"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(el().querySelector('[data-testid="message"]')?.textContent).toContain('Export PDF du widget « Effectif actif » lancé (simulation)');
-    menu('Effectif actif')[0].click();
+    const items = [...panneauVisible().querySelectorAll('button[socMenuItem]')] as HTMLButtonElement[];
+    expect(items.map((b) => b.textContent?.trim())).toEqual(['Modifier']);
+    items[0].click();
     expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-1'], { queryParams: { mode: 'edition' } });
   }));
 
-  it('vue manager : seulement les tableaux de ses populations, sans « Modifier »', fakeAsync(() => {
-    ouvrir('manager');
+  it('« Visualiser » (?tableau=) : ce tableau-là, même inactif, sans filtre « Rôle »', fakeAsync(() => {
+    ouvrir('admin-rh', 'tdb-5');
     expect(el().textContent).toContain('Dashboard effectifs internationaux');
-    expect(el().textContent).not.toContain('Dashboard RH Global');
-    expect(menu('Effectif par filiale').map((b) => b.textContent?.trim())).toEqual(['Exporter en PDF']);
+    expect(el().querySelector('soc-select')).toBeNull();
+    expect(el().textContent).toContain('Population : Filiales hors Sénégal');
   }));
 
-  it('suit le tableau demandé dans l’URL, sinon le premier accessible', fakeAsync(() => {
-    ouvrir('admin-rh', 'tdb-3');
-    expect(el().textContent).toContain('Dashboard effectifs internationaux');
-    query.next(convertToParamMap({ tableau: 'tdb-4' })); // inactif : pas accessible
-    fixture.detectChanges();
-    expect(el().textContent).toContain('Dashboard RH Global');
-  }));
-
-  it('aucun tableau accessible : message explicite', fakeAsync(() => {
-    ouvrir('manager');
-    session.user.set({ ...session.user(), email: 'inconnu@socium.link' });
-    fixture.detectChanges();
-    expect(el().querySelector('[data-testid="aucun-tableau"]')?.textContent).toContain('Aucun tableau de bord actif n\'est accessible en tant que Manager');
+  it('état vide : « Votre tableau de bord est vide » + « Configurer le tableau de bord »', fakeAsync(() => {
+    ouvrir('manager', undefined, () => {
+      const service = TestBed.inject(TableauxDeBordService);
+      service.enregistrerComposition('tdb-3', { widgets: [], sections: [], statut: 'Actif', profils: ['manager'] }).subscribe();
+    });
+    expect(el().querySelector('[data-testid="vide"]')?.textContent).toContain('Votre tableau de bord est vide');
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
+    ([...el().querySelectorAll('[data-testid="vide"] button')].find((b) => b.textContent?.includes('Configurer le tableau de bord')) as HTMLButtonElement).click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-3'], { queryParams: { mode: 'edition' } });
   }));
 });

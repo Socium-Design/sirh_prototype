@@ -4,75 +4,105 @@ import { TableauxDeBordPageComponent } from './tableaux-de-bord-page.component';
 
 describe('TableauxDeBordPageComponent', () => {
   let fixture: ComponentFixture<TableauxDeBordPageComponent>;
-  const rows = () => [...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
-  const ligne = (libelle: string) => rows().find((r) => r.querySelector('td')?.textContent?.trim() === libelle)!;
-  const cellules = (libelle: string) => [...ligne(libelle).querySelectorAll('td')].map((td) => td.textContent?.trim());
-  /** Ouvre le menu d'actions d'une ligne (panneau rendu dans <body>, seul le panneau visible compte). */
-  const action = (libelle: string, item: string) => {
-    (ligne(libelle).querySelector('button[aria-label="Actions"]') as HTMLButtonElement).click();
+  const el = () => fixture.nativeElement as HTMLElement;
+  const rows = () => [...el().querySelectorAll('tbody tr')] as HTMLElement[];
+  const ligne = (nom: string) => rows().find((r) => r.querySelector('td')?.textContent?.trim() === nom)!;
+  const cellules = (nom: string) => [...ligne(nom).querySelectorAll('td')].map((td) => td.textContent?.replace(/\s+/g, ' ').trim());
+  const modale = () => document.body.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement | null;
+  const boutonModale = (texte: string) => [...modale()!.querySelectorAll('button')].find((b) => b.textContent?.trim() === texte) as HTMLButtonElement;
+  const detecter = () => {
+    fixture.detectChanges();
+    tick(500);
+    fixture.detectChanges();
+  };
+  const action = (nom: string, libelle: string) => {
+    (ligne(nom).querySelector('button[aria-label="Actions"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     const panneau = [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]')].find((p) => p.style.visibility === 'visible')!;
-    return [...panneau.querySelectorAll('button[socMenuItem]')].find((b) => b.textContent?.includes(item)) as HTMLButtonElement | undefined;
+    return [...panneau.querySelectorAll('button[socMenuItem]')].find((b) => b.textContent?.includes(libelle)) as HTMLButtonElement;
+  };
+  const rechercher = (texte: string) => {
+    const input = el().querySelector('soc-search-bar input') as HTMLInputElement;
+    input.value = texte;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
   };
 
   beforeEach(fakeAsync(() => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(TableauxDeBordPageComponent);
-    fixture.detectChanges();
-    tick(300);
-    fixture.detectChanges();
+    detecter();
   }));
 
   afterEach(() => fixture.destroy());
 
-  it('liste les tableaux de bord avec population, statut, widgets et date de création', () => {
-    expect(rows().length).toBe(4);
-    expect(fixture.nativeElement.querySelector('soc-badge').textContent.trim()).toBe('4');
-    expect([...fixture.nativeElement.querySelectorAll('th')].map((th: HTMLElement) => th.textContent?.trim())).toContain('Date de création');
-    expect(cellules('Dashboard RH Global')).toEqual(jasmine.arrayContaining(['Équipe Sénégal', 'Actif', '6', '12/05/2026']));
-    expect(ligne('Performance DSI').querySelector('soc-tag')?.textContent?.trim()).toBe('Inactif');
+  it('colonnes Nom | Modèle de base | Profils | Statut | Date de création, boutons Détail et Visualiser', () => {
+    expect(rows().length).toBe(5);
+    expect([...el().querySelectorAll('thead th')].map((th) => th.textContent?.trim()).filter(Boolean)).toEqual(['Nom', 'Modèle de base', 'Profils', 'Statut', 'Date de création']);
+    expect(cellules('Dashboard Direction Générale').slice(0, 2)).toEqual(['Dashboard Direction Générale', 'Direction Générale']);
+    const pastilles = [...ligne('Dashboard Direction Générale').querySelectorAll('td')[2].querySelectorAll('soc-tag')].map((t) => t.textContent?.trim());
+    expect(pastilles).toEqual(['Direction générale', 'Admin RH']);
+    expect(cellules('Dashboard Direction Générale').slice(3, 5)).toEqual(['Actif', '03/06/2026']);
+    expect(ligne('Dashboard Direction Générale').querySelector('[data-testid="detail"]')?.textContent?.trim()).toBe('Détail');
+    expect(ligne('Dashboard Direction Générale').querySelector('[data-testid="visualiser"]')?.textContent?.trim()).toBe('Visualiser');
+    expect(cellules('Dashboard masse salariale')[3]).toBe('Archivé');
+    expect(cellules('Dashboard effectifs internationaux')[3]).toBe('Inactif');
+    expect(el().querySelector('soc-search-bar input')?.getAttribute('placeholder')).toBe('Rechercher un tableau de bord...');
   });
 
-  it('ouvre la création et la modification', () => {
+  it('« Détail » ouvre la composition en lecture seule, « Visualiser » la consultation de ce tableau', () => {
     const navigate = spyOn(TestBed.inject(Router), 'navigate');
-    ([...fixture.nativeElement.querySelectorAll('button')].find((b: HTMLElement) => b.textContent?.includes('Créer un tableau de bord')) as HTMLButtonElement).click();
-    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord/nouveau']);
-    action('Performance DSI', 'Modifier')!.click();
-    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-4', 'modifier']);
+    (ligne('Dashboard Managers').querySelector('[data-testid="detail"]') as HTMLButtonElement).click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-3']);
+    (ligne('Dashboard Managers').querySelector('[data-testid="visualiser"]') as HTMLButtonElement).click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/tableau-de-bord'], { queryParams: { tableau: 'tdb-3' } });
   });
 
-  it('« Voir détails » depuis le menu ou un clic sur la ligne', () => {
-    const navigate = spyOn(TestBed.inject(Router), 'navigate');
-    action('Performance DSI', 'Voir détails')!.click();
-    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-4']);
-    ligne('Dashboard RH Global').querySelector('td')!.click();
-    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-1']);
+  it('recherche, avec les deux états vides', () => {
+    rechercher('managers');
+    expect(rows().map((r) => r.querySelector('td')?.textContent?.trim())).toEqual(['Dashboard Managers']);
+    rechercher('introuvable');
+    expect(rows().length).toBe(0);
+    expect(el().querySelector('[data-testid="vide"]')?.textContent).toContain('Aucun résultat pour cette recherche.');
   });
 
-  it('recherche par libellé', () => {
-    const input = fixture.nativeElement.querySelector('soc-search-bar input') as HTMLInputElement;
-    input.value = 'masse';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    fixture.detectChanges();
-    expect(rows().map((r) => r.querySelector('td')?.textContent?.trim())).toEqual(['Dashboard masse salariale']);
-  });
-
-  it("désactive « Activer », avec info-bulle, tant que le tableau n'a pas été prévisualisé", () => {
-    const activer = action('Performance DSI', 'Activer')!;
-    expect(activer.disabled).toBeTrue();
-    expect(activer.closest('soc-tooltip')).not.toBeNull();
-    expect(document.body.textContent).toContain("Prévisualisez le tableau de bord avant de l'activer.");
-  });
-
-  it('active et désactive un tableau de bord', fakeAsync(() => {
-    action('Dashboard RH Global', 'Désactiver')!.click();
-    tick(500);
-    fixture.detectChanges();
-    expect(ligne('Dashboard RH Global').querySelector('soc-tag')?.textContent?.trim()).toBe('Inactif');
-
-    action('Dashboard masse salariale', 'Activer')!.click();
-    tick(500);
-    fixture.detectChanges();
-    expect(ligne('Dashboard masse salariale').querySelector('soc-tag')?.textContent?.trim()).toBe('Actif');
+  it('« Dupliquer » crée « X (copie) »', fakeAsync(() => {
+    action('Dashboard Managers', 'Dupliquer').click();
+    detecter();
+    expect(rows().length).toBe(6);
+    expect(ligne('Dashboard Managers (copie)')).toBeTruthy();
   }));
+
+  it('« Supprimer » : confirmation puis suppression ; liste vide → « Aucun tableau de bord configuré. »', fakeAsync(() => {
+    action('Dashboard Managers', 'Supprimer').click();
+    fixture.detectChanges();
+    expect(modale()?.textContent).toContain('Supprimer le tableau de bord ?');
+    expect(modale()?.textContent).toContain(
+      '"Dashboard Managers" sera définitivement supprimé. Les utilisateurs concernés perdront l\'accès à ce tableau de bord.',
+    );
+    boutonModale('Supprimer').click();
+    detecter();
+    expect(ligne('Dashboard Managers')).toBeUndefined();
+
+    for (const nom of rows().map((r) => r.querySelector('td')!.textContent!.trim())) {
+      action(nom, 'Supprimer').click();
+      fixture.detectChanges();
+      boutonModale('Supprimer').click();
+      detecter();
+    }
+    expect(el().querySelector('[data-testid="vide"]')?.textContent).toContain('Aucun tableau de bord configuré.');
+  }));
+
+  it('« Nouveau tableau de bord » ouvre la modale de création ; « Modifier » la modale pré-remplie', () => {
+    ([...el().querySelectorAll('button[socButton]')].find((b) => b.textContent?.includes('Nouveau tableau de bord')) as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(modale()?.textContent).toContain('Nouveau tableau de bord');
+    boutonModale('Annuler').click();
+    fixture.detectChanges();
+    expect(modale()).toBeNull();
+
+    action('Dashboard Managers', 'Modifier').click();
+    fixture.detectChanges();
+    expect(modale()?.textContent).toContain('Modifier le tableau de bord');
+  });
 });

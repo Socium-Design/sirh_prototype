@@ -12,12 +12,35 @@
 
 .graphique__kpi {
   font-family: var(--bridges-shape-text-body-font);
-  font-size: var(--bridges-size-text-text-size-5xl);
-  line-height: var(--bridges-size-text-line-height-5xl);
+  font-size: var(--bridges-size-text-text-size-4xl);
+  line-height: var(--bridges-size-text-line-height-4xl);
   color: var(--bridges-color-text-primary);
 }
 
-.graphique__legende {
-  font-size: var(--bridges-size-text-text-size-sm);
+.graphique__unite {
+  font-size: var(--bridges-size-text-text-size-md);
   color: var(--bridges-color-text-secondary);
+}
+
+.graphique__tendance {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-xs);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-success);
+}
+
+.graphique__tendance--defavorable {
+  color: var(--bridges-color-text-danger);
+}
+
+.graphique__fleche {
+  width: var(--bridges-size-text-text-size-md);
+  height: var(--bridges-size-text-text-size-md);
+}
+
+// Mini-carte (composition) : chiffre plus petit.
+:host(.compact) .graphique__kpi {
+  font-size: var(--bridges-size-text-text-size-2xl);
+  line-height: var(--bridges-size-text-line-height-2xl);
 }

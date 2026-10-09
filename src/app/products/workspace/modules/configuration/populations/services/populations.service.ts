@@ -1,75 +1,74 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, delay, of } from 'rxjs';
+import { Observable, delay, map, of, switchMap, throwError } from 'rxjs';
 import { POPULATIONS } from '../../../../../../../mocks/data/populations.mock';
-import { POPULATION_USAGES } from '../../../../../../../mocks/data/population-usages.mock';
-import { SessionService } from '../../../../../../core/session/session.service';
+import { TableauxDeBordService } from '../../../tableau-de-bord/services/tableaux-de-bord.service';
 import type { Population, PopulationSaisie, PopulationUsage } from '../models/population.model';
 import { copierRegles } from './population-regles';
 
 const LATENCE = 200;
 
+/** Usage d'une population : un tableau de bord qui la prend pour périmètre. */
+export interface UsagePopulation extends PopulationUsage {
+  populationId: string;
+}
+
 /**
- * Accès aux populations et à leurs usages. Simule une API sur le mock partagé : les modifications vivent en mémoire le temps
- * de la session (copie des mocks, jamais modifiés). Seul ce service changera quand une vraie API existera.
+ * Accès aux populations. Simule une API sur le mock partagé : les modifications vivent en mémoire le temps de la session
+ * (copie du mock, jamais modifié). Les usages d'une population sont les tableaux de bord qui la prennent pour périmètre.
  */
 @Injectable({ providedIn: 'root' })
 export class PopulationsService {
-  private readonly session = inject(SessionService);
+  private readonly tableaux = inject(TableauxDeBordService);
   private populations: Population[] = structuredClone(POPULATIONS);
-  private usages: PopulationUsage[] = structuredClone(POPULATION_USAGES);
+  private sequence = 0;
 
   getAll(): Observable<Population[]> {
     return of(structuredClone(this.populations)).pipe(delay(LATENCE));
   }
 
-  getUsages(): Observable<PopulationUsage[]> {
-    return of(structuredClone(this.usages)).pipe(delay(LATENCE));
+  getById(id: string): Observable<Population | undefined> {
+    return of(structuredClone(this.populations.find((p) => p.id === id))).pipe(delay(LATENCE));
+  }
+
+  /** Tableaux de bord qui utilisent chaque population. */
+  getUsages(): Observable<UsagePopulation[]> {
+    return this.tableaux
+      .getAll()
+      .pipe(map((tableaux) => tableaux.flatMap((t) => (t.populationId ? [{ id: t.id, libelle: t.libelle, populationId: t.populationId }] : []))));
   }
 
   create(saisie: PopulationSaisie): Observable<Population> {
-    const user = this.session.user();
-    const population: Population = {
-      ...this.depuisSaisie(saisie),
-      id: `pop-${Date.now()}`,
-      creePar: { nom: user.name, email: user.email },
-      modifieeLe: aujourdhui(),
-    };
+    const population: Population = { ...depuisSaisie(saisie), id: `pop-${Date.now().toString(36)}-${++this.sequence}` };
     this.populations = [...this.populations, population];
     return of(structuredClone(population)).pipe(delay(LATENCE));
   }
 
   /**
-   * Enregistre de nouvelles règles. Seuls les usages de `usagesMisAJour` suivent la nouvelle version ; les autres usages de
-   * la population gardent la version précédente (figée), comme choisi dans la modale d'impact.
+   * Enregistre la population. Seuls les tableaux de bord `tableauxMisAJour` suivent la nouvelle version ; les autres
+   * tableaux qui l'utilisent gardent la version précédente (figée), comme choisi dans la modale d'impact.
    */
-  update(id: string, saisie: PopulationSaisie, usagesMisAJour: string[]): Observable<Population> {
+  update(id: string, saisie: PopulationSaisie, tableauxMisAJour: string[]): Observable<Population> {
     const ancienne = this.populations.find((p) => p.id === id);
-    if (!ancienne) throw new Error(`Population inconnue : ${id}`);
-    const population: Population = { ...ancienne, ...this.depuisSaisie(saisie), modifieeLe: aujourdhui() };
+    if (!ancienne) return throwError(() => new Error(`Population inconnue : ${id}`));
+    const population: Population = { ...depuisSaisie(saisie), id };
     this.populations = this.populations.map((p) => (p.id === id ? population : p));
-    this.usages = this.usages.map((u) => {
-      if (u.populationId !== id) return u;
-      if (usagesMisAJour.includes(u.id)) return { ...u, versionFigee: undefined };
-      return { ...u, versionFigee: u.versionFigee ?? copierRegles(ancienne) };
-    });
-    return of(structuredClone(population)).pipe(delay(LATENCE));
+    return this.tableaux.appliquerModificationPopulation(id, tableauxMisAJour, ancienne).pipe(map(() => structuredClone(population)));
   }
 
   /**
-   * Retire la population des usages `usagesRetires`. Elle n'est supprimée du référentiel que lorsque plus aucun élément
-   * ne l'utilise ; les éléments décochés dans la modale d'impact la conservent.
+   * Retire la population des tableaux de bord `tableauxRetires`. Elle n'est supprimée du référentiel que lorsque plus aucun
+   * tableau ne l'utilise ; les tableaux décochés dans la modale d'impact la conservent.
    */
-  remove(id: string, usagesRetires: string[]): Observable<void> {
-    this.usages = this.usages.filter((u) => !(u.populationId === id && usagesRetires.includes(u.id)));
-    if (!this.usages.some((u) => u.populationId === id)) this.populations = this.populations.filter((p) => p.id !== id);
-    return of(undefined).pipe(delay(LATENCE));
-  }
-
-  private depuisSaisie(saisie: PopulationSaisie) {
-    return { nom: saisie.nom.trim(), description: saisie.description.trim(), ...copierRegles(saisie) };
+  remove(id: string, tableauxRetires: string[]): Observable<void> {
+    return this.tableaux.retirerPopulation(id, tableauxRetires).pipe(
+      switchMap(() => this.getUsages()),
+      map((usages) => {
+        if (!usages.some((u) => u.populationId === id)) this.populations = this.populations.filter((p) => p.id !== id);
+      }),
+    );
   }
 }
 
-function aujourdhui(): string {
-  return new Date().toISOString().slice(0, 10);
+function depuisSaisie(saisie: PopulationSaisie): Omit<Population, 'id'> {
+  return { nom: saisie.nom.trim(), description: saisie.description.trim(), ...copierRegles(saisie) };
 }

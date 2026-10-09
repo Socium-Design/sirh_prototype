@@ -1,1 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
+
+/*
+ * GAP-DS design_system_angular#14 — contournement provisoire : la liste d'un soc-select / soc-multi-select (panneau de
+ * soc-popover, z-20) s'ouvrait sous le voile d'une soc-dialog (z-50) et y était inutilisable. Les panneaux de popover,
+ * rendus dans <body>, passent au-dessus des modales. À retirer dès que le kit gère la pile des calques.
+ */
+body > div[role='dialog'].z-20 {
+  z-index: 60;
+}

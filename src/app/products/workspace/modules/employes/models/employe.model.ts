@@ -1,4 +1,5 @@
 export type StatutEmploye = 'Actif' | 'Inactif';
+export type Sexe = 'Homme' | 'Femme';
 
 export interface Employe {
   id: string;
@@ -14,6 +15,10 @@ export interface Employe {
   /** Filiale (pays) — mêmes libellés que les entreprises de la session. */
   filiale: string;
   statut: StatutEmploye;
+  typeContrat: string;
+  sexe: Sexe;
+  /** Tranche d'ancienneté (« Moins d'1 an », « 1 à 3 ans »…), calculée depuis la date d'entrée. */
+  anciennete: string;
   /** Date d'entrée, au format ISO (AAAA-MM-JJ). */
   dateEntree: string;
 }

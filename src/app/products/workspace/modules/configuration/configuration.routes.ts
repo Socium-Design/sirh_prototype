@@ -1,37 +1,19 @@
 import { Routes } from '@angular/router';
 import { ONGLETS_CONFIGURATION } from './configuration.tabs';
+import { quitterSansEnregistrer } from './tableaux-de-bord/quitter-sans-enregistrer.guard';
 
 export const CONFIGURATION_ROUTES: Routes = [
-  // Formulaires plein écran (soc-page-form n'a pas d'emplacement d'onglets) : déclarés avant la page à onglets.
-  {
-    path: 'populations/nouvelle',
-    loadComponent: () => import('./populations/population-form-page.component').then((m) => m.PopulationFormPageComponent),
-    title: 'Créer une population',
-  },
+  // Pages hors onglets (détail, composition), déclarées avant la page à onglets. Les formulaires sont des modales.
   {
     path: 'populations/:id',
     loadComponent: () => import('./populations/population-detail-page.component').then((m) => m.PopulationDetailPageComponent),
     title: 'Population',
   },
   {
-    path: 'populations/:id/modifier',
-    loadComponent: () => import('./populations/population-form-page.component').then((m) => m.PopulationFormPageComponent),
-    title: 'Modifier la population',
-  },
-  {
-    path: 'tableaux-de-bord/nouveau',
-    loadComponent: () => import('./tableaux-de-bord/tableau-de-bord-form-page.component').then((m) => m.TableauDeBordFormPageComponent),
-    title: 'Créer un tableau de bord',
-  },
-  {
-    path: 'tableaux-de-bord/:id/modifier',
-    loadComponent: () => import('./tableaux-de-bord/tableau-de-bord-form-page.component').then((m) => m.TableauDeBordFormPageComponent),
-    title: 'Modifier le tableau de bord',
-  },
-  {
     path: 'tableaux-de-bord/:id',
     loadComponent: () =>
       import('./tableaux-de-bord/tableau-de-bord-composition-page.component').then((m) => m.TableauDeBordCompositionPageComponent),
+    canDeactivate: [quitterSansEnregistrer],
     title: 'Composition du tableau de bord',
   },
   {

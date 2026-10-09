@@ -1,0 +1,82 @@
+// La modale du kit n'a pas de hauteur maximale : le formulaire défile lui-même quand les conditions s'accumulent.
+.population {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-lg);
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.population__sous-titre,
+.population__aide,
+.effectif__libelle {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-secondary);
+}
+
+.population__conditions,
+.population__lignes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-sm);
+}
+
+.population__entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bridges-position-gap-md);
+}
+
+.population__titre,
+.effectif__titre {
+  font-size: var(--bridges-size-text-text-size-md);
+  color: var(--bridges-color-text-primary);
+}
+
+.population__liaison,
+.population__ajouter {
+  align-self: flex-start;
+}
+
+.condition {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bridges-position-gap-sm);
+}
+
+.condition__champ,
+.condition__operateur,
+.condition__valeurs {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.condition__champ,
+.condition__operateur {
+  flex: 1 1 0;
+}
+
+.condition__valeurs {
+  flex: 1.6 1 0;
+}
+
+.effectif {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xs);
+  padding: var(--bridges-position-padding-md);
+  border-radius: var(--bridges-shape-figure-radius-md);
+  background: var(--bridges-color-background-layer-1);
+}
+
+.effectif__nombre {
+  font-size: var(--bridges-size-text-text-size-3xl);
+  color: var(--bridges-color-text-primary);
+}
+
+// En rouge quand personne ne correspond.
+.effectif--vide .effectif__nombre {
+  color: var(--bridges-color-text-danger);
+}

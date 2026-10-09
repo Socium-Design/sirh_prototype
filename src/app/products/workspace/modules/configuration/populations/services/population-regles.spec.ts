@@ -1,77 +1,51 @@
 import { EMPLOYES } from '../../../../../../../mocks/data/employes.mock';
 import type { ReglesPopulation } from '../models/population.model';
-import { copierRegles, employesCouverts, populationsSimilaires, reglesIdentiques, valeursDuChamp } from './population-regles';
+import { copierRegles, employesCouverts, populationDeMemeNom, respecteCondition, valeursDuChamp } from './population-regles';
 
 describe('population-regles', () => {
-  const rhDakar = (combinaison: 'ET' | 'OU'): ReglesPopulation => ({
-    combinaison,
-    conditions: [
-      { champ: 'departement', operateur: 'est', valeur: 'Ressources humaines' },
-      { champ: 'site', operateur: 'est', valeur: 'Dakar' },
-    ],
+  const awa = EMPLOYES[0]; // Dakar, Sénégal, CDI, Femme
+
+  it('« est » : la valeur de l’employé fait partie des valeurs choisies ; « n’est pas » : l’inverse', () => {
+    expect(respecteCondition(awa, { champ: 'site', operateur: 'est', valeurs: ['Thiès', 'Dakar'] })).toBeTrue();
+    expect(respecteCondition(awa, { champ: 'site', operateur: 'est', valeurs: ['Thiès'] })).toBeFalse();
+    expect(respecteCondition(awa, { champ: 'site', operateur: 'nest_pas', valeurs: ['Thiès', 'Paris'] })).toBeTrue();
+    expect(respecteCondition(awa, { champ: 'sexe', operateur: 'est', valeurs: ['Femme'] })).toBeTrue();
   });
 
-  it('ET : garde les employés qui respectent toutes les conditions', () => {
-    const couverts = employesCouverts(rhDakar('ET'), EMPLOYES);
-    expect(couverts.length).toBe(3);
-    expect(couverts.every((e) => e.departement === 'Ressources humaines' && e.site === 'Dakar')).toBeTrue();
+  it('combine les conditions en ET ou en OU ; sans condition, personne', () => {
+    const et: ReglesPopulation = {
+      combinaison: 'ET',
+      conditions: [
+        { champ: 'filiale', operateur: 'est', valeurs: ['Sénégal'] },
+        { champ: 'typeContrat', operateur: 'est', valeurs: ['CDI'] },
+      ],
+    };
+    const ou: ReglesPopulation = { ...et, combinaison: 'OU' };
+    const senegal = EMPLOYES.filter((e) => e.filiale === 'Sénégal');
+    const cdi = EMPLOYES.filter((e) => e.typeContrat === 'CDI');
+    expect(employesCouverts(et, EMPLOYES).length).toBe(senegal.filter((e) => e.typeContrat === 'CDI').length);
+    expect(employesCouverts(ou, EMPLOYES).length).toBe(new Set([...senegal, ...cdi]).size);
+    expect(employesCouverts({ combinaison: 'ET', conditions: [] }, EMPLOYES)).toEqual([]);
   });
 
-  it('OU : garde les employés qui respectent au moins une condition', () => {
-    const couverts = employesCouverts(rhDakar('OU'), EMPLOYES);
-    expect(couverts.length).toBe(11);
-    expect(couverts.every((e) => e.departement === 'Ressources humaines' || e.site === 'Dakar')).toBeTrue();
+  it('propose les valeurs existantes de chaque champ, y compris contrat, sexe et ancienneté', () => {
+    expect(valeursDuChamp('sexe', EMPLOYES)).toEqual(['Femme', 'Homme']);
+    expect(valeursDuChamp('typeContrat', EMPLOYES)).toEqual(['CDD', 'CDI', 'Prestataire', 'Stage']);
+    expect(valeursDuChamp('anciennete', EMPLOYES).length).toBeGreaterThan(1);
   });
 
-  it("« N'est pas » exclut la valeur", () => {
-    const couverts = employesCouverts({ combinaison: 'ET', conditions: [{ champ: 'statut', operateur: 'nest_pas', valeur: 'Inactif' }] }, EMPLOYES);
-    expect(couverts.length).toBe(EMPLOYES.length - 3);
-  });
-
-  it('sans condition, ne couvre personne', () => {
-    expect(employesCouverts({ combinaison: 'OU', conditions: [] }, EMPLOYES)).toEqual([]);
-  });
-
-  it('liste les valeurs distinctes et triées d’un champ', () => {
-    expect(valeursDuChamp('filiale', EMPLOYES)).toEqual(["Côte d'Ivoire", 'France', 'Sénégal']);
-  });
-
-  it('copie les règles sans lien avec la source', () => {
-    const source = rhDakar('ET');
+  it('copie des règles indépendante de la source', () => {
+    const source: ReglesPopulation = { combinaison: 'OU', conditions: [{ champ: 'site', operateur: 'est', valeurs: ['Dakar'] }] };
     const copie = copierRegles(source);
-    copie.conditions[0].valeur = 'Finance';
-    copie.conditions.push({ champ: 'statut', operateur: 'est', valeur: 'Actif' });
-    expect(source.conditions.length).toBe(2);
-    expect(source.conditions[0].valeur).toBe('Ressources humaines');
+    copie.conditions[0].valeurs.push('Thiès');
+    expect(source.conditions[0].valeurs).toEqual(['Dakar']);
   });
 
-  describe('similarité', () => {
-    const populations = [
-      { id: 'a', ...rhDakar('ET') },
-      { id: 'b', combinaison: 'ET' as const, conditions: [{ champ: 'statut' as const, operateur: 'est' as const, valeur: 'Inactif' }] },
-    ];
-
-    it('critères identiques, quel que soit l’ordre des conditions', () => {
-      const inverse: ReglesPopulation = { combinaison: 'ET', conditions: [...rhDakar('ET').conditions].reverse() };
-      expect(reglesIdentiques(inverse, rhDakar('ET'))).toBeTrue();
-      expect(reglesIdentiques(rhDakar('OU'), rhDakar('ET'))).toBeFalse();
-      expect(populationsSimilaires(inverse, populations, EMPLOYES).map((s) => [s.population.id, s.raison])).toEqual([['a', 'criteres-identiques']]);
-    });
-
-    it('mêmes employés couverts avec des critères différents', () => {
-      const memes: ReglesPopulation = { combinaison: 'ET', conditions: [{ champ: 'statut', operateur: 'nest_pas', valeur: 'Actif' }] };
-      expect(populationsSimilaires(memes, populations, EMPLOYES).map((s) => [s.population.id, s.raison])).toEqual([['b', 'memes-employes']]);
-    });
-
-    it('ignore la population modifiée elle-même et les règles vides', () => {
-      expect(populationsSimilaires(rhDakar('ET'), populations, EMPLOYES, 'a')).toEqual([]);
-      expect(populationsSimilaires({ combinaison: 'ET', conditions: [] }, populations, EMPLOYES)).toEqual([]);
-    });
-
-    it('ne signale pas deux populations qui ne couvrent personne', () => {
-      const vide: ReglesPopulation = { combinaison: 'ET', conditions: [{ champ: 'site', operateur: 'est', valeur: 'Lyon' }] };
-      const autreVide = { id: 'c', combinaison: 'ET' as const, conditions: [{ champ: 'site' as const, operateur: 'est' as const, valeur: 'Lille' }] };
-      expect(populationsSimilaires(vide, [autreVide], EMPLOYES)).toEqual([]);
-    });
+  it('repère une population de même nom (casse et espaces ignorés), hors population modifiée', () => {
+    const populations = [{ id: 'a', nom: 'Équipe Sénégal' }, { id: 'b', nom: 'RH' }];
+    expect(populationDeMemeNom('  équipe sénégal ', populations)?.id).toBe('a');
+    expect(populationDeMemeNom('Équipe Sénégal', populations, 'a')).toBeUndefined();
+    expect(populationDeMemeNom('Autre', populations)).toBeUndefined();
+    expect(populationDeMemeNom('  ', populations)).toBeUndefined();
   });
 });

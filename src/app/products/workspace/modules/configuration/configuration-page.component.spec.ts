@@ -53,9 +53,11 @@ describe('ConfigurationPageComponent (page à onglets)', () => {
     expect(actif()).toBe('Gestion des tableaux de bord');
   });
 
-  it('affiche les formulaires en plein écran, sans onglets', async () => {
-    await ouvrir('/workspace/configuration/populations/nouvelle');
-    expect(el().querySelector('soc-page-form')).not.toBeNull();
+  it('affiche le détail d’une population en pleine page, sans onglets', async () => {
+    await ouvrir('/workspace/configuration/populations/pop-1');
+    await new Promise((r) => setTimeout(r, 300)); // latence simulée du service
+    harness.detectChanges();
+    expect(el().querySelector('soc-page-details')).not.toBeNull();
     expect(onglets().length).toBe(0);
   });
 
