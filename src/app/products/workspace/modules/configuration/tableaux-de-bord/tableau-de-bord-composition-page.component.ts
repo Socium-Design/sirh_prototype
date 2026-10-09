@@ -9,7 +9,6 @@ import {
   SocButtonLeftIcon,
   SocButtonRightIcon,
   SocCardGrid,
-  SocCheckbox,
   SocDialog,
   SocMenu,
   SocMenuItem,
@@ -20,6 +19,7 @@ import {
   SocPopoverTrigger,
   SocTag,
   type DialogAction,
+  type TagColor,
 } from '@socium-design/angular-components';
 import { Subject, forkJoin, map, take, type Observable } from 'rxjs';
 import {
@@ -43,7 +43,7 @@ import type { Employe } from '../../employes/models/employe.model';
 import { EmployesService } from '../../employes/services/employes.service';
 import { WidgetCarteComponent } from '../../tableau-de-bord/components/widget-carte.component';
 import type { Indicateur, SerieIndicateur } from '../../tableau-de-bord/models/indicateur.model';
-import { LIBELLES_PROFILS, type Profil, type StatutTableauDeBord, type TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
+import { type StatutTableauDeBord, type TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
 import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../tableau-de-bord/services/catalogue';
 import { CatalogueService } from '../../tableau-de-bord/services/catalogue.service';
 import { ajouterWidget, modifierWidget, renommerSection, retirerWidget } from '../../tableau-de-bord/services/composition';
@@ -57,14 +57,13 @@ import { WidgetDialogComponent, type ModificationWidget } from './components/wid
 import type { AvecChangementsNonEnregistres } from './quitter-sans-enregistrer.guard';
 
 const LISTE = '/workspace/configuration/tableaux-de-bord';
-const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
 
 /**
  * Workspace > Configuration > Gestion des tableaux de bord > composition d'un tableau de bord (GabaritComposerPage du Figma Make).
  * Espace de travail `soc-labs-workspace-layout` : barre du haut (retour, nom, « Lecture seule » ou indication, actions),
  * panneau « Informations » à gauche, composition au centre, Bibliothèque à droite (édition) ; chaque colonne défile seule.
  * - « Détail » (par défaut) : lecture seule.
- * - `?mode=edition` (« Modifier ») : informations, statut et profils modifiables, ajout depuis la Bibliothèque par « + » ou
+ * - `?mode=edition` (« Modifier ») : informations et statut modifiables (profils en lecture seule, comme dans le Figma), ajout depuis la Bibliothèque par « + » ou
  *   glisser-déposer, « Modifier le KPI » ; les changements portent sur un brouillon enregistré par « Enregistrer » (→ « Enregistré ✓ »).
  * - « Prévisualiser » : le tableau en plein écran (`soc-labs-fullscreen-overlay`), sur données simulées.
  * Composants Labs (expérimentaux) : importés via `shared/labs/labs.ts`.
@@ -74,7 +73,7 @@ const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
   host: { '(window:beforeunload)': 'avertirAvantDechargement($event)' },
   imports: [
     CdkDropListGroup, CdkDropList, SocBadge, SocTag, SocButton, SocButtonLeftIcon, SocButtonRightIcon, SocCardGrid, SocPopover, SocPopoverTrigger, SocMenu, SocMenuItem,
-    SocMenuItemIcon, SocMessage, SocMessageContent, SocDialog, SocCheckbox, SocLabsWorkspaceLayout, SocLabsWorkspaceBack, SocLabsWorkspaceTitle,
+    SocMenuItemIcon, SocMessage, SocMessageContent, SocDialog, SocLabsWorkspaceLayout, SocLabsWorkspaceBack, SocLabsWorkspaceTitle,
     SocLabsWorkspaceHint, SocLabsWorkspaceActions, SocLabsWorkspaceLeft, SocLabsWorkspaceRight, SocLabsCompactField, SocLabsPillToggle,
     SocLabsIconButton, SocLabsDropZone, SocLabsFullscreenOverlay, SocLabsOverlayBadge, WidgetCarteComponent, BibliothequeComponent,
     WidgetDialogComponent, ProfilsComponent, LucideArrowLeft, LucideEye, LucidePencil, LucideSave, LucideCheck, LucideEllipsis, LucideTrash,
@@ -94,12 +93,12 @@ const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
           <soc-tag socLabsWorkspaceHint color="information">Lecture seule</soc-tag>
         }
         <div socLabsWorkspaceActions class="actions">
-          <button socButton variant="tertiary" data-testid="previsualiser" (click)="apercu.set(true)">
+          <button socButton variant="secondary" data-testid="previsualiser" (click)="apercu.set(true)">
             <svg lucideEye socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
             Prévisualiser
           </button>
           @if (!edition()) {
-            <button socButton variant="secondary" data-testid="modifier" (click)="modifier()">
+            <button socButton data-testid="modifier" (click)="modifier()">
               <svg lucidePencil socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
               Modifier
             </button>
@@ -138,24 +137,15 @@ const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
           />
           <div class="infos__champ">
             <span class="infos__libelle" id="statut-libelle">Statut</span>
-            <soc-labs-pill-toggle
-              ariaLabel="Statut"
-              size="sm"
-              [options]="optionsStatuts"
-              [value]="t.statut"
-              [disabled]="!edition()"
-              (valueChange)="changerStatut($event)"
-              data-testid="statut"
-            />
+            @if (edition()) {
+              <soc-labs-pill-toggle ariaLabel="Statut" size="sm" [options]="optionsStatuts" [value]="t.statut" (valueChange)="changerStatut($event)" data-testid="statut" />
+            } @else {
+              <soc-tag class="infos__statut" [color]="couleursStatuts[t.statut]" data-testid="statut">{{ t.statut }}</soc-tag>
+            }
           </div>
           <div class="infos__champ" role="group" aria-labelledby="profils-libelle">
             <span class="infos__libelle" id="profils-libelle">Profils</span>
-            <app-profils [profils]="t.profils" />
-            @if (edition()) {
-              @for (profil of profils; track profil) {
-                <soc-checkbox [id]="'profil-' + profil" [label]="libellesProfils[profil]" [checked]="t.profils.includes(profil)" (checkedChange)="basculerProfil(profil, $event)" />
-              }
-            }
+            <app-profils [profils]="t.profils" data-testid="profils" />
           </div>
         </div>
 
@@ -179,7 +169,7 @@ const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
               </div>
               <soc-card-grid [columns]="3">
                 @for (vue of section.widgets; track vue.widget.id) {
-                  <app-widget-carte [vue]="vue" [compact]="true" [pastille]="true" data-testid="widget">
+                  <app-widget-carte [vue]="vue" [compact]="true" [pastille]="true" [descriptionDeuxLignes]="true" data-testid="widget">
                     @if (edition()) {
                       <soc-popover appWidgetActions position="bottom-end" [open]="menuOuvert() === vue.widget.id" (openChange)="menuOuvert.set($event ? vue.widget.id : null)">
                         <soc-labs-icon-button socPopoverTrigger [ariaLabel]="'Actions du graphe ' + vue.titre" tooltip="Actions">
@@ -313,8 +303,8 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   protected readonly menuOuvert = signal<string | null>(null);
   protected readonly widgetEdite = signal<WidgetVue | null>(null);
 
-  protected readonly profils = PROFILS;
-  protected readonly libellesProfils = LIBELLES_PROFILS;
+  /** Statut en lecture seule : une pastille du kit (Actif vert, Archivé ambre ; pas de gris dans soc-tag, voir GAP-DS). */
+  protected readonly couleursStatuts: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'information', Archivé: 'warning' };
   protected readonly optionsStatuts: LabsPillOption<StatutTableauDeBord>[] = [
     { value: 'Actif', label: 'Actif', color: 'green' },
     { value: 'Inactif', label: 'Inactif', color: 'gray' },
@@ -414,10 +404,6 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   /** Clic sur une zone de dépôt : on amène l'utilisateur à la recherche de la Bibliothèque. */
   protected chercherDansBibliotheque(): void {
     this.bibliotheque()?.focusRecherche();
-  }
-
-  protected basculerProfil(profil: Profil, coche: boolean): void {
-    this.modifierBrouillon((t) => ({ ...t, profils: PROFILS.filter((p) => (p === profil ? coche : t.profils.includes(p))) }));
   }
 
   /** Garde de sortie : sans changement non enregistré, on part ; sinon on demande confirmation. */

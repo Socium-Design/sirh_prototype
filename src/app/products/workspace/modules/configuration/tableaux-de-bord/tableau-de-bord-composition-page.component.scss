@@ -27,7 +27,7 @@
   gap: var(--bridges-position-gap-sm);
 }
 
-// « Enregistré ✓ » : le kit n'a pas de variante « succès » pour un bouton (GAP-DS) → seule la coche passe en vert.
+// « Enregistré ✓ » : le kit n'a pas de variante « succès » pour un bouton (GAP-DS design_system_angular#27) → seule la coche passe en vert.
 .enregistre svg {
   color: var(--bridges-color-text-success);
 }
@@ -52,7 +52,8 @@
   letter-spacing: 0.04em;
 }
 
-// Même libellé que soc-labs-compact-field (petites capitales), pour les champs qui n'en sont pas (statut, profils).
+// Même libellé que soc-labs-compact-field (petites capitales), pour les champs qui n'en sont pas (statut, profils) :
+// GAP-DS design_system_angular#28 (pas d'emplacement de contenu libre dans le champ compact).
 .infos__libelle {
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -108,4 +109,8 @@
 .composition--survol {
   outline: var(--bridges-shape-line-thick) dashed var(--bridges-color-border-focus);
   background: var(--bridges-color-surface-selected);
+}
+
+.infos__statut {
+  align-self: flex-start;
 }

@@ -64,17 +64,30 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(el().querySelector('button[aria-label^="Actions du graphe"]')).toBeNull();
       expect(widgets()[0].textContent).toContain('Aucun filtre');
       expect(widgets()[0].querySelector('soc-labs-chart-type-chip')).not.toBeNull();
+      // Description entière (coupée à 2 lignes en CSS), pas de sous-titre tronqué à 96 caractères.
+      const description = widgets()[0].querySelector('[data-testid="description"]') as HTMLElement;
+      expect(description.textContent?.trim()).toBe('Nombre de collaborateurs actifs à date dans le périmètre du tableau de bord.');
+      expect(getComputedStyle(description).webkitLineClamp).toBe('2');
       expect(el().querySelector('soc-labs-drop-zone')).toBeNull();
     });
 
-    it('informations en texte, statut non modifiable, vrais boutons texte « Prévisualiser » et « Modifier »', () => {
+    it('informations en texte, statut en une pastille, profils en pastilles, « Modifier » principal et « Prévisualiser » secondaire', () => {
       const infos = el().querySelector('[data-testid="infos"]')!;
       expect(infos.querySelectorAll('input, textarea, select').length).toBe(0);
-      expect(infos.querySelector('[data-testid="statut"] [role="radio"][aria-checked="true"]')?.textContent?.trim()).toBe('Actif');
-      expect(infos.querySelector('[data-testid="statut"] [role="radio"][aria-disabled="true"], [data-testid="statut"] [role="radio"]:disabled')).not.toBeNull();
+      const statut = infos.querySelector('[data-testid="statut"]')!;
+      expect(statut.tagName).toBe('SOC-TAG');
+      expect(statut.textContent?.trim()).toBe('Actif');
+      expect(infos.querySelector('soc-labs-pill-toggle')).toBeNull();
+      expect([...infos.querySelectorAll('[data-testid="profils"] soc-tag')].map((t) => t.textContent?.trim())).toEqual(['Manager']);
       expect(infos.querySelector('soc-checkbox')).toBeNull();
-      expect(el().querySelector('[data-testid="previsualiser"]')?.textContent?.trim()).toBe('Prévisualiser');
-      expect(el().querySelector('[data-testid="modifier"]')?.textContent?.trim()).toBe('Modifier');
+      const previsualiser = el().querySelector('[data-testid="previsualiser"]') as HTMLElement;
+      const modifier = el().querySelector('[data-testid="modifier"]') as HTMLElement;
+      expect(previsualiser.textContent?.trim()).toBe('Prévisualiser');
+      expect(previsualiser.querySelector('svg[lucideEye]')).not.toBeNull();
+      expect(modifier.textContent?.trim()).toBe('Modifier');
+      expect(modifier.querySelector('svg[lucidePencil]')).not.toBeNull();
+      expect(modifier.className).toContain('bg-primary-default');
+      expect(previsualiser.className).toContain('bg-secondary-default');
     });
 
     it('« Modifier » passe en édition (dans l’URL)', () => {
@@ -217,13 +230,11 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(carte.textContent).toContain('Site : Dakar');
     });
 
-    it('statut (pastilles) et profils modifiables ; « Enregistrer » persiste puis affiche « Enregistré ✓ »', fakeAsync(() => {
+    it('statut modifiable (pastilles), profils en pastilles seules ; « Enregistrer » persiste puis affiche « Enregistré ✓ »', fakeAsync(() => {
       const service = TestBed.inject(TableauxDeBordService);
       const enregistrer = spyOn(service, 'enregistrerComposition').and.callThrough();
-      ([...el().querySelectorAll('[data-testid="infos"] soc-checkbox')].find((c) => c.textContent?.includes('Administrateur RH'))!.querySelector('[role="checkbox"]') as HTMLElement).click();
-      fixture.detectChanges();
-      expect(page['brouillon']().profils).toEqual(['admin-rh', 'manager']);
-      expect(el().querySelector('[data-testid="infos"] app-profils')?.textContent).toContain('Admin RH');
+      expect(el().querySelector('[data-testid="infos"] soc-checkbox')).toBeNull();
+      expect(el().querySelector('[data-testid="profils"]')?.textContent?.trim()).toBe('Manager');
       ([...el().querySelectorAll('[data-testid="statut"] [role="radio"]')].find((r) => r.textContent?.trim() === 'Inactif') as HTMLElement).click();
       fixture.detectChanges();
       expect(page['brouillon']().statut).toBe('Inactif');
@@ -232,7 +243,7 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(bouton().textContent?.trim()).toBe('Enregistrer');
       bouton().click();
       rafraichir();
-      expect(enregistrer).toHaveBeenCalledWith('tdb-3', jasmine.objectContaining({ statut: 'Inactif', profils: ['admin-rh', 'manager'] }));
+      expect(enregistrer).toHaveBeenCalledWith('tdb-3', jasmine.objectContaining({ statut: 'Inactif', profils: ['manager'] }));
       expect(bouton().getAttribute('aria-label')).toBe('Enregistré ✓');
       expect(bouton().textContent?.trim()).toBe('Enregistré');
 
