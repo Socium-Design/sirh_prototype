@@ -82,7 +82,7 @@ describe('TableauDeBordFormPageComponent', () => {
       tick(300);
       expect(cree.statut).toBe('Inactif');
       expect(cree.widgets.length).toBe(5);
-      expect(navigateByUrl).toHaveBeenCalledWith('/workspace/configuration/tableaux-de-bord');
+      expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', cree.id], { queryParams: { mode: 'edition' } });
     }));
 
     it('exige le tableau source pour une copie', () => {

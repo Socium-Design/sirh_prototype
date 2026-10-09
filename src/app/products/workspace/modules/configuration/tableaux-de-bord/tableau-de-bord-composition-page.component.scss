@@ -1,0 +1,86 @@
+// Mise en page en colonnes (GAP-DS #9 / #13 : ni panneau latéral non modal, ni template à panneaux). Tokens du kit uniquement.
+.espace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bridges-position-gap-xl);
+  align-items: start;
+}
+
+.espace--bibliotheque {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.composition,
+.section,
+.bibliotheque,
+.bibliotheque__liste,
+.dialogue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-md);
+}
+
+.composition {
+  gap: var(--bridges-position-gap-lg);
+}
+
+.section__entete,
+.repartition,
+.bibliotheque__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bridges-position-gap-sm);
+}
+
+.section__titre {
+  font-size: var(--bridges-size-text-text-size-lg);
+  line-height: var(--bridges-size-text-line-height-lg);
+  color: var(--bridges-color-text-primary);
+}
+
+.repartition__libelle,
+.bibliotheque__aide {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-secondary);
+}
+
+.bibliotheque {
+  position: sticky;
+  top: 0;
+  padding: var(--bridges-position-padding-lg);
+  border-radius: var(--bridges-shape-figure-radius-lg);
+  background: var(--bridges-color-background-layer-1);
+}
+
+.bibliotheque__item {
+  display: block;
+  cursor: grab;
+}
+
+.bibliotheque__emplacement {
+  height: 0;
+}
+
+// Retour visuel du CDK pendant le glisser-déposer (le kit n'en propose pas : GAP-DS #8).
+.section.cdk-drop-list-receiving {
+  outline: var(--bridges-shape-line-thick) dashed var(--bridges-color-border-focus);
+  outline-offset: var(--bridges-position-gap-xs);
+  border-radius: var(--bridges-shape-figure-radius-md);
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--bridges-position-gap-sm) var(--bridges-position-gap-lg);
+}
+
+.detail dt {
+  color: var(--bridges-color-text-secondary);
+}
+
+.edition__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--bridges-position-gap-sm);
+}

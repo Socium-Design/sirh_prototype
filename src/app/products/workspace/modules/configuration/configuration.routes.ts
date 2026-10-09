@@ -24,6 +24,12 @@ export const CONFIGURATION_ROUTES: Routes = [
     title: 'Modifier le tableau de bord',
   },
   {
+    path: 'tableaux-de-bord/:id',
+    loadComponent: () =>
+      import('./tableaux-de-bord/tableau-de-bord-composition-page.component').then((m) => m.TableauDeBordCompositionPageComponent),
+    title: 'Composition du tableau de bord',
+  },
+  {
     path: '',
     loadComponent: () => import('./configuration-page.component').then((m) => m.ConfigurationPageComponent),
     children: [

@@ -1,6 +1,6 @@
 import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucidePencil, LucidePlus } from '@lucide/angular';
+import { LucideLibrary, LucidePencil, LucidePlus } from '@lucide/angular';
 import {
   SocBadge,
   SocButton,
@@ -41,7 +41,7 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
   selector: 'app-tableaux-de-bord-page',
   imports: [
     SocDataTable, SocDataTableBadge, SocDataTableActions, SocBadge, SocButton, SocButtonLeftIcon, SocTag, SocMenu, SocMenuItem, SocMenuItemIcon,
-    SocTooltip, SocTooltipLabel, SocMessage, SocMessageContent, LucidePlus, LucidePencil,
+    SocTooltip, SocTooltipLabel, SocMessage, SocMessageContent, LucidePlus, LucidePencil, LucideLibrary,
   ],
   styles: `.tableaux__vide { display: block; margin-top: var(--bridges-position-gap-md); }`,
   template: `
@@ -51,6 +51,9 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
 
     <ng-template #actionsMenu let-row let-close="close">
       <soc-menu>
+        <button socMenuItem label="Composer" (click)="close(); composer(row)">
+          <svg lucideLibrary socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
+        </button>
         <button socMenuItem label="Modifier" (click)="close(); modifier(row)">
           <svg lucidePencil socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
         </button>
@@ -153,6 +156,11 @@ export class TableauxDeBordPageComponent {
 
   protected creer(): void {
     this.router.navigate(['/workspace/configuration/tableaux-de-bord/nouveau']);
+  }
+
+  /** Composition (Bibliothèque) en mode édition. */
+  protected composer(ligne: LigneTableau): void {
+    this.router.navigate(['/workspace/configuration/tableaux-de-bord', ligne.id], { queryParams: { mode: 'edition' } });
   }
 
   protected modifier(ligne: LigneTableau): void {

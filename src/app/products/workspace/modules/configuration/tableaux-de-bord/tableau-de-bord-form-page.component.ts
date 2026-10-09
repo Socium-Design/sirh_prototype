@@ -285,8 +285,16 @@ export class TableauDeBordFormPageComponent {
       this.tentative.set(true);
       return;
     }
-    const requete = this.id ? this.service.update(this.id, this.saisie()) : this.service.create(this.saisie(), this.pointDeDepart());
-    requete.subscribe({ next: () => this.retourListe(), error: (e: Error) => this.erreur.set(e.message) });
+    const erreur = (e: Error) => this.erreur.set(e.message);
+    if (this.id) {
+      this.service.update(this.id, this.saisie()).subscribe({ next: () => this.retourListe(), error: erreur });
+    } else {
+      // Après la création, on compose le tableau dans la Bibliothèque.
+      this.service.create(this.saisie(), this.pointDeDepart()).subscribe({
+        next: (t) => this.router.navigate(['/workspace/configuration/tableaux-de-bord', t.id], { queryParams: { mode: 'edition' } }),
+        error: erreur,
+      });
+    }
   }
 
   /** Part modifier la population (page Populations) en gardant la saisie en cours, puis revient ici. */
