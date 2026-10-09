@@ -27,6 +27,8 @@ export const PRODUCT_HOME: Partial<Record<AppShellProduct, string>> = {
 export const NAV_ROUTES: Record<string, string> = {
   'workspace-postes': '/workspace/postes',
   'workspace-employes': '/workspace/employes',
+  // Page à onglets (Populations, Gabarits…) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
+  'workspace-configurations': '/workspace/configuration',
   'perfs-formations': '/perf/formation',
   'perfs-evaluations': '/perf/evaluation',
   'perfs-objectifs': '/perf/objectifs',
@@ -44,12 +46,15 @@ export function productFromUrl(url: string): AppShellProduct {
   return PRODUCT_BY_PATH[first] ?? 'workspace';
 }
 
-/** Item de menu à surligner d'après l'URL (undefined si la page n'a pas d'item dans le menu). */
+/**
+ * Item de menu à surligner d'après l'URL (undefined si la page n'a pas d'item dans le menu). Les sous-pages d'une route
+ * (`/workspace/configuration/populations/nouvelle`) gardent l'item de leur page parente.
+ */
 export function navItemFromUrl(url: string): string | undefined {
   const path = stripUrl(url);
   const [first, second] = path.split('/').filter(Boolean);
   if (first === COMING_SOON_PATH) return second;
-  return Object.entries(NAV_ROUTES).find(([, route]) => route === path)?.[0];
+  return Object.entries(NAV_ROUTES).find(([, route]) => path === route || path.startsWith(`${route}/`))?.[0];
 }
 
 /** Route à ouvrir quand on clique un item du menu. */

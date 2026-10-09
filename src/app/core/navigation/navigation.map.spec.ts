@@ -20,6 +20,15 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/workspace/carrieres')).toBeUndefined();
   });
 
+  it('keeps the menu item of the parent page on its tabs and sub-pages', () => {
+    expect(navItemFromUrl('/workspace/configuration')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/populations')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/gabarits')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/populations/nouvelle')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/populations/pop-1/modifier')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/employes-archives')).toBeUndefined();
+  });
+
   it('highlights the item of a coming-soon page', () => {
     expect(navItemFromUrl('/a-venir/workspace-structures')).toBe('workspace-structures');
   });
@@ -27,6 +36,7 @@ describe('navigation.map', () => {
   it('opens a built page for a mapped item and the coming-soon page otherwise', () => {
     expect(routeForNavItem('workspace-employes')).toBe('/workspace/employes');
     expect(routeForNavItem('workspace-structures')).toBe('/a-venir/workspace-structures');
+    expect(routeForNavItem('workspace-configurations')).toBe('/workspace/configuration');
   });
 
   it('opens a built product home, or the coming-soon accueil of an unbuilt product', () => {
