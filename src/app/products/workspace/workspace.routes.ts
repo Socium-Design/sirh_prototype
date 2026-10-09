@@ -5,7 +5,12 @@ import { EmployesPageComponent } from './modules/employes/employes-page.componen
 import { CarrieresPageComponent } from './modules/carrieres/carrieres-page.component';
 
 export const WORKSPACE_ROUTES: Routes = [
-  { path: '', redirectTo: 'postes', pathMatch: 'full' },
+  // Le prototype s'ouvre sur l'accueil du Workspace (futur intranet).
+  { path: '', redirectTo: 'accueil', pathMatch: 'full' },
+  {
+    path: 'accueil',
+    loadChildren: () => import('./modules/accueil/accueil.routes').then((m) => m.ACCUEIL_ROUTES),
+  },
   { path: 'postes', component: PostesPageComponent, title: 'Postes' },
   { path: 'competences', component: CompetencesPageComponent, title: 'Compétences' },
   { path: 'employes', component: EmployesPageComponent, title: 'Employés' },
