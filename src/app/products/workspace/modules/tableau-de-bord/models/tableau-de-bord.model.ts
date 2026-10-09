@@ -1,15 +1,12 @@
+import { LIBELLES_ROLES, type RoleDemo } from '../../../../../core/session/session.service';
 import type { ReglesPopulation } from '../../configuration/populations/models/population.model';
 
 export type StatutTableauDeBord = 'Actif' | 'Inactif' | 'Archivé';
 
-/** Profils qui consultent un tableau de bord. */
-export type Profil = 'admin-rh' | 'manager' | 'direction-generale';
+/** Profils qui consultent un tableau de bord : les rôles de démonstration de la consultation. */
+export type Profil = RoleDemo;
 
-export const LIBELLES_PROFILS: Record<Profil, string> = {
-  'admin-rh': 'Administrateur RH',
-  manager: 'Manager',
-  'direction-generale': 'Direction générale',
-};
+export const LIBELLES_PROFILS: Record<Profil, string> = LIBELLES_ROLES;
 
 /** Modèle de base (point de départ) d'un tableau de bord. */
 export type ModeleBase = 'vide' | 'direction-generale' | 'admin-rh' | 'manager';
