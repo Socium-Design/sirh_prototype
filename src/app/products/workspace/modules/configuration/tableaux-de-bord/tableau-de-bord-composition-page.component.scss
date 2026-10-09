@@ -1,56 +1,24 @@
-// Mise en page en colonnes (GAP-DS #13 : pas de template à panneaux). Tokens du kit uniquement.
-.espace {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  gap: var(--bridges-position-gap-xl);
-  align-items: start;
+// Mise en page fournie par soc-labs-workspace-layout (Labs, GAP-DS #13). Tokens du kit uniquement.
+:host {
+  display: block;
+  height: 100%;
 }
 
-.espace--edition {
-  grid-template-columns: 220px minmax(0, 1fr) 300px;
-}
-
-.infos,
-.infos__profils,
-.composition,
-.section,
-.apercu {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bridges-position-gap-md);
-}
-
-.infos__profils {
-  gap: var(--bridges-position-gap-sm);
-}
-
-.infos__titre {
-  font-size: var(--bridges-size-text-text-size-sm);
-  color: var(--bridges-color-text-secondary);
-  letter-spacing: 0.04em;
-}
-
-.infos__libelle {
-  font-size: var(--bridges-size-text-text-size-sm);
-  color: var(--bridges-color-text-primary);
-}
-
-.composition {
-  gap: var(--bridges-position-gap-lg);
-  min-height: 240px;
-}
-
-.composition__titre,
-.section__titre {
+.titre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--bridges-size-text-text-size-lg);
   line-height: var(--bridges-size-text-line-height-lg);
   color: var(--bridges-color-text-primary);
 }
 
-.section__titre {
-  font-size: var(--bridges-size-text-text-size-md);
+.indication {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-secondary);
 }
 
+.actions,
 .section__entete,
 .widget__filtres {
   display: flex;
@@ -59,8 +27,69 @@
   gap: var(--bridges-position-gap-sm);
 }
 
+// « Enregistré ✓ » : le kit n'a pas de variante « succès » pour un bouton (GAP-DS design_system_angular#27) → seule la coche passe en vert.
+.enregistre svg {
+  color: var(--bridges-color-text-success);
+}
+
+.infos,
+.infos__champ,
+.composition,
+.section,
+.apercu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-md);
+}
+
+.infos__champ {
+  gap: var(--bridges-position-gap-xs);
+}
+
+.infos__titre {
+  font-size: var(--bridges-size-text-text-size-xs);
+  color: var(--bridges-color-text-secondary);
+  letter-spacing: 0.04em;
+}
+
+// Même libellé que soc-labs-compact-field (petites capitales), pour les champs qui n'en sont pas (statut, profils) :
+// GAP-DS design_system_angular#28 (pas d'emplacement de contenu libre dans le champ compact).
+.infos__libelle {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--bridges-shape-text-label-font);
+  font-weight: var(--bridges-shape-text-label-weight);
+  font-size: var(--bridges-size-text-text-size-tiny);
+  color: var(--bridges-color-text-secondary);
+}
+
+.composition {
+  flex-shrink: 0; // colonne flex du layout : la zone grandit avec son contenu au lieu d'être écrasée
+  gap: var(--bridges-position-gap-lg);
+  min-height: 100%;
+  padding: var(--bridges-position-padding-lg);
+  border-radius: var(--bridges-shape-figure-radius-md);
+}
+
+.composition__titre {
+  font-size: var(--bridges-size-text-text-size-md);
+  color: var(--bridges-color-text-primary);
+}
+
+.section__titre {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+}
+
 .widget__filtres {
   gap: var(--bridges-position-gap-xs);
+}
+
+.widget__filtre-icone {
+  flex-shrink: 0;
+  width: var(--bridges-size-icon-xs);
+  height: var(--bridges-size-icon-xs);
+  color: var(--bridges-color-text-tertiary);
 }
 
 .widget__sans-filtre {
@@ -72,9 +101,17 @@
   gap: var(--bridges-position-gap-xl);
 }
 
-// Retour visuel du CDK pendant le glisser-déposer (le kit n'en propose pas : GAP-DS #8).
+// Pendant le glisser : toute la zone centrale se met en évidence (les zones de dépôt Labs aussi, via [active]).
 .composition.cdk-drop-list-receiving {
+  outline: var(--bridges-shape-line-hairline) dashed var(--bridges-color-border-focus);
+}
+
+.composition--survol {
   outline: var(--bridges-shape-line-thick) dashed var(--bridges-color-border-focus);
-  outline-offset: var(--bridges-position-gap-xs);
-  border-radius: var(--bridges-shape-figure-radius-md);
+  background: var(--bridges-color-surface-selected);
+}
+
+// Statut en lecture seule (soc-tag) : « Inactif » en bleu en attendant une couleur neutre du kit (GAP-DS design_system_angular#29).
+.infos__statut {
+  align-self: flex-start;
 }

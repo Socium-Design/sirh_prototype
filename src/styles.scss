@@ -3,7 +3,8 @@
 /*
  * GAP-DS design_system_angular#14 — contournement provisoire : la liste d'un soc-select / soc-multi-select (panneau de
  * soc-popover, z-20) s'ouvrait sous le voile d'une soc-dialog (z-50) et y était inutilisable. Les panneaux de popover,
- * rendus dans <body>, passent au-dessus des modales. À retirer dès que le kit gère la pile des calques.
+ * rendus dans <body>, passent au-dessus des modales. Toujours nécessaire avec le kit 0.2.0 (popover z-20, dialog z-50) :
+ * à retirer dès que le kit gère la pile des calques.
  */
 body > div[role='dialog'].z-20 {
   z-index: 60;

@@ -44,9 +44,21 @@ depuis le code du kit — ne devine jamais un nom de prop par analogie avec le H
 - `node_modules/@socium-design/angular-components/docs/USAGE.md` — conventions (slots, formulaires, booléens, overlays)
 - `docs/design-system.md` (dans ce dépôt) — quel template de page pour quel besoin, et les patrons de pages du prototype
 
-Le design system est **en lecture seule** ici : ne jamais modifier `node_modules`. S'il manque quelque chose
-(composant, prop, variante, écart visuel), signale-le comme `GAP-DS` (voir `docs/guidelines.md`) et propose une
-solution de contournement honnête (jamais un faux composant maison qui imite le kit).
+Le design system est **en lecture seule** ici : ne jamais modifier `node_modules`.
+
+### Composant manquant → Labs (règle obligatoire)
+
+Quand un composant (ou une prop, une variante) manque dans le kit pendant la création d'une page :
+
+1. **Chercher d'abord dans Labs** : `@socium-design/angular-components/labs` — lire
+   `node_modules/@socium-design/angular-components/labs/README.md` et la section « Labs (expérimental) » de
+   `docs/generated/components.md`.
+2. **S'il n'existe pas dans Labs : ne rien bricoler dans la page.** Le signaler comme `GAP-DS` et **proposer** de le
+   créer dans Labs, dans le dépôt `design_system_angular` — puis **attendre l'accord** avant de le faire.
+3. **Ne jamais importer un composant Labs comme s'il était stable** : tous les imports Labs passent par
+   `src/app/shared/labs/labs.ts` (point d'entrée unique, jamais `/labs` directement ailleurs), pour les retrouver
+   d'un coup lors d'une promotion.
+4. **Ne jamais promouvoir un composant Labs dans le kit officiel** : c'est une décision de l'équipe design.
 
 La feuille de style du kit (`styles.css` : tokens, polices, styles des composants) est déjà chargée par `angular.json` ;
 aucune configuration Tailwind n'est nécessaire. Pour un style propre à l'application, utiliser le SCSS du composant et
@@ -97,7 +109,7 @@ unique et cohérent, partagé par tout le prototype.
 
 - [ ] Composants standalone, nouvelle syntaxe de contrôle (`@if`/`@for`)
 - [ ] Routes chargées en `loadChildren`, pas importées en dur
-- [ ] Aucun composant improvisé — tout vient du kit ou est `GAP-DS`
+- [ ] Aucun composant improvisé — tout vient du kit, de Labs (via `shared/labs/labs.ts`) ou est `GAP-DS`
 - [ ] Entrée ajoutée dans `navigation.map.ts` ; `npm run build` et `npm run test:ci` verts
 - [ ] Page vérifiée dans le navigateur (actions, recherche, pagination, états vides), pas seulement compilée
 - [ ] Test de la page écrit

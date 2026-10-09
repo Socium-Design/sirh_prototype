@@ -99,7 +99,7 @@ describe('TableauDeBordPageComponent (consultation)', () => {
   it('état vide : « Votre tableau de bord est vide » + « Configurer le tableau de bord »', fakeAsync(() => {
     ouvrir('manager', undefined, () => {
       const service = TestBed.inject(TableauxDeBordService);
-      service.enregistrerComposition('tdb-3', { widgets: [], sections: [], statut: 'Actif', profils: ['manager'] }).subscribe();
+      service.enregistrerComposition('tdb-3', { libelle: 'Dashboard Managers', description: '', populationId: 'pop-6', widgets: [], sections: [], statut: 'Actif', profils: ['manager'] }).subscribe();
     });
     expect(el().querySelector('[data-testid="vide"]')?.textContent).toContain('Votre tableau de bord est vide');
     const navigate = spyOn(TestBed.inject(Router), 'navigate');

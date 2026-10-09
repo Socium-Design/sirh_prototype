@@ -41,11 +41,13 @@ describe('TableauxDeBordService', () => {
     expect(TABLEAUX_DE_BORD[0].libelle).toBe('Dashboard RH Global');
   }));
 
-  it('enregistre la composition (graphes, sections, statut, profils)', fakeAsync(() => {
-    const source = lire('tdb-3')!;
-    service.enregistrerComposition('tdb-3', { widgets: [], sections: source.sections, statut: 'Archivé', profils: ['admin-rh'] }).subscribe();
+  it('enregistre la composition (informations, graphes, sections, statut, profils)', fakeAsync(() => {
+    const { libelle, description, populationId, sections } = lire('tdb-3')!;
+    service
+      .enregistrerComposition('tdb-3', { libelle: ` ${libelle} 2 `, description, populationId, widgets: [], sections, statut: 'Archivé', profils: ['admin-rh'] })
+      .subscribe();
     tick(300);
-    expect(lire('tdb-3')).toEqual(jasmine.objectContaining({ widgets: [], statut: 'Archivé', profils: ['admin-rh'] }));
+    expect(lire('tdb-3')).toEqual(jasmine.objectContaining({ libelle: `${libelle} 2`, widgets: [], statut: 'Archivé', profils: ['admin-rh'] }));
   }));
 
   it('duplique en « X (copie) » avec de nouveaux identifiants de graphes', fakeAsync(() => {
