@@ -3,20 +3,17 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import {
   SocBadge,
-  SocBreadcrumb,
   SocButton,
   SocButtonLeftIcon,
   SocDataTable,
+  SocDataTableActions,
+  SocDataTableBadge,
   SocDialog,
   SocMenu,
   SocMenuItem,
   SocMenuItemIcon,
   SocMessage,
   SocMessageContent,
-  SocPageActions,
-  SocPageBadge,
-  SocPageBreadcrumb,
-  SocPageList,
   SocTooltip,
   SocTooltipLabel,
   type DataTableColumn,
@@ -45,11 +42,15 @@ interface LignePopulation extends Population {
 const LONGUEUR_EXTRAIT = 40;
 const extrait = (texte: string) => (!texte ? '—' : texte.length > LONGUEUR_EXTRAIT ? `${texte.slice(0, LONGUEUR_EXTRAIT).trimEnd()}…` : texte);
 
-/** Workspace > Configuration > Populations — liste des populations (groupes d'employés servant de périmètre aux KPIs). */
+/**
+ * Workspace > Configuration > onglet Populations — liste des populations (groupes d'employés servant de périmètre aux KPIs).
+ * Contenu d'onglet : affiché dans la page Configuration, il n'a pas de template de page à lui.
+ */
 @Component({
   selector: 'app-populations-page',
+  styles: `.populations__vide { display: block; margin-top: var(--bridges-position-gap-md); }`,
   imports: [
-    SocPageList, SocPageBreadcrumb, SocPageBadge, SocPageActions, SocBreadcrumb, SocBadge, SocButton, SocButtonLeftIcon, SocDataTable,
+    SocBadge, SocButton, SocButtonLeftIcon, SocDataTable, SocDataTableBadge, SocDataTableActions,
     SocMenu, SocMenuItem, SocMenuItemIcon, SocTooltip, SocTooltipLabel, SocDialog, SocMessage, SocMessageContent,
     PopulationImpactDialogComponent, LucidePlus, LucidePencil, LucideTrash,
   ],
@@ -74,31 +75,30 @@ const extrait = (texte: string) => (!texte ? '—' : texte.length > LONGUEUR_EXT
       </soc-menu>
     </ng-template>
 
-    <soc-page-list title="Populations" description="Définissez des groupes d'employés par règles, réutilisables dans les dashboards et les modules.">
-      <soc-breadcrumb socPageBreadcrumb [items]="[{ label: 'Workspace' }, { label: 'Configuration' }, { label: 'Populations' }]" />
-      <soc-badge socPageBadge color="primary">{{ lignes().length }}</soc-badge>
-      <button socButton socPageActions size="lg" (click)="creer()">
+    <soc-data-table
+      title="Populations"
+      subtitle="Groupes d'employés définis par règles, réutilisables dans les dashboards et les modules."
+      [columns]="columns"
+      [rows]="pageRows()"
+      [rowKey]="rowKey"
+      [searchable]="true"
+      (search)="onSearch($event)"
+      [rowActionsMenu]="actionsMenu"
+      [pagination]="pagination()"
+      (pageChange)="page.set($event)"
+      (pageSizeChange)="onPageSize($event)"
+    >
+      <soc-badge socDataTableBadge color="primary">{{ lignes().length }}</soc-badge>
+      <button socButton socDataTableActions (click)="creer()">
         <svg lucidePlus socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
         Créer une population
       </button>
-
-      <soc-data-table
-        [columns]="columns"
-        [rows]="pageRows()"
-        [rowKey]="rowKey"
-        [searchable]="true"
-        (search)="onSearch($event)"
-        [rowActionsMenu]="actionsMenu"
-        [pagination]="pagination()"
-        (pageChange)="page.set($event)"
-        (pageSizeChange)="onPageSize($event)"
-      />
-      @if (charge() && !filtered().length) {
-        <soc-message variant="inline" status="info">
-          <span socMessageContent>{{ query() ? 'Aucune population ne correspond à « ' + query() + ' ».' : 'Aucune population pour le moment.' }}</span>
-        </soc-message>
-      }
-    </soc-page-list>
+    </soc-data-table>
+    @if (charge() && !filtered().length) {
+      <soc-message class="populations__vide" variant="inline" status="info">
+        <span socMessageContent>{{ query() ? 'Aucune population ne correspond à « ' + query() + ' ».' : 'Aucune population pour le moment.' }}</span>
+      </soc-message>
+    }
 
     <soc-dialog
       [open]="!!aConfirmer()"

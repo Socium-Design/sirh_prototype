@@ -202,7 +202,7 @@ export class PopulationFormPageComponent {
 
   protected readonly breadcrumb = [
     { label: 'Workspace' },
-    { label: 'Configuration' },
+    { label: 'Configurations', onClick: () => this.retourListe() },
     { label: 'Populations', onClick: () => this.retourListe() },
     { label: this.id ? 'Modifier' : 'Nouvelle population' },
   ];

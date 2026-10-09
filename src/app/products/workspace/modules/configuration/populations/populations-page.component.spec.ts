@@ -32,10 +32,11 @@ describe('PopulationsPageComponent', () => {
 
   afterEach(() => fixture.destroy());
 
-  it('affiche les populations avec leur nombre total', () => {
+  it('affiche les populations avec leur nombre total, sans template de page (contenu d’onglet)', () => {
     expect(rows().length).toBe(6);
     expect(fixture.nativeElement.querySelector('soc-badge').textContent.trim()).toBe('6');
-    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Populations');
+    expect(fixture.nativeElement.querySelector('soc-data-table').textContent).toContain('Populations');
+    expect(fixture.nativeElement.querySelector('soc-page-list, h1')).toBeNull();
   });
 
   it('calcule règles, employés couverts et usages', () => {
@@ -60,7 +61,7 @@ describe('PopulationsPageComponent', () => {
 
   it('ouvre la création et la modification', () => {
     const navigate = spyOn(TestBed.inject(Router), 'navigate');
-    (fixture.nativeElement.querySelector('button[socButton]') as HTMLButtonElement).click();
+    ([...fixture.nativeElement.querySelectorAll('button[socButton]')].find((b: HTMLElement) => b.textContent?.includes('Créer une population')) as HTMLButtonElement).click();
     expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/populations/nouvelle']);
     action('RH Dakar', 'Modifier').click();
     expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/populations', 'pop-6', 'modifier']);

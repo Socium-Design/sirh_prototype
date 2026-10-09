@@ -27,8 +27,8 @@ export const PRODUCT_HOME: Partial<Record<AppShellProduct, string>> = {
 export const NAV_ROUTES: Record<string, string> = {
   'workspace-postes': '/workspace/postes',
   'workspace-employes': '/workspace/employes',
-  // GAP-DS : le menu Workspace du kit n'a pas d'item « Populations » ; la page vit sous « Configurations ».
-  'workspace-configurations': '/workspace/configuration/populations',
+  // Page à onglets (Populations, Gabarits…) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
+  'workspace-configurations': '/workspace/configuration',
   'perfs-formations': '/perf/formation',
   'perfs-evaluations': '/perf/evaluation',
   'perfs-objectifs': '/perf/objectifs',
