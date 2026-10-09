@@ -1,100 +1,114 @@
 import { CdkDrag, CdkDragPlaceholder, CdkDropList } from '@angular/cdk/drag-drop';
-import { Component, computed, input, output, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { LucideCheck, LucideGripVertical, LucideLock, LucidePencil, LucidePlus } from '@lucide/angular';
+import { Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
 import {
-  SocAccordion,
-  SocAccordionRightSlot,
-  SocBadge,
-  SocButton,
-  SocButtonLeftIcon,
-  SocInputText,
-  SocSearchBar,
-  SocTooltip,
-  SocTooltipLabel,
-} from '@socium-design/angular-components';
-import { IconeGraphiqueComponent } from '../../../tableau-de-bord/components/icone-graphique.component';
+  LucideArrowLeftRight,
+  LucideCalendarX,
+  LucideCheck,
+  LucideChevronDown,
+  LucideChevronRight,
+  LucideFolder,
+  LucidePlus,
+  LucideUserPlus,
+  LucideUsers,
+  LucideWallet,
+} from '@lucide/angular';
+import { SocBadge, SocSearchBar } from '@socium-design/angular-components';
+import { SocLabsChartTypeChip, SocLabsIconButton, SocLabsInlineEdit, SocLabsListRow, SocLabsListRowAction, SocLabsListRowLeading } from '../../../../../../shared/labs/labs';
 import { TYPES_GRAPHIQUES } from '../../../tableau-de-bord/models/graphique.types';
 import type { TableauDeBord } from '../../../tableau-de-bord/models/tableau-de-bord.model';
 import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../tableau-de-bord/services/catalogue';
 
 /**
- * Bibliothèque de la composition : catalogue d'indicateurs par section (repliables, renommables pour ce tableau de bord),
- * recherche, compteur de graphes ajoutés. Ajout par « + » ou glisser-déposer (CDK : le kit n'a pas de glisser-déposer,
- * GAP-DS #8) ; ✓ une fois ajouté ; cadenas pour un indicateur non souscrit.
+ * Bibliothèque de la composition : catalogue d'indicateurs par section (repliables, renommables sur place pour ce tableau
+ * de bord), recherche, compteur des graphes ajoutés (seulement s'il y en a). Ajout par « + » ou glisser-déposer (CDK) ;
+ * ligne « ajoutée » ; ligne verrouillée pour un indicateur non souscrit.
+ * Labs : `soc-labs-list-row`, `soc-labs-chart-type-chip`, `soc-labs-icon-button`, `soc-labs-inline-edit`.
  */
 @Component({
   selector: 'app-bibliotheque',
   imports: [
-    ReactiveFormsModule, CdkDropList, CdkDrag, CdkDragPlaceholder, SocAccordion, SocAccordionRightSlot, SocBadge, SocButton, SocButtonLeftIcon,
-    SocInputText, SocSearchBar, SocTooltip, SocTooltipLabel, IconeGraphiqueComponent, LucideGripVertical, LucidePlus, LucideCheck, LucideLock,
-    LucidePencil,
+    CdkDropList, CdkDrag, CdkDragPlaceholder, SocBadge, SocSearchBar, SocLabsListRow, SocLabsListRowLeading, SocLabsListRowAction,
+    SocLabsChartTypeChip, SocLabsIconButton, SocLabsInlineEdit, LucidePlus, LucideCheck, LucideChevronDown, LucideChevronRight, LucideUsers,
+    LucideUserPlus, LucideArrowLeftRight, LucideWallet, LucideCalendarX, LucideFolder,
   ],
   styleUrl: './bibliotheque.component.scss',
   template: `
-    <aside class="bibliotheque" aria-label="Bibliothèque" data-testid="bibliotheque">
-      <p class="bibliotheque__titre">BIBLIOTHÈQUE</p>
-      <soc-search-bar placeholder="Rechercher un graphe..." [value]="recherche()" (valueChange)="recherche.set($event)" (clear)="recherche.set('')" />
+    <p class="bibliotheque__titre">BIBLIOTHÈQUE</p>
+    <soc-search-bar placeholder="Rechercher un graphe..." [value]="recherche()" (valueChange)="recherche.set($event)" (clear)="recherche.set('')" />
 
-      @for (section of sections(); track section.id) {
-        @if (enRenommage() === section.id) {
-          <soc-input-text
-            [formControl]="nom"
-            label="Nom de la section"
-            helperText="Entrée pour valider, Échap pour annuler."
-            data-testid="renommage"
-            (keydown.enter)="validerRenommage(section.id); $event.preventDefault()"
-            (keydown.escape)="enRenommage.set(null)"
+    @for (section of sections(); track section.id) {
+      <div class="section" data-testid="section-bibliotheque">
+        <div class="section__entete">
+          <soc-labs-icon-button
+            size="xs"
+            [ariaLabel]="(estRepliee(section.id) ? 'Déplier ' : 'Replier ') + section.libelle"
+            [attr.aria-expanded]="!estRepliee(section.id)"
+            (click)="basculer(section.id)"
+          >
+            @if (estRepliee(section.id)) {
+              <svg lucideChevronRight class="size-full"></svg>
+            } @else {
+              <svg lucideChevronDown class="size-full"></svg>
+            }
+          </soc-labs-icon-button>
+          <span class="section__icone" aria-hidden="true">
+            @switch (section.id) {
+              @case ('capital-humain') { <svg lucideUsers class="size-full" [strokeWidth]="1.5"></svg> }
+              @case ('recrutement') { <svg lucideUserPlus class="size-full" [strokeWidth]="1.5"></svg> }
+              @case ('mouvements') { <svg lucideArrowLeftRight class="size-full" [strokeWidth]="1.5"></svg> }
+              @case ('masse-salariale') { <svg lucideWallet class="size-full" [strokeWidth]="1.5"></svg> }
+              @case ('absences') { <svg lucideCalendarX class="size-full" [strokeWidth]="1.5"></svg> }
+              @default { <svg lucideFolder class="size-full" [strokeWidth]="1.5"></svg> }
+            }
+          </span>
+          <soc-labs-inline-edit
+            class="section__nom"
+            ariaLabel="le nom de la section"
+            [value]="section.libelle"
+            [defaultValue]="section.libelleCatalogue"
+            [maxlength]="60"
+            (valueChange)="renommerSection.emit({ sectionId: section.id, libelle: $event })"
+            data-testid="nom-section"
           />
-        } @else {
-          <soc-accordion [label]="section.libelle" [open]="true" data-testid="section-bibliotheque">
-            <span socAccordionRightSlot class="bibliotheque__entete" (click)="$event.stopPropagation()">
-              <soc-badge color="primary" data-testid="compteur">{{ section.ajoutes }}/{{ section.indicateurs.length }}</soc-badge>
-              <soc-tooltip>
-                <button socButton type="button" variant="ghost" aria-label="Renommer cette section" (click)="renommer(section.id, section.libelle)">
-                  <svg lucidePencil socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
-                </button>
-                <span socTooltipLabel>Renommer cette section</span>
-              </soc-tooltip>
-            </span>
-            <div class="bibliotheque__liste" cdkDropList [cdkDropListSortingDisabled]="true" [cdkDropListEnterPredicate]="refuserDepot">
-              @for (indicateur of section.indicateurs; track indicateur.id) {
-                @if (indicateur.disponible) {
-                  <div class="ligne" cdkDrag [cdkDragData]="indicateur.id" [cdkDragDisabled]="ajoutes().has(indicateur.id)" data-testid="indicateur">
-                    <!-- Emplacement vide : la zone survolée ne s'agrandit pas pendant le glisser. -->
-                    <div *cdkDragPlaceholder class="ligne__emplacement"></div>
-                    <svg lucideGripVertical class="ligne__poignee" [strokeWidth]="1.5" aria-hidden="true"></svg>
-                    <span class="ligne__icone"><app-icone-graphique [type]="indicateur.typeGraphique" /></span>
-                    <span class="ligne__textes">
-                      <span class="ligne__nom">{{ indicateur.titre }}</span>
-                      <span class="ligne__type">{{ type(indicateur) }}</span>
-                    </span>
-                    @if (ajoutes().has(indicateur.id)) {
-                      <svg lucideCheck class="ligne__ajoute" [strokeWidth]="2" role="img" [attr.aria-label]="indicateur.titre + ' ajouté'"></svg>
-                    } @else {
-                      <button socButton type="button" variant="ghost" [attr.aria-label]="'Ajouter ' + indicateur.titre" (click)="ajouter.emit(indicateur)">
-                        <svg lucidePlus socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
-                      </button>
-                    }
-                  </div>
-                } @else {
-                  <div class="ligne ligne--verrouillee" data-testid="indicateur-indisponible">
-                    <svg lucideLock class="ligne__poignee" [strokeWidth]="1.5" aria-hidden="true"></svg>
-                    <span class="ligne__icone"><app-icone-graphique [type]="indicateur.typeGraphique" /></span>
-                    <span class="ligne__textes">
-                      <span class="ligne__nom">{{ indicateur.titre }}</span>
-                      <span class="ligne__type">Produit non souscrit</span>
-                    </span>
-                  </div>
+          @if (section.ajoutes) {
+            <soc-badge color="primary" data-testid="compteur">{{ section.ajoutes }}</soc-badge>
+          }
+        </div>
+
+        @if (!estRepliee(section.id)) {
+          <div class="section__liste" role="list" cdkDropList [cdkDropListSortingDisabled]="true" [cdkDropListEnterPredicate]="refuserDepot">
+            @for (indicateur of section.indicateurs; track indicateur.id) {
+              @let ajoute = ajoutes().has(indicateur.id);
+              <soc-labs-list-row
+                [title]="indicateur.titre"
+                [subtitle]="indicateur.disponible ? type(indicateur) : 'Produit non souscrit'"
+                [selected]="ajoute"
+                [locked]="!indicateur.disponible"
+                [lockedReason]="indicateur.disponible ? undefined : 'Produit non souscrit'"
+                [draggable]="indicateur.disponible && !ajoute"
+                cdkDrag
+                [cdkDragData]="indicateur.id"
+                [cdkDragDisabled]="!indicateur.disponible || ajoute"
+                [attr.data-testid]="indicateur.disponible ? 'indicateur' : 'indicateur-indisponible'"
+              >
+                <!-- Emplacement vide : la ligne ne s'efface pas de la Bibliothèque pendant le glisser. -->
+                <div *cdkDragPlaceholder class="section__emplacement"></div>
+                <soc-labs-chart-type-chip socLabsListRowLeading [type]="indicateur.typeGraphique" [decorative]="true" />
+                @if (ajoute) {
+                  <svg socLabsListRowAction lucideCheck class="ligne__ajoute" [strokeWidth]="2" role="img" [attr.aria-label]="indicateur.titre + ' ajouté'"></svg>
+                } @else if (indicateur.disponible) {
+                  <soc-labs-icon-button socLabsListRowAction variant="primary-subtle" [ariaLabel]="'Ajouter ' + indicateur.titre" (click)="ajouter.emit(indicateur)">
+                    <svg lucidePlus class="size-full"></svg>
+                  </soc-labs-icon-button>
                 }
-              }
-            </div>
-          </soc-accordion>
+              </soc-labs-list-row>
+            }
+          </div>
         }
-      } @empty {
-        <p class="ligne__type">Aucun graphe ne correspond.</p>
-      }
-    </aside>
+      </div>
+    } @empty {
+      <p class="bibliotheque__vide">Aucun graphe ne correspond.</p>
+    }
   `,
 })
 export class BibliothequeComponent {
@@ -103,9 +117,9 @@ export class BibliothequeComponent {
   readonly ajouter = output<IndicateurCatalogue>();
   readonly renommerSection = output<{ sectionId: string; libelle: string }>();
 
+  private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly recherche = signal('');
-  protected readonly enRenommage = signal<string | null>(null);
-  protected readonly nom = new FormControl('', { nonNullable: true });
+  private readonly repliees = signal<ReadonlySet<string>>(new Set());
 
   /** Indicateurs déjà présents dans le tableau de bord. */
   protected readonly ajoutes = computed(() => new Set(this.tableau().widgets.map((w) => w.indicateurId)));
@@ -116,6 +130,7 @@ export class BibliothequeComponent {
     return this.catalogue()
       .map((section) => ({
         ...section,
+        libelleCatalogue: section.libelle,
         libelle: this.tableau().sections.find((s) => s.id === section.id)?.libelle ?? section.libelle,
         ajoutes: section.indicateurs.filter((i) => this.ajoutes().has(i.id)).length,
         indicateurs: section.indicateurs.filter((i) => !q || i.titre.toLowerCase().includes(q)),
@@ -126,17 +141,23 @@ export class BibliothequeComponent {
   /** La Bibliothèque est en lecture seule : on ne peut rien y déposer. */
   protected readonly refuserDepot = () => false;
 
+  /** Une recherche déplie tout, pour montrer les résultats. */
+  protected estRepliee(sectionId: string): boolean {
+    return !this.recherche().trim() && this.repliees().has(sectionId);
+  }
+
+  protected basculer(sectionId: string): void {
+    const repliees = new Set(this.repliees());
+    if (!repliees.delete(sectionId)) repliees.add(sectionId);
+    this.repliees.set(repliees);
+  }
+
+  /** Donne le focus à la recherche (clic sur une zone de dépôt de la composition). */
+  focusRecherche(): void {
+    this.hote.nativeElement.querySelector<HTMLInputElement>('soc-search-bar input')?.focus();
+  }
+
   protected type(indicateur: IndicateurCatalogue): string {
     return TYPES_GRAPHIQUES[indicateur.typeGraphique].libelle;
-  }
-
-  protected renommer(sectionId: string, libelle: string): void {
-    this.nom.setValue(libelle);
-    this.enRenommage.set(sectionId);
-  }
-
-  protected validerRenommage(sectionId: string): void {
-    if (this.nom.value.trim()) this.renommerSection.emit({ sectionId, libelle: this.nom.value });
-    this.enRenommage.set(null);
   }
 }

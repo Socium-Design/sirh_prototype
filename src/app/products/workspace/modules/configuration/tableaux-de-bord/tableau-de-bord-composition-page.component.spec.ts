@@ -14,6 +14,12 @@ describe('TableauDeBordCompositionPageComponent', () => {
   const widgets = () => [...el().querySelectorAll('[data-testid="widget"]')] as HTMLElement[];
   const titresWidgets = () => widgets().map((w) => w.querySelector('soc-card p')?.textContent?.trim());
   const sections = () => [...el().querySelectorAll('[data-testid="section"]')].map((s) => s.querySelector('.section__titre')?.textContent?.trim() + ' · ' + s.querySelector('soc-badge')?.textContent?.trim());
+  const saisir = (champ: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, valeur: string, evenement = 'input') => {
+    champ.value = valeur;
+    champ.dispatchEvent(new Event(evenement, { bubbles: true }));
+    fixture.detectChanges();
+  };
+  const apercu = () => document.body.querySelector('soc-labs-fullscreen-overlay [role="dialog"], [role="dialog"][aria-modal="true"]:has([data-testid="apercu"])') as HTMLElement | null;
   const ligne = (titre: string) =>
     [...el().querySelectorAll('[data-testid="indicateur"], [data-testid="indicateur-indisponible"]')].find((c) => c.textContent?.includes(titre)) as HTMLElement;
   const modale = () => document.body.querySelector('[role="dialog"][aria-modal="true"]') as HTMLElement | null;
@@ -46,7 +52,8 @@ describe('TableauDeBordCompositionPageComponent', () => {
 
     it('badge « Lecture seule », informations à gauche, graphes par section, sans Bibliothèque ni menus', () => {
       expect(el().querySelector('h1')?.textContent).toContain('Dashboard Managers');
-      expect(el().querySelector('soc-tag')?.textContent?.trim()).toBe('Lecture seule');
+      expect(el().querySelector('soc-tag[socLabsWorkspaceHint]')?.textContent?.trim()).toBe('Lecture seule');
+      expect(el().textContent).not.toContain('Ajouter des graphes depuis la bibliothèque');
       const infos = el().querySelector('[data-testid="infos"]')!.textContent!;
       for (const texte of ['INFORMATIONS', 'Libellé', 'Description', 'Population', 'Managers – périmètre hiérarchique', 'Statut', 'Actif', 'Profils', 'Manager']) {
         expect(infos).withContext(texte).toContain(texte);
@@ -56,6 +63,18 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(el().querySelector('[data-testid="bibliotheque"]')).toBeNull();
       expect(el().querySelector('button[aria-label^="Actions du graphe"]')).toBeNull();
       expect(widgets()[0].textContent).toContain('Aucun filtre');
+      expect(widgets()[0].querySelector('soc-labs-chart-type-chip')).not.toBeNull();
+      expect(el().querySelector('soc-labs-drop-zone')).toBeNull();
+    });
+
+    it('informations en texte, statut non modifiable, vrais boutons texte « Prévisualiser » et « Modifier »', () => {
+      const infos = el().querySelector('[data-testid="infos"]')!;
+      expect(infos.querySelectorAll('input, textarea, select').length).toBe(0);
+      expect(infos.querySelector('[data-testid="statut"] [role="radio"][aria-checked="true"]')?.textContent?.trim()).toBe('Actif');
+      expect(infos.querySelector('[data-testid="statut"] [role="radio"][aria-disabled="true"], [data-testid="statut"] [role="radio"]:disabled')).not.toBeNull();
+      expect(infos.querySelector('soc-checkbox')).toBeNull();
+      expect(el().querySelector('[data-testid="previsualiser"]')?.textContent?.trim()).toBe('Prévisualiser');
+      expect(el().querySelector('[data-testid="modifier"]')?.textContent?.trim()).toBe('Modifier');
     });
 
     it('« Modifier » passe en édition (dans l’URL)', () => {
@@ -73,11 +92,63 @@ describe('TableauDeBordCompositionPageComponent', () => {
       const entetes = [...el().querySelectorAll('[data-testid="section-bibliotheque"]')].map((s) => s.textContent!.replace(/\s+/g, ' '));
       expect(entetes.length).toBe(5);
       expect(entetes[0]).toContain('Gestion du capital humain');
-      expect(el().querySelector('[data-testid="compteur"]')?.textContent?.trim()).toBe('1/4');
+      // Compteur des graphes ajoutés : seulement pour les sections qui en ont.
+      expect([...el().querySelectorAll('[data-testid="compteur"]')].map((c) => c.textContent?.trim())).toEqual(['1', '1', '2']);
       expect(ligne('Effectif total').querySelector('[aria-label="Effectif total ajouté"]')).not.toBeNull();
       expect(ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]')).not.toBeNull();
       expect(ligne('Coût moyen par embauche').getAttribute('data-testid')).toBe('indicateur-indisponible');
       expect(ligne('Coût moyen par embauche').textContent).toContain('Produit non souscrit');
+      expect(ligne('Effectif total').querySelector('soc-labs-chart-type-chip')).not.toBeNull();
+    });
+
+    it('une section de la Bibliothèque se replie et se déplie', () => {
+      const lignes = () => el().querySelectorAll('[data-testid="bibliotheque"] soc-labs-list-row').length;
+      const avant = lignes();
+      (el().querySelector('[data-testid="bibliotheque"] button[aria-label="Replier Gestion du capital humain"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(lignes()).toBe(avant - 4);
+      (el().querySelector('[data-testid="bibliotheque"] button[aria-label="Déplier Gestion du capital humain"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(lignes()).toBe(avant);
+    });
+
+    it('libellé, description et population modifiables ; « Enregistrer » les persiste', fakeAsync(() => {
+      const service = TestBed.inject(TableauxDeBordService);
+      const enregistrer = spyOn(service, 'enregistrerComposition').and.callThrough();
+      saisir(el().querySelector('[data-testid="libelle"] input') as HTMLInputElement, 'Dashboard Managers Dakar');
+      expect(el().querySelector('h1')?.textContent).toContain('Dashboard Managers Dakar');
+      saisir(el().querySelector('[data-testid="description"] textarea') as HTMLTextAreaElement, 'Équipes de Dakar.');
+      const population = el().querySelector('[data-testid="population"] select') as HTMLSelectElement;
+      saisir(population, population.options[0].value, 'change');
+      expect(page['modifie']()).toBeTrue();
+      (el().querySelector('[data-testid="enregistrer"]') as HTMLButtonElement).click();
+      rafraichir();
+      expect(enregistrer).toHaveBeenCalledWith(
+        'tdb-3',
+        jasmine.objectContaining({ libelle: 'Dashboard Managers Dakar', description: 'Équipes de Dakar.', populationId: population.options[0].value }),
+      );
+      expect(page['peutQuitter']()).toBeTrue();
+    }));
+
+    it('libellé vide : « Enregistrer » désactivé', () => {
+      saisir(el().querySelector('[data-testid="libelle"] input') as HTMLInputElement, '  ');
+      expect((el().querySelector('[data-testid="enregistrer"]') as HTMLButtonElement).disabled).toBeTrue();
+    });
+
+    it('zone de dépôt : emplacement permanent sous les graphes ; un clic amène à la recherche de la Bibliothèque', () => {
+      const emplacement = el().querySelector('[data-testid="emplacement"]')!;
+      expect(emplacement.textContent).toContain('Ajouter un graphe depuis la bibliothèque');
+      (emplacement.querySelector('button') as HTMLButtonElement).click();
+      expect(document.activeElement).toBe(el().querySelector('[data-testid="bibliotheque"] soc-search-bar input'));
+    });
+
+    it('pendant le glisser, toute la zone de composition se met en évidence', () => {
+      page['survol'].set(true);
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="composition"]')!.classList).toContain('composition--survol');
+      page['deposer']({ item: { data: 'x' }, previousContainer: {}, container: {} } as unknown as CdkDragDrop<unknown, unknown, string>);
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="composition"]')!.classList).not.toContain('composition--survol');
     });
 
     it('« + » ajoute le graphe dans la section de son indicateur', fakeAsync(() => {
@@ -100,32 +171,30 @@ describe('TableauDeBordCompositionPageComponent', () => {
       input.value = 'turnover';
       input.dispatchEvent(new Event('input', { bubbles: true }));
       fixture.detectChanges();
-      expect([...el().querySelectorAll('[data-testid="indicateur"]')].map((l) => l.querySelector('.ligne__nom')?.textContent?.trim())).toEqual([
-        'Turnover global',
-        'Turnover par département',
+      expect([...el().querySelectorAll('[data-testid="indicateur"]')].map((l) => l.textContent)).toEqual([
+        jasmine.stringContaining('Turnover global'),
+        jasmine.stringContaining('Turnover par département'),
       ]);
     });
 
-    it('renomme une section directement (Entrée valide, Échap annule)', () => {
-      (el().querySelector('[aria-label="Renommer cette section"]') as HTMLButtonElement).click();
-      fixture.detectChanges();
-      const champ = () => el().querySelector('[data-testid="renommage"]') as HTMLElement;
-      const input = champ().querySelector('input') as HTMLInputElement;
-      input.value = 'Mon équipe';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      fixture.detectChanges();
-      expect(champ()).toBeNull();
+    it('renomme une section sur place dans la Bibliothèque (Entrée valide, Échap annule)', () => {
+      const nom = () => el().querySelector('[data-testid="nom-section"]') as HTMLElement;
+      const editer = (valeur: string, touche: string) => {
+        (nom().querySelector('button') as HTMLButtonElement).click();
+        fixture.detectChanges();
+        const input = nom().querySelector('input') as HTMLInputElement;
+        input.value = valeur;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: touche, bubbles: true }));
+        fixture.detectChanges();
+      };
+      editer('Mon équipe', 'Escape');
+      expect(nom().querySelector('input')).toBeNull();
       expect(sections()[0]).toBe('Gestion du capital humain · 1 KPI');
 
-      (el().querySelector('[aria-label="Renommer cette section"]') as HTMLButtonElement).click();
-      fixture.detectChanges();
-      const input2 = champ().querySelector('input') as HTMLInputElement;
-      input2.value = 'Mon équipe';
-      input2.dispatchEvent(new Event('input', { bubbles: true }));
-      input2.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-      fixture.detectChanges();
+      editer('Mon équipe', 'Enter');
       expect(sections()[0]).toBe('Mon équipe · 1 KPI');
+      expect(nom().textContent).toContain('Mon équipe');
     });
 
     it('menu d’un graphe : « Retirer »', () => {
@@ -148,25 +217,28 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(carte.textContent).toContain('Site : Dakar');
     });
 
-    it('statut et profils modifiables ; « Enregistrer » persiste puis affiche « Enregistré ✓ »', fakeAsync(() => {
+    it('statut (pastilles) et profils modifiables ; « Enregistrer » persiste puis affiche « Enregistré ✓ »', fakeAsync(() => {
       const service = TestBed.inject(TableauxDeBordService);
       const enregistrer = spyOn(service, 'enregistrerComposition').and.callThrough();
       ([...el().querySelectorAll('[data-testid="infos"] soc-checkbox')].find((c) => c.textContent?.includes('Administrateur RH'))!.querySelector('[role="checkbox"]') as HTMLElement).click();
       fixture.detectChanges();
       expect(page['brouillon']().profils).toEqual(['admin-rh', 'manager']);
-      page['changerStatut']('Inactif');
+      expect(el().querySelector('[data-testid="infos"] app-profils')?.textContent).toContain('Admin RH');
+      ([...el().querySelectorAll('[data-testid="statut"] [role="radio"]')].find((r) => r.textContent?.trim() === 'Inactif') as HTMLElement).click();
       fixture.detectChanges();
+      expect(page['brouillon']().statut).toBe('Inactif');
 
       const bouton = () => el().querySelector('[data-testid="enregistrer"]') as HTMLButtonElement;
-      expect(bouton().getAttribute('aria-label')).toBe('Enregistrer');
+      expect(bouton().textContent?.trim()).toBe('Enregistrer');
       bouton().click();
       rafraichir();
       expect(enregistrer).toHaveBeenCalledWith('tdb-3', jasmine.objectContaining({ statut: 'Inactif', profils: ['admin-rh', 'manager'] }));
       expect(bouton().getAttribute('aria-label')).toBe('Enregistré ✓');
+      expect(bouton().textContent?.trim()).toBe('Enregistré');
 
       (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
       fixture.detectChanges();
-      expect(bouton().getAttribute('aria-label')).toBe('Enregistrer');
+      expect(bouton().textContent?.trim()).toBe('Enregistrer');
     }));
 
     it('quitter sans changement : pas de confirmation', () => {
@@ -209,16 +281,21 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(page['peutQuitter']()).toBeTrue();
     });
 
-    it('« Prévisualiser » : plein écran, KPI en haut puis graphes sur 2 colonnes, données simulées', () => {
+    it('« Prévisualiser » : plein écran, KPI en haut puis graphes sur 2 colonnes, données simulées ; Échap ferme', () => {
       (el().querySelector('[data-testid="previsualiser"]') as HTMLButtonElement).click();
       fixture.detectChanges();
-      expect(el().textContent).toContain('Prévisualisation · Managers – périmètre hiérarchique · 4 KPIs');
-      expect(el().textContent).toContain('Données simulées');
-      const grilles = el().querySelectorAll('[data-testid="apercu"] soc-card-grid');
+      const calque = apercu()!;
+      expect(calque.textContent).toContain('Dashboard Managers');
+      expect(calque.textContent).toContain('Prévisualisation · Managers – périmètre hiérarchique · 4 KPIs');
+      expect(calque.textContent).toContain('Données simulées');
+      const grilles = calque.querySelectorAll('[data-testid="apercu"] soc-card-grid');
       expect(grilles.length).toBe(2);
       expect(grilles[0].querySelectorAll('app-widget-carte').length).toBe(1);
       expect(grilles[1].querySelectorAll('app-widget-carte').length).toBe(3);
-      expect(el().textContent).toContain('Retour à la composition');
+      calque.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+      expect(page['apercu']()).toBeFalse();
+      expect(document.body.querySelector('[data-testid="apercu"]')).toBeNull();
     });
   });
 
@@ -226,10 +303,13 @@ describe('TableauDeBordCompositionPageComponent', () => {
     ouvrir('tdb-3');
     page['brouillon'].update((t: any) => ({ ...t, widgets: [] }));
     fixture.detectChanges();
-    expect(el().querySelector('[data-testid="composition-vide"]')?.textContent).toContain('Cliquez sur un graphe dans la bibliothèque →');
+    const vide = el().querySelector('[data-testid="composition-vide"]')!;
+    expect(vide.tagName).toBe('SOC-LABS-DROP-ZONE');
+    expect(vide.textContent).toContain('Cliquez sur un graphe dans la bibliothèque →');
+    expect(el().querySelector('[data-testid="emplacement"]')).toBeNull();
     page['apercu'].set(true);
     fixture.detectChanges();
-    expect(el().textContent).toContain('Aucun KPI ajouté — retournez à la bibliothèque pour en ajouter.');
+    expect(document.body.querySelector('[data-testid="apercu"]')?.textContent).toContain('Aucun KPI ajouté — retournez à la bibliothèque pour en ajouter.');
   }));
 
   it('revient à la liste si le tableau n’existe pas', fakeAsync(() => {

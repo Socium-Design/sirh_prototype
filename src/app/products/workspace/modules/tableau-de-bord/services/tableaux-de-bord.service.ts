@@ -9,8 +9,8 @@ import type { ModeleBase, TableauDeBord, TableauDeBordSaisie } from '../models/t
 
 const LATENCE = 200;
 
-/** Ce que la composition enregistre (bouton « Enregistrer ») : graphes, sections, statut et profils. */
-export type Composition = Pick<TableauDeBord, 'widgets' | 'sections' | 'statut' | 'profils'>;
+/** Ce que la composition enregistre (bouton « Enregistrer ») : informations, graphes, sections, statut et profils. */
+export type Composition = Pick<TableauDeBord, 'libelle' | 'description' | 'populationId' | 'widgets' | 'sections' | 'statut' | 'profils'>;
 
 /**
  * Accès aux tableaux de bord du client. Simule une API sur le mock partagé ; les modifications vivent en mémoire le temps
@@ -61,7 +61,10 @@ export class TableauxDeBordService {
 
   /** Enregistre la composition (bouton « Enregistrer » de la page de composition). */
   enregistrerComposition(id: string, composition: Composition): Observable<TableauDeBord> {
-    return this.modifier(id, (t) => Object.assign(t, structuredClone(composition)));
+    return this.modifier(id, (t) => {
+      if (t.populationId !== composition.populationId) delete t.reglesFigees;
+      Object.assign(t, structuredClone(composition), { libelle: composition.libelle.trim(), description: composition.description.trim() });
+    });
   }
 
   /** Copie complète, nommée « X (copie) ». */
