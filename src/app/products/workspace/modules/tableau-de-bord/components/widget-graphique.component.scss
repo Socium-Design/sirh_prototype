@@ -1,0 +1,23 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xs);
+  width: 100%;
+}
+
+.graphique {
+  position: relative;
+  width: 100%;
+}
+
+.graphique__kpi {
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-5xl);
+  line-height: var(--bridges-size-text-line-height-5xl);
+  color: var(--bridges-color-text-primary);
+}
+
+.graphique__legende {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-secondary);
+}

@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { SocMessage } from '@socium-design/angular-components';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { POPULATIONS } from '../../../../../../mocks/data/populations.mock';
 import { PopulationFormPageComponent } from './population-form-page.component';
@@ -26,11 +28,11 @@ describe('PopulationFormPageComponent', () => {
     fixture.detectChanges();
   };
 
-  const creer = (id?: string) => {
+  const creer = (id?: string, query: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}), queryParamMap: convertToParamMap(query) } } },
       ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl');
@@ -90,6 +92,40 @@ describe('PopulationFormPageComponent', () => {
       fixture.detectChanges();
       expect(compteur()).toBe('11 employés correspondent à ces règles.');
     });
+
+    it('affiche le compteur en rouge quand aucun employé ne correspond', () => {
+      saisirNom('Personne');
+      cliquer('Suivant');
+      const [c1] = page['form'].controls.conditions.controls;
+      c1.patchValue({ valeur: 'Dakar' });
+      cliquer('Ajouter une condition');
+      const c2 = page['form'].controls.conditions.at(1);
+      c2.patchValue({ champ: 'statut' });
+      c2.patchValue({ valeur: 'Inactif' });
+      fixture.detectChanges();
+      expect(compteur()).toBe('Aucun employé ne correspond à ces règles.');
+      const message = fixture.debugElement.queryAll(By.directive(SocMessage)).find((d) => d.nativeElement.contains(el().querySelector('[data-testid="compteur"]')))!;
+      expect((message.componentInstance as SocMessage).status()).toBe('error');
+    });
+
+    it('alerte (sans bloquer) quand une population semblable existe déjà', fakeAsync(() => {
+      saisirNom('Encore le Sénégal');
+      cliquer('Suivant');
+      page['form'].controls.conditions.at(0).patchValue({ champ: 'filiale' });
+      page['form'].controls.conditions.at(0).patchValue({ valeur: 'Sénégal' });
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="similaire"]')?.textContent).toContain('« Équipe Sénégal » a déjà exactement ces critères.');
+      page['form'].controls.conditions.at(0).patchValue({ champ: 'site' });
+      page['form'].controls.conditions.at(0).patchValue({ valeur: 'Dakar' });
+      cliquer('Ajouter une condition');
+      page['form'].controls.conditions.at(1).patchValue({ valeur: 'Thiès' });
+      (el().querySelector('#combinaison-ou') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="similaire"]')?.textContent).toContain('« Équipe Sénégal » couvre déjà exactement les mêmes employés.');
+      cliquer('Créer la population');
+      tick(300);
+      expect(navigate).toHaveBeenCalledWith('/workspace/configuration/populations');
+    }));
 
     it('vide la valeur quand on change de champ', () => {
       saisirNom('Test');
@@ -151,6 +187,20 @@ describe('PopulationFormPageComponent', () => {
       expect(figee('usage-1')).toBeUndefined();
       expect(figee('usage-2')?.conditions[0].valeur).toBe('Sénégal');
       expect(figee('usage-3')).toBeUndefined();
+      expect(navigate).toHaveBeenCalledWith('/workspace/configuration/populations');
+    }));
+  });
+
+  describe('retour vers la page appelante', () => {
+    it('revient à la page passée en « retour » (ex. formulaire de tableau de bord)', fakeAsync(() => {
+      creer('pop-6', { retour: '/workspace/configuration/tableaux-de-bord/nouveau' });
+      cliquer('Annuler');
+      expect(navigate).toHaveBeenCalledWith('/workspace/configuration/tableaux-de-bord/nouveau');
+    }));
+
+    it('ignore un « retour » hors du Workspace', fakeAsync(() => {
+      creer('pop-6', { retour: 'https://exemple.com' });
+      cliquer('Annuler');
       expect(navigate).toHaveBeenCalledWith('/workspace/configuration/populations');
     }));
   });

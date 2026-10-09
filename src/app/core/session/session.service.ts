@@ -1,6 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import type { EnterpriseOption, LanguageOption } from '@socium-design/angular-components';
-import { SESSION_ENTERPRISES, SESSION_LANGUAGES, SESSION_USER } from '../../../mocks/data/session.mock';
+import { SESSION_ENTERPRISES, SESSION_LANGUAGES, SESSION_USER, VUE_CONSOLIDEE } from '../../../mocks/data/session.mock';
+
+/** Rôle de démonstration : il change ce que l'on voit et ce que l'on peut faire (dashboards, critères de population). */
+export type RoleDemo = 'admin-rh' | 'manager';
+
+export const LIBELLES_ROLES: Record<RoleDemo, string> = { 'admin-rh': 'Admin RH', manager: 'Manager' };
 
 /**
  * Session du prototype (utilisateur, entreprise active, langue). Les valeurs viennent du mock partagé ;
@@ -14,4 +19,12 @@ export class SessionService {
   readonly languages = signal<LanguageOption[]>(SESSION_LANGUAGES);
   readonly enterprise = signal<string | undefined>(SESSION_ENTERPRISES[0].value);
   readonly language = signal<string | undefined>(SESSION_LANGUAGES[0].value);
+  /** Rôle de démonstration, partagé par la Configuration et la consultation des tableaux de bord. */
+  readonly role = signal<RoleDemo>('admin-rh');
+  /** Filiale active (libellé, comme sur les employés) ; `null` = vue consolidée de toutes les filiales. */
+  readonly filiale = computed(() => {
+    const valeur = this.enterprise();
+    if (!valeur || valeur === VUE_CONSOLIDEE) return null;
+    return this.enterprises().find((e) => e.value === valeur)?.subsidiary ?? null;
+  });
 }

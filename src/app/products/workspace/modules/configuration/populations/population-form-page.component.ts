@@ -38,7 +38,7 @@ import {
   type PopulationSaisie,
   type PopulationUsage,
 } from './models/population.model';
-import { copierRegles, employesCouverts, valeursDuChamp } from './services/population-regles';
+import { copierRegles, employesCouverts, populationsSimilaires, valeursDuChamp } from './services/population-regles';
 import { PopulationsService } from './services/populations.service';
 
 type ConditionForm = FormGroup<{
@@ -48,6 +48,9 @@ type ConditionForm = FormGroup<{
 }>;
 
 const LISTE = '/workspace/configuration/populations';
+
+/** N'accepte qu'une page interne du Workspace comme page de retour. */
+const pageDeRetour = (url: string | null): string | null => (url?.startsWith('/workspace/') ? url : null);
 
 const nonVide = (c: AbstractControl<string>): ValidationErrors | null => (c.value.trim() ? null : { required: true });
 const auMoinsUne = (c: AbstractControl<unknown[]>): ValidationErrors | null => (c.value.length ? null : { aucuneCondition: true });
@@ -106,9 +109,15 @@ const auMoinsUne = (c: AbstractControl<unknown[]>): ValidationErrors | null => (
             }
           }
         } @else {
-          <soc-message variant="inline" status="info">
+          <!-- En rouge quand aucun employé ne correspond (calcul automatique, pas d'action « Estimer »). -->
+          <soc-message variant="inline" [status]="nbEmployes() ? 'info' : 'error'">
             <span socMessageContent data-testid="compteur">{{ compteur() }}</span>
           </soc-message>
+          @if (similaires().length) {
+            <soc-message variant="inline" status="warning">
+              <span socMessageContent data-testid="similaire">{{ alerteSimilaire() }}</span>
+            </soc-message>
+          }
 
           <div class="formulaire__combinaison" role="radiogroup" aria-label="Combinaison des conditions">
             <soc-radio-button formControlName="combinaison" name="combinaison" value="ET" id="combinaison-et" label="ET — toutes les conditions" />
@@ -177,8 +186,11 @@ export class PopulationFormPageComponent {
   private readonly service = inject(PopulationsService);
   private readonly employes = toSignal(inject(EmployesService).getAll(), { initialValue: [] as Employe[] });
 
+  private readonly route = inject(ActivatedRoute).snapshot;
   /** Id de la population modifiée ; absent en création. */
-  protected readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
+  protected readonly id = this.route.paramMap.get('id');
+  /** Page d'où l'on vient (ex. formulaire d'un tableau de bord) : on y revient après enregistrement ou annulation. */
+  private readonly retour = pageDeRetour(this.route.queryParamMap.get('retour'));
   private readonly populations = signal<Population[]>([]);
   /** Éléments qui utilisent la population modifiée. */
   protected readonly usages = signal<PopulationUsage[]>([]);
@@ -202,8 +214,8 @@ export class PopulationFormPageComponent {
 
   protected readonly breadcrumb = [
     { label: 'Workspace' },
-    { label: 'Configurations', onClick: () => this.retourListe() },
-    { label: 'Populations', onClick: () => this.retourListe() },
+    { label: 'Configurations', onClick: () => this.router.navigateByUrl(LISTE) },
+    { label: 'Populations', onClick: () => this.router.navigateByUrl(LISTE) },
     { label: this.id ? 'Modifier' : 'Nouvelle population' },
   ];
 
@@ -232,6 +244,20 @@ export class PopulationFormPageComponent {
     const n = this.nbEmployes();
     return n ? `${n} employé${n > 1 ? 's' : ''} correspond${n > 1 ? 'ent' : ''} à ces règles.` : 'Aucun employé ne correspond à ces règles.';
   });
+
+  /** Populations existantes aux critères identiques ou couvrant les mêmes employés (alerte non bloquante). */
+  protected readonly similaires = computed(() => {
+    const { combinaison, conditions } = this.valeur();
+    return populationsSimilaires({ combinaison, conditions: conditions.filter((c) => c.valeur) }, this.populations(), this.employes(), this.id);
+  });
+  protected readonly alerteSimilaire = computed(() =>
+    this.similaires()
+      .map(({ population, raison }) =>
+        raison === 'criteres-identiques' ? `« ${population.nom} » a déjà exactement ces critères.` : `« ${population.nom} » couvre déjà exactement les mêmes employés.`,
+      )
+      .concat('Vous pouvez tout de même enregistrer.')
+      .join(' '),
+  );
 
   protected readonly erreurNom = computed(() => {
     this.valeur();
@@ -318,7 +344,7 @@ export class PopulationFormPageComponent {
   }
 
   protected retourListe(): void {
-    this.router.navigateByUrl(LISTE);
+    this.router.navigateByUrl(this.retour ?? LISTE);
   }
 
   /** Remplace les règles du formulaire par une copie indépendante de celles de `source`. */

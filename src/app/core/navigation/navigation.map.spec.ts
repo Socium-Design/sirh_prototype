@@ -17,13 +17,14 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/workspace/employes')).toBe('workspace-employes');
     expect(navItemFromUrl('/workspace/employes/?q=a#top')).toBe('workspace-employes');
     expect(navItemFromUrl('/perf/evaluation')).toBe('perfs-evaluations');
+    expect(navItemFromUrl('/workspace/tableau-de-bord?tableau=tdb-3')).toBe('workspace-tableau-de-bord');
     expect(navItemFromUrl('/workspace/carrieres')).toBeUndefined();
   });
 
   it('keeps the menu item of the parent page on its tabs and sub-pages', () => {
     expect(navItemFromUrl('/workspace/configuration')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations')).toBe('workspace-configurations');
-    expect(navItemFromUrl('/workspace/configuration/gabarits')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/tableaux-de-bord')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations/nouvelle')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations/pop-1/modifier')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/employes-archives')).toBeUndefined();

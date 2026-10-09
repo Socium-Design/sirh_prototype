@@ -74,4 +74,16 @@ export const POPULATIONS: Population[] = [
     creePar: SESSION,
     modifieeLe: '2026-10-01',
   },
+  {
+    id: 'pop-7',
+    nom: 'Inactifs Dakar',
+    description: 'Collaborateurs inactifs du site de Dakar (aucun à ce jour).',
+    combinaison: 'ET',
+    conditions: [
+      { champ: 'statut', operateur: 'est', valeur: 'Inactif' },
+      { champ: 'site', operateur: 'est', valeur: 'Dakar' },
+    ],
+    creePar: SESSION,
+    modifieeLe: '2026-10-05',
+  },
 ];

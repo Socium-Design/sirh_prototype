@@ -9,15 +9,38 @@ export const CONFIGURATION_ROUTES: Routes = [
     title: 'Créer une population',
   },
   {
+    path: 'populations/:id',
+    loadComponent: () => import('./populations/population-detail-page.component').then((m) => m.PopulationDetailPageComponent),
+    title: 'Population',
+  },
+  {
     path: 'populations/:id/modifier',
     loadComponent: () => import('./populations/population-form-page.component').then((m) => m.PopulationFormPageComponent),
     title: 'Modifier la population',
+  },
+  {
+    path: 'tableaux-de-bord/nouveau',
+    loadComponent: () => import('./tableaux-de-bord/tableau-de-bord-form-page.component').then((m) => m.TableauDeBordFormPageComponent),
+    title: 'Créer un tableau de bord',
+  },
+  {
+    path: 'tableaux-de-bord/:id/modifier',
+    loadComponent: () => import('./tableaux-de-bord/tableau-de-bord-form-page.component').then((m) => m.TableauDeBordFormPageComponent),
+    title: 'Modifier le tableau de bord',
+  },
+  {
+    path: 'tableaux-de-bord/:id',
+    loadComponent: () =>
+      import('./tableaux-de-bord/tableau-de-bord-composition-page.component').then((m) => m.TableauDeBordCompositionPageComponent),
+    title: 'Composition du tableau de bord',
   },
   {
     path: '',
     loadComponent: () => import('./configuration-page.component').then((m) => m.ConfigurationPageComponent),
     children: [
       { path: '', redirectTo: ONGLETS_CONFIGURATION[0].route, pathMatch: 'full' },
+      // Ancien onglet provisoire (en production depuis la PR #2), remplacé par la gestion des tableaux de bord.
+      { path: 'gabarits', redirectTo: 'tableaux-de-bord' },
       // Une route par onglet de `ONGLETS_CONFIGURATION`.
       {
         path: 'populations',
@@ -25,9 +48,9 @@ export const CONFIGURATION_ROUTES: Routes = [
         title: 'Populations',
       },
       {
-        path: 'gabarits',
-        loadComponent: () => import('./configuration-a-venir.component').then((m) => m.ConfigurationAVenirComponent),
-        title: 'Gabarits / tableaux de bord',
+        path: 'tableaux-de-bord',
+        loadComponent: () => import('./tableaux-de-bord/tableaux-de-bord-page.component').then((m) => m.TableauxDeBordPageComponent),
+        title: 'Gestion des tableaux de bord',
       },
     ],
   },
