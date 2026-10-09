@@ -35,3 +35,14 @@ export interface TableauDeBord {
   /** Vrai une fois le tableau prévisualisé : condition pour l'activer. */
   previsualise: boolean;
 }
+
+/** Informations générales saisies dans le formulaire d'un tableau de bord. */
+export interface TableauDeBordSaisie {
+  libelle: string;
+  description: string;
+  statut: StatutTableauDeBord;
+  populationId: string;
+}
+
+/** Point de départ d'un nouveau tableau de bord : V0 pré-remplie (par défaut), tableau vide ou copie d'un existant. */
+export type PointDeDepart = { type: 'v0' } | { type: 'vide' } | { type: 'copie'; sourceId: string };

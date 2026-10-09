@@ -49,6 +49,9 @@ type ConditionForm = FormGroup<{
 
 const LISTE = '/workspace/configuration/populations';
 
+/** N'accepte qu'une page interne du Workspace comme page de retour. */
+const pageDeRetour = (url: string | null): string | null => (url?.startsWith('/workspace/') ? url : null);
+
 const nonVide = (c: AbstractControl<string>): ValidationErrors | null => (c.value.trim() ? null : { required: true });
 const auMoinsUne = (c: AbstractControl<unknown[]>): ValidationErrors | null => (c.value.length ? null : { aucuneCondition: true });
 
@@ -177,8 +180,11 @@ export class PopulationFormPageComponent {
   private readonly service = inject(PopulationsService);
   private readonly employes = toSignal(inject(EmployesService).getAll(), { initialValue: [] as Employe[] });
 
+  private readonly route = inject(ActivatedRoute).snapshot;
   /** Id de la population modifiée ; absent en création. */
-  protected readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
+  protected readonly id = this.route.paramMap.get('id');
+  /** Page d'où l'on vient (ex. formulaire d'un tableau de bord) : on y revient après enregistrement ou annulation. */
+  private readonly retour = pageDeRetour(this.route.queryParamMap.get('retour'));
   private readonly populations = signal<Population[]>([]);
   /** Éléments qui utilisent la population modifiée. */
   protected readonly usages = signal<PopulationUsage[]>([]);
@@ -202,8 +208,8 @@ export class PopulationFormPageComponent {
 
   protected readonly breadcrumb = [
     { label: 'Workspace' },
-    { label: 'Configurations', onClick: () => this.retourListe() },
-    { label: 'Populations', onClick: () => this.retourListe() },
+    { label: 'Configurations', onClick: () => this.router.navigateByUrl(LISTE) },
+    { label: 'Populations', onClick: () => this.router.navigateByUrl(LISTE) },
     { label: this.id ? 'Modifier' : 'Nouvelle population' },
   ];
 
@@ -318,7 +324,7 @@ export class PopulationFormPageComponent {
   }
 
   protected retourListe(): void {
-    this.router.navigateByUrl(LISTE);
+    this.router.navigateByUrl(this.retour ?? LISTE);
   }
 
   /** Remplace les règles du formulaire par une copie indépendante de celles de `source`. */

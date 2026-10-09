@@ -1,6 +1,12 @@
 import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { LucidePencil, LucidePlus } from '@lucide/angular';
 import {
   SocBadge,
+  SocButton,
+  SocButtonLeftIcon,
+  SocDataTableActions,
+  SocMenuItemIcon,
   SocDataTable,
   SocDataTableBadge,
   SocMenu,
@@ -33,7 +39,10 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
  */
 @Component({
   selector: 'app-tableaux-de-bord-page',
-  imports: [SocDataTable, SocDataTableBadge, SocBadge, SocTag, SocMenu, SocMenuItem, SocTooltip, SocTooltipLabel, SocMessage, SocMessageContent],
+  imports: [
+    SocDataTable, SocDataTableBadge, SocDataTableActions, SocBadge, SocButton, SocButtonLeftIcon, SocTag, SocMenu, SocMenuItem, SocMenuItemIcon,
+    SocTooltip, SocTooltipLabel, SocMessage, SocMessageContent, LucidePlus, LucidePencil,
+  ],
   styles: `.tableaux__vide { display: block; margin-top: var(--bridges-position-gap-md); }`,
   template: `
     <ng-template #statutCell let-row>
@@ -42,6 +51,9 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
 
     <ng-template #actionsMenu let-row let-close="close">
       <soc-menu>
+        <button socMenuItem label="Modifier" (click)="close(); modifier(row)">
+          <svg lucidePencil socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
+        </button>
         @if (row.statut === 'Actif') {
           <button socMenuItem label="Désactiver" (click)="close(); changerStatut(row, 'Inactif')"></button>
         } @else if (row.activable) {
@@ -69,6 +81,10 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
       (pageSizeChange)="onPageSize($event)"
     >
       <soc-badge socDataTableBadge color="primary">{{ lignes().length }}</soc-badge>
+      <button socButton socDataTableActions (click)="creer()">
+        <svg lucidePlus socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
+        Créer un tableau de bord
+      </button>
     </soc-data-table>
     @if (charge() && !filtered().length) {
       <soc-message class="tableaux__vide" variant="inline" status="info">
@@ -78,6 +94,7 @@ const COULEURS_STATUT: Record<StatutTableauDeBord, TagColor> = { Actif: 'success
   `,
 })
 export class TableauxDeBordPageComponent {
+  private readonly router = inject(Router);
   private readonly service = inject(TableauxDeBordService);
   private readonly populationsService = inject(PopulationsService);
 
@@ -132,6 +149,14 @@ export class TableauxDeBordPageComponent {
   protected onPageSize(size: number): void {
     this.pageSize.set(size);
     this.page.set(1);
+  }
+
+  protected creer(): void {
+    this.router.navigate(['/workspace/configuration/tableaux-de-bord/nouveau']);
+  }
+
+  protected modifier(ligne: LigneTableau): void {
+    this.router.navigate(['/workspace/configuration/tableaux-de-bord', ligne.id, 'modifier']);
   }
 
   protected changerStatut(ligne: LigneTableau, statut: StatutTableauDeBord): void {

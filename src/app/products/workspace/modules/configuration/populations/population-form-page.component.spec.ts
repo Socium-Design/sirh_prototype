@@ -26,11 +26,11 @@ describe('PopulationFormPageComponent', () => {
     fixture.detectChanges();
   };
 
-  const creer = (id?: string) => {
+  const creer = (id?: string, query: Record<string, string> = {}) => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}), queryParamMap: convertToParamMap(query) } } },
       ],
     });
     navigate = spyOn(TestBed.inject(Router), 'navigateByUrl');
@@ -151,6 +151,20 @@ describe('PopulationFormPageComponent', () => {
       expect(figee('usage-1')).toBeUndefined();
       expect(figee('usage-2')?.conditions[0].valeur).toBe('Sénégal');
       expect(figee('usage-3')).toBeUndefined();
+      expect(navigate).toHaveBeenCalledWith('/workspace/configuration/populations');
+    }));
+  });
+
+  describe('retour vers la page appelante', () => {
+    it('revient à la page passée en « retour » (ex. formulaire de tableau de bord)', fakeAsync(() => {
+      creer('pop-6', { retour: '/workspace/configuration/tableaux-de-bord/nouveau' });
+      cliquer('Annuler');
+      expect(navigate).toHaveBeenCalledWith('/workspace/configuration/tableaux-de-bord/nouveau');
+    }));
+
+    it('ignore un « retour » hors du Workspace', fakeAsync(() => {
+      creer('pop-6', { retour: 'https://exemple.com' });
+      cliquer('Annuler');
       expect(navigate).toHaveBeenCalledWith('/workspace/configuration/populations');
     }));
   });

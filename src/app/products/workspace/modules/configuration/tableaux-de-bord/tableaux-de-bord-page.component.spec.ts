@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { TableauxDeBordPageComponent } from './tableaux-de-bord-page.component';
 
 describe('TableauxDeBordPageComponent', () => {
@@ -31,6 +31,14 @@ describe('TableauxDeBordPageComponent', () => {
     expect([...fixture.nativeElement.querySelectorAll('th')].map((th: HTMLElement) => th.textContent?.trim())).toContain('Date de création');
     expect(cellules('Dashboard RH Global')).toEqual(jasmine.arrayContaining(['Équipe Sénégal', 'Actif', '6', '12/05/2026']));
     expect(ligne('Performance DSI').querySelector('soc-tag')?.textContent?.trim()).toBe('Inactif');
+  });
+
+  it('ouvre la création et la modification', () => {
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
+    ([...fixture.nativeElement.querySelectorAll('button')].find((b: HTMLElement) => b.textContent?.includes('Créer un tableau de bord')) as HTMLButtonElement).click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord/nouveau']);
+    action('Performance DSI', 'Modifier')!.click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-4', 'modifier']);
   });
 
   it('recherche par libellé', () => {
