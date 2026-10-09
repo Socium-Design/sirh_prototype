@@ -303,7 +303,7 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   protected readonly menuOuvert = signal<string | null>(null);
   protected readonly widgetEdite = signal<WidgetVue | null>(null);
 
-  /** Statut en lecture seule : une pastille du kit (Actif vert, Archivé ambre ; pas de gris dans soc-tag, voir GAP-DS). */
+  /** Statut en lecture seule : une pastille du kit (Actif vert, Archivé ambre ; Inactif en bleu faute de gris : GAP-DS design_system_angular#29). */
   protected readonly couleursStatuts: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'information', Archivé: 'warning' };
   protected readonly optionsStatuts: LabsPillOption<StatutTableauDeBord>[] = [
     { value: 'Actif', label: 'Actif', color: 'green' },

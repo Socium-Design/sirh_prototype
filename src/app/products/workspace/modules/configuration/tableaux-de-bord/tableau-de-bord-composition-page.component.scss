@@ -111,6 +111,7 @@
   background: var(--bridges-color-surface-selected);
 }
 
+// Statut en lecture seule (soc-tag) : « Inactif » en bleu en attendant une couleur neutre du kit (GAP-DS design_system_angular#29).
 .infos__statut {
   align-self: flex-start;
 }
