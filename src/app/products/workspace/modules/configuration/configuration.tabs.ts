@@ -10,7 +10,7 @@ export interface OngletConfiguration {
  */
 export const ONGLETS_CONFIGURATION: OngletConfiguration[] = [
   { libelle: 'Populations', route: 'populations' },
-  { libelle: 'Gabarits / tableaux de bord', route: 'gabarits' },
+  { libelle: 'Gestion des tableaux de bord', route: 'tableaux-de-bord' },
 ];
 
 export const CONFIGURATION_PATH = '/workspace/configuration';

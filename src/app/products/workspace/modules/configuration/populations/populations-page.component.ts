@@ -22,6 +22,7 @@ import {
 import { LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
 import { forkJoin } from 'rxjs';
 import { SessionService } from '../../../../../core/session/session.service';
+import { extrait } from '../../../../../shared/utils/texte';
 import type { Employe } from '../../employes/models/employe.model';
 import { EmployesService } from '../../employes/services/employes.service';
 import { PopulationImpactDialogComponent } from './components/population-impact-dialog.component';
@@ -34,13 +35,6 @@ interface LignePopulation extends Population {
   usages: PopulationUsage[];
   supprimable: boolean;
 }
-
-/**
- * Le tableau du kit ne gère ni largeur de colonne ni troncature (GAP-DS) : une description longue pousse les dernières
- * colonnes hors champ. On affiche un extrait.
- */
-const LONGUEUR_EXTRAIT = 40;
-const extrait = (texte: string) => (!texte ? '—' : texte.length > LONGUEUR_EXTRAIT ? `${texte.slice(0, LONGUEUR_EXTRAIT).trimEnd()}…` : texte);
 
 /**
  * Workspace > Configuration > onglet Populations — liste des populations (groupes d'employés servant de périmètre aux KPIs).

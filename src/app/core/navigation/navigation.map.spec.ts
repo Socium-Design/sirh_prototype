@@ -23,7 +23,7 @@ describe('navigation.map', () => {
   it('keeps the menu item of the parent page on its tabs and sub-pages', () => {
     expect(navItemFromUrl('/workspace/configuration')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations')).toBe('workspace-configurations');
-    expect(navItemFromUrl('/workspace/configuration/gabarits')).toBe('workspace-configurations');
+    expect(navItemFromUrl('/workspace/configuration/tableaux-de-bord')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations/nouvelle')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations/pop-1/modifier')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/employes-archives')).toBeUndefined();

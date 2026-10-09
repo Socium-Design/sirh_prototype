@@ -27,7 +27,7 @@ export const PRODUCT_HOME: Partial<Record<AppShellProduct, string>> = {
 export const NAV_ROUTES: Record<string, string> = {
   'workspace-postes': '/workspace/postes',
   'workspace-employes': '/workspace/employes',
-  // Page à onglets (Populations, Gabarits…) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
+  // Page à onglets (Populations, Gestion des tableaux de bord) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
   'workspace-configurations': '/workspace/configuration',
   'perfs-formations': '/perf/formation',
   'perfs-evaluations': '/perf/evaluation',

@@ -18,6 +18,8 @@ export const CONFIGURATION_ROUTES: Routes = [
     loadComponent: () => import('./configuration-page.component').then((m) => m.ConfigurationPageComponent),
     children: [
       { path: '', redirectTo: ONGLETS_CONFIGURATION[0].route, pathMatch: 'full' },
+      // Ancien onglet provisoire (en production depuis la PR #2), remplacé par la gestion des tableaux de bord.
+      { path: 'gabarits', redirectTo: 'tableaux-de-bord' },
       // Une route par onglet de `ONGLETS_CONFIGURATION`.
       {
         path: 'populations',
@@ -25,9 +27,9 @@ export const CONFIGURATION_ROUTES: Routes = [
         title: 'Populations',
       },
       {
-        path: 'gabarits',
-        loadComponent: () => import('./configuration-a-venir.component').then((m) => m.ConfigurationAVenirComponent),
-        title: 'Gabarits / tableaux de bord',
+        path: 'tableaux-de-bord',
+        loadComponent: () => import('./tableaux-de-bord/tableaux-de-bord-page.component').then((m) => m.TableauxDeBordPageComponent),
+        title: 'Gestion des tableaux de bord',
       },
     ],
   },

@@ -26,16 +26,22 @@ describe('ConfigurationPageComponent (page à onglets)', () => {
     expect(el().querySelector('soc-data-table')).not.toBeNull();
   });
 
+  it("redirige l'ancien onglet « Gabarits » vers la gestion des tableaux de bord", async () => {
+    await ouvrir('/workspace/configuration/gabarits');
+    expect(TestBed.inject(Router).url).toBe('/workspace/configuration/tableaux-de-bord');
+    expect(actif()).toBe('Gestion des tableaux de bord');
+  });
+
   it('affiche un onglet par entrée de la liste de configuration, dans l’ordre', async () => {
     await ouvrir('/workspace/configuration/populations');
     expect(onglets().map((o) => o.textContent?.trim())).toEqual(ONGLETS_CONFIGURATION.map((o) => o.libelle));
   });
 
   it("active l'onglet d'après l'URL", async () => {
-    await ouvrir('/workspace/configuration/gabarits');
-    expect(actif()).toBe('Gabarits / tableaux de bord');
-    expect(el().querySelector('soc-message')?.textContent).toContain('« Gabarits / tableaux de bord » n\'est pas encore construite');
-    expect(el().querySelector('soc-data-table')).toBeNull();
+    await ouvrir('/workspace/configuration/tableaux-de-bord');
+    expect(actif()).toBe('Gestion des tableaux de bord');
+    expect(el().querySelector('app-tableaux-de-bord-page')).not.toBeNull();
+    expect(el().querySelector('app-populations-page')).toBeNull();
   });
 
   it("change d'URL au clic sur un onglet", async () => {
@@ -43,8 +49,8 @@ describe('ConfigurationPageComponent (page à onglets)', () => {
     onglets()[1].click();
     await harness.fixture.whenStable();
     harness.detectChanges();
-    expect(TestBed.inject(Router).url).toBe('/workspace/configuration/gabarits');
-    expect(actif()).toBe('Gabarits / tableaux de bord');
+    expect(TestBed.inject(Router).url).toBe('/workspace/configuration/tableaux-de-bord');
+    expect(actif()).toBe('Gestion des tableaux de bord');
   });
 
   it('affiche les formulaires en plein écran, sans onglets', async () => {
@@ -63,7 +69,7 @@ describe('ongletDepuisUrl', () => {
   it('trouve l’onglet d’une page, de ses sous-pages et ignore la query string', () => {
     expect(ongletDepuisUrl('/workspace/configuration/populations')?.route).toBe('populations');
     expect(ongletDepuisUrl('/workspace/configuration/populations/pop-1/modifier?x=1')?.route).toBe('populations');
-    expect(ongletDepuisUrl('/workspace/configuration/gabarits#haut')?.route).toBe('gabarits');
+    expect(ongletDepuisUrl('/workspace/configuration/tableaux-de-bord#haut')?.route).toBe('tableaux-de-bord');
   });
 
   it("ne trouve rien hors de la configuration ou pour un onglet inconnu", () => {
