@@ -175,7 +175,7 @@ export class TableauDeBordPageComponent {
     tableauxAccessibles(this.tableaux(), this.populations(), this.session.role(), this.utilisateur(), this.employes()),
   );
   protected readonly optionsTableaux = computed<SelectOption[]>(() => this.accessibles().map((t) => ({ value: t.id, label: t.libelle })));
-  protected readonly tableau = computed(() => this.accessibles().find((t) => t.id === this.tableauDemande()) ?? this.accessibles()[0]);
+  protected readonly tableau = computed(() => this.accessibles().find((t) => t.id === this.tableauDemande()) ?? this.accessibles().at(0));
 
   protected readonly perimetre = computed(() => employesDuPerimetre(this.employes(), this.session.filiale()));
   private readonly idsMasques = computed(() => (this.tableau() ? this.masquesService.pour(this.tableau()!.id) : []));

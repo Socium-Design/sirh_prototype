@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { SocTag } from '@socium-design/angular-components';
 import { Router, provideRouter } from '@angular/router';
 import { PopulationsPageComponent } from './populations-page.component';
 
@@ -33,8 +35,8 @@ describe('PopulationsPageComponent', () => {
   afterEach(() => fixture.destroy());
 
   it('affiche les populations avec leur nombre total, sans template de page (contenu d’onglet)', () => {
-    expect(rows().length).toBe(6);
-    expect(fixture.nativeElement.querySelector('soc-badge').textContent.trim()).toBe('6');
+    expect(rows().length).toBe(7);
+    expect(fixture.nativeElement.querySelector('soc-badge').textContent.trim()).toBe('7');
     expect(fixture.nativeElement.querySelector('soc-data-table').textContent).toContain('Populations');
     expect(fixture.nativeElement.querySelector('soc-page-list, h1')).toBeNull();
   });
@@ -45,9 +47,24 @@ describe('PopulationsPageComponent', () => {
     expect(cellules('RH Dakar').slice(2, 5)).toEqual(['2', '3', '—']);
   });
 
+  it('affiche en rouge le compteur d’une population qui ne couvre personne', () => {
+    const tag = fixture.debugElement.queryAll(By.directive(SocTag)).find((d) => ligne('Inactifs Dakar').contains(d.nativeElement))!;
+    expect(tag.nativeElement.textContent.trim()).toBe('0');
+    expect((tag.componentInstance as SocTag).color()).toBe('error');
+    expect(ligne('RH Dakar').querySelectorAll('td')[3].querySelector('soc-tag')).toBeNull();
+  });
+
+  it('ouvre le détail depuis le menu ou un clic sur la ligne', () => {
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
+    action('RH Dakar', 'Voir détails').click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/populations', 'pop-6']);
+    ligne('Équipe Sénégal').querySelector('td')!.click();
+    expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/populations', 'pop-1']);
+  });
+
   it('recherche par nom, avec un message quand rien ne correspond', () => {
     const input = fixture.nativeElement.querySelector('soc-search-bar input') as HTMLInputElement;
-    input.value = 'dakar';
+    input.value = 'rh dakar';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
     expect(rows().map((r) => r.querySelector('td')?.textContent?.trim())).toEqual(['RH Dakar']);
@@ -82,7 +99,7 @@ describe('PopulationsPageComponent', () => {
     boutonDialogue('Supprimer').click();
     tick(500); // suppression puis rechargement de la liste
     fixture.detectChanges();
-    expect(rows().length).toBe(5);
+    expect(rows().length).toBe(6);
     expect(ligne('RH Dakar')).toBeUndefined();
   }));
 

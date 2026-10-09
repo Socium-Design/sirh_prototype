@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import {
@@ -14,12 +14,14 @@ import {
   SocMenuItemIcon,
   SocMessage,
   SocMessageContent,
+  SocTag,
   SocTooltip,
   SocTooltipLabel,
+  type DataTableCellContext,
   type DataTableColumn,
   type DialogAction,
 } from '@socium-design/angular-components';
-import { LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
+import { LucideEye, LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
 import { forkJoin } from 'rxjs';
 import { SessionService } from '../../../../../core/session/session.service';
 import { extrait } from '../../../../../shared/utils/texte';
@@ -46,11 +48,23 @@ interface LignePopulation extends Population {
   imports: [
     SocBadge, SocButton, SocButtonLeftIcon, SocDataTable, SocDataTableBadge, SocDataTableActions,
     SocMenu, SocMenuItem, SocMenuItemIcon, SocTooltip, SocTooltipLabel, SocDialog, SocMessage, SocMessageContent,
-    PopulationImpactDialogComponent, LucidePlus, LucidePencil, LucideTrash,
+    PopulationImpactDialogComponent, SocTag, LucidePlus, LucidePencil, LucideTrash, LucideEye,
   ],
   template: `
+    <ng-template #employesCell let-row>
+      <!-- En rouge quand la population ne couvre personne. -->
+      @if (row.nbEmployes) {
+        {{ row.nbEmployes }}
+      } @else {
+        <soc-tag color="error">0</soc-tag>
+      }
+    </ng-template>
+
     <ng-template #actionsMenu let-row let-close="close">
       <soc-menu>
+        <button socMenuItem label="Voir détails" (click)="close(); voirDetails(row)">
+          <svg lucideEye socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
+        </button>
         <button socMenuItem label="Modifier" (click)="close(); modifier(row)">
           <svg lucidePencil socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
         </button>
@@ -72,11 +86,13 @@ interface LignePopulation extends Population {
     <soc-data-table
       title="Populations"
       subtitle="Groupes d'employés définis par règles, réutilisables dans les dashboards et les modules."
-      [columns]="columns"
+      [columns]="columns()"
       [rows]="pageRows()"
       [rowKey]="rowKey"
       [searchable]="true"
       (search)="onSearch($event)"
+      [rowClickable]="true"
+      (rowClick)="voirDetails($event)"
       [rowActionsMenu]="actionsMenu"
       [pagination]="pagination()"
       (pageChange)="page.set($event)"
@@ -133,15 +149,16 @@ export class PopulationsPageComponent {
   protected readonly aConfirmer = signal<LignePopulation | null>(null);
   protected readonly impact = signal<LignePopulation | null>(null);
 
-  protected readonly columns: DataTableColumn<LignePopulation>[] = [
+  private readonly employesCell = viewChild.required<TemplateRef<DataTableCellContext<LignePopulation>>>('employesCell');
+  protected readonly columns = computed<DataTableColumn<LignePopulation>[]>(() => [
     { key: 'nom', header: 'Nom', render: (p) => p.nom },
     { key: 'description', header: 'Description', render: (p) => extrait(p.description) },
     { key: 'regles', header: 'Règles', render: (p) => String(p.conditions.length) },
-    { key: 'employes', header: 'Employés couverts', render: (p) => String(p.nbEmployes) },
+    { key: 'employes', header: 'Employés couverts', render: this.employesCell() },
     { key: 'usages', header: 'Utilisée par', render: (p) => (p.usages.length ? `${p.usages.length} élément${p.usages.length > 1 ? 's' : ''}` : '—') },
     { key: 'creePar', header: 'Créée par', render: (p) => p.creePar.nom },
     { key: 'modifieeLe', header: 'Modifiée le', render: (p) => new Date(p.modifieeLe).toLocaleDateString('fr-FR') },
-  ];
+  ]);
 
   protected readonly lignes = computed<LignePopulation[]>(() => {
     const email = this.session.user().email;
@@ -185,6 +202,11 @@ export class PopulationsPageComponent {
 
   protected creer(): void {
     this.router.navigate(['/workspace/configuration/populations/nouvelle']);
+  }
+
+  /** Détail en lecture seule : nom, description, filtres (pas les tableaux de bord qui l'utilisent). */
+  protected voirDetails(ligne: LignePopulation): void {
+    this.router.navigate(['/workspace/configuration/populations', ligne.id]);
   }
 
   protected modifier(ligne: LignePopulation): void {

@@ -9,6 +9,11 @@ export const CONFIGURATION_ROUTES: Routes = [
     title: 'Créer une population',
   },
   {
+    path: 'populations/:id',
+    loadComponent: () => import('./populations/population-detail-page.component').then((m) => m.PopulationDetailPageComponent),
+    title: 'Population',
+  },
+  {
     path: 'populations/:id/modifier',
     loadComponent: () => import('./populations/population-form-page.component').then((m) => m.PopulationFormPageComponent),
     title: 'Modifier la population',

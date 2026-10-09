@@ -38,7 +38,7 @@ import {
   type PopulationSaisie,
   type PopulationUsage,
 } from './models/population.model';
-import { copierRegles, employesCouverts, valeursDuChamp } from './services/population-regles';
+import { copierRegles, employesCouverts, populationsSimilaires, valeursDuChamp } from './services/population-regles';
 import { PopulationsService } from './services/populations.service';
 
 type ConditionForm = FormGroup<{
@@ -109,9 +109,15 @@ const auMoinsUne = (c: AbstractControl<unknown[]>): ValidationErrors | null => (
             }
           }
         } @else {
-          <soc-message variant="inline" status="info">
+          <!-- En rouge quand aucun employé ne correspond (calcul automatique, pas d'action « Estimer »). -->
+          <soc-message variant="inline" [status]="nbEmployes() ? 'info' : 'error'">
             <span socMessageContent data-testid="compteur">{{ compteur() }}</span>
           </soc-message>
+          @if (similaires().length) {
+            <soc-message variant="inline" status="warning">
+              <span socMessageContent data-testid="similaire">{{ alerteSimilaire() }}</span>
+            </soc-message>
+          }
 
           <div class="formulaire__combinaison" role="radiogroup" aria-label="Combinaison des conditions">
             <soc-radio-button formControlName="combinaison" name="combinaison" value="ET" id="combinaison-et" label="ET — toutes les conditions" />
@@ -238,6 +244,20 @@ export class PopulationFormPageComponent {
     const n = this.nbEmployes();
     return n ? `${n} employé${n > 1 ? 's' : ''} correspond${n > 1 ? 'ent' : ''} à ces règles.` : 'Aucun employé ne correspond à ces règles.';
   });
+
+  /** Populations existantes aux critères identiques ou couvrant les mêmes employés (alerte non bloquante). */
+  protected readonly similaires = computed(() => {
+    const { combinaison, conditions } = this.valeur();
+    return populationsSimilaires({ combinaison, conditions: conditions.filter((c) => c.valeur) }, this.populations(), this.employes(), this.id);
+  });
+  protected readonly alerteSimilaire = computed(() =>
+    this.similaires()
+      .map(({ population, raison }) =>
+        raison === 'criteres-identiques' ? `« ${population.nom} » a déjà exactement ces critères.` : `« ${population.nom} » couvre déjà exactement les mêmes employés.`,
+      )
+      .concat('Vous pouvez tout de même enregistrer.')
+      .join(' '),
+  );
 
   protected readonly erreurNom = computed(() => {
     this.valeur();

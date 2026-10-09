@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { SocMessage } from '@socium-design/angular-components';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { POPULATIONS } from '../../../../../../mocks/data/populations.mock';
 import { PopulationFormPageComponent } from './population-form-page.component';
@@ -90,6 +92,40 @@ describe('PopulationFormPageComponent', () => {
       fixture.detectChanges();
       expect(compteur()).toBe('11 employés correspondent à ces règles.');
     });
+
+    it('affiche le compteur en rouge quand aucun employé ne correspond', () => {
+      saisirNom('Personne');
+      cliquer('Suivant');
+      const [c1] = page['form'].controls.conditions.controls;
+      c1.patchValue({ valeur: 'Dakar' });
+      cliquer('Ajouter une condition');
+      const c2 = page['form'].controls.conditions.at(1);
+      c2.patchValue({ champ: 'statut' });
+      c2.patchValue({ valeur: 'Inactif' });
+      fixture.detectChanges();
+      expect(compteur()).toBe('Aucun employé ne correspond à ces règles.');
+      const message = fixture.debugElement.queryAll(By.directive(SocMessage)).find((d) => d.nativeElement.contains(el().querySelector('[data-testid="compteur"]')))!;
+      expect((message.componentInstance as SocMessage).status()).toBe('error');
+    });
+
+    it('alerte (sans bloquer) quand une population semblable existe déjà', fakeAsync(() => {
+      saisirNom('Encore le Sénégal');
+      cliquer('Suivant');
+      page['form'].controls.conditions.at(0).patchValue({ champ: 'filiale' });
+      page['form'].controls.conditions.at(0).patchValue({ valeur: 'Sénégal' });
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="similaire"]')?.textContent).toContain('« Équipe Sénégal » a déjà exactement ces critères.');
+      page['form'].controls.conditions.at(0).patchValue({ champ: 'site' });
+      page['form'].controls.conditions.at(0).patchValue({ valeur: 'Dakar' });
+      cliquer('Ajouter une condition');
+      page['form'].controls.conditions.at(1).patchValue({ valeur: 'Thiès' });
+      (el().querySelector('#combinaison-ou') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(el().querySelector('[data-testid="similaire"]')?.textContent).toContain('« Équipe Sénégal » couvre déjà exactement les mêmes employés.');
+      cliquer('Créer la population');
+      tick(300);
+      expect(navigate).toHaveBeenCalledWith('/workspace/configuration/populations');
+    }));
 
     it('vide la valeur quand on change de champ', () => {
       saisirNom('Test');
