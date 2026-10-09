@@ -25,6 +25,7 @@ export const PRODUCT_HOME: Partial<Record<AppShellProduct, string>> = {
 
 /** Id d'item de menu du design system (cf. `NAVIGATION_PRESETS`) → route. */
 export const NAV_ROUTES: Record<string, string> = {
+  'workspace-accueil': '/workspace/accueil',
   'workspace-postes': '/workspace/postes',
   'workspace-employes': '/workspace/employes',
   'workspace-tableau-de-bord': '/workspace/tableau-de-bord',

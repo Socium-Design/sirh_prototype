@@ -15,6 +15,7 @@ describe('navigation.map', () => {
 
   it('finds the menu item of a page, ignoring query string and trailing slash', () => {
     expect(navItemFromUrl('/workspace/employes')).toBe('workspace-employes');
+    expect(navItemFromUrl('/workspace/accueil')).toBe('workspace-accueil');
     expect(navItemFromUrl('/workspace/employes/?q=a#top')).toBe('workspace-employes');
     expect(navItemFromUrl('/perf/evaluation')).toBe('perfs-evaluations');
     expect(navItemFromUrl('/workspace/tableau-de-bord?tableau=tdb-3')).toBe('workspace-tableau-de-bord');
