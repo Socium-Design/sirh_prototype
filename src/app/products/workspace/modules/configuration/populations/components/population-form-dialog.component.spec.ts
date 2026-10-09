@@ -168,13 +168,13 @@ describe('PopulationFormDialogComponent', () => {
 
   describe('modification', () => {
     it('recharge nom, description et conditions ; population non utilisée : enregistrement direct', fakeAsync(() => {
-      ouvrir(POPULATIONS.find((p) => p.id === 'pop-6')!);
+      ouvrir(POPULATIONS.find((p) => p.id === 'pop-7')!);
       expect(modale().textContent).toContain('Modifier la population');
       expect(modale().textContent).toContain('Modifiez les informations et les critères de filtrage.');
-      expect(formulaire['form'].controls.nom.value).toBe('Managers – périmètre hiérarchique');
+      expect(formulaire['form'].controls.nom.value).toBe('Inactifs Dakar');
       expect(conditions().length).toBe(2);
-      expect(condition(1).valeurs.value).toEqual(['Dakar', 'Thiès']);
-      expect(effectif().textContent?.trim()).toBe('7');
+      expect(condition(1).valeurs.value).toEqual(['Dakar']);
+      expect(effectif().textContent?.trim()).toBe('0');
 
       bouton('Enregistrer les modifications').click();
       detecter();

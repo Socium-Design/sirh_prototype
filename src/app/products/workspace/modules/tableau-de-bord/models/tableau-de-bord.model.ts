@@ -1,6 +1,28 @@
-import type { AuteurPopulation, ReglesPopulation } from '../../configuration/populations/models/population.model';
+import type { ReglesPopulation } from '../../configuration/populations/models/population.model';
 
 export type StatutTableauDeBord = 'Actif' | 'Inactif' | 'Archivé';
+
+/** Profils qui consultent un tableau de bord. */
+export type Profil = 'admin-rh' | 'manager' | 'direction-generale';
+
+export const LIBELLES_PROFILS: Record<Profil, string> = {
+  'admin-rh': 'Administrateur RH',
+  manager: 'Manager',
+  'direction-generale': 'Direction générale',
+};
+
+/** Modèle de base (point de départ) d'un tableau de bord. */
+export type ModeleBase = 'vide' | 'direction-generale' | 'admin-rh' | 'manager';
+
+export interface Gabarit {
+  id: ModeleBase;
+  libelle: string;
+  description: string;
+  /** Indicateurs ajoutés à la création. */
+  indicateurs: string[];
+  /** Profils proposés par défaut. */
+  profils: Profil[];
+}
 
 /** Section d'un tableau de bord : reprend une section du catalogue, renommable pour ce tableau. */
 export interface SectionTableau {
@@ -12,7 +34,7 @@ export interface SectionTableau {
 export interface Widget {
   id: string;
   indicateurId: string;
-  /** Titre / description personnalisés ; absents = ceux du catalogue (« Réinitialiser » les efface). */
+  /** Titre / description personnalisés ; absents = ceux du catalogue. */
   titre?: string;
   description?: string;
   sectionId: string;
@@ -25,29 +47,25 @@ export interface TableauDeBord {
   libelle: string;
   description: string;
   statut: StatutTableauDeBord;
-  /** Seule règle d'accès : les employés de cette population voient le tableau de bord. `null` : population supprimée. */
+  /** Population / scope : périmètre de données de tous les graphes. `null` : population supprimée. */
   populationId: string | null;
   /**
    * Version des règles de la population conservée par ce tableau quand il a été exclu d'une modification de la population
    * (modale d'impact) ; absente = le tableau suit la version courante.
    */
   reglesFigees?: ReglesPopulation;
+  modele: ModeleBase;
+  profils: Profil[];
   sections: SectionTableau[];
   widgets: Widget[];
-  creePar: AuteurPopulation;
   /** Date de création, au format ISO (AAAA-MM-JJ). */
   creeLe: string;
-  /** Vrai une fois le tableau prévisualisé : condition pour l'activer. */
-  previsualise: boolean;
 }
 
-/** Informations générales saisies dans le formulaire d'un tableau de bord. */
+/** Informations saisies dans la modale de création / modification. */
 export interface TableauDeBordSaisie {
   libelle: string;
   description: string;
   statut: StatutTableauDeBord;
   populationId: string;
 }
-
-/** Point de départ d'un nouveau tableau de bord : V0 pré-remplie (par défaut), tableau vide ou copie d'un existant. */
-export type PointDeDepart = { type: 'v0' } | { type: 'vide' } | { type: 'copie'; sourceId: string };

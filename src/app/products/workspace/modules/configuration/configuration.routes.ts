@@ -9,16 +9,6 @@ export const CONFIGURATION_ROUTES: Routes = [
     title: 'Population',
   },
   {
-    path: 'tableaux-de-bord/nouveau',
-    loadComponent: () => import('./tableaux-de-bord/tableau-de-bord-form-page.component').then((m) => m.TableauDeBordFormPageComponent),
-    title: 'Créer un tableau de bord',
-  },
-  {
-    path: 'tableaux-de-bord/:id/modifier',
-    loadComponent: () => import('./tableaux-de-bord/tableau-de-bord-form-page.component').then((m) => m.TableauDeBordFormPageComponent),
-    title: 'Modifier le tableau de bord',
-  },
-  {
     path: 'tableaux-de-bord/:id',
     loadComponent: () =>
       import('./tableaux-de-bord/tableau-de-bord-composition-page.component').then((m) => m.TableauDeBordCompositionPageComponent),

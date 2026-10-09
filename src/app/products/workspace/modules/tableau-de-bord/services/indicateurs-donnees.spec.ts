@@ -17,22 +17,31 @@ describe('indicateurs-donnees', () => {
     expect(filtrerEmployes(EMPLOYES, []).length).toBe(EMPLOYES.length);
   });
 
-  it('KPI effectif : compte les actifs du périmètre filtré', () => {
-    expect(calculerDonnees(ind('ind-effectif-total'), EMPLOYES, [], SERIES_INDICATEURS).valeur).toBe(20);
+  it('effectif total : compte les actifs du périmètre filtré, avec sa tendance', () => {
+    const donnees = calculerDonnees(ind('ind-effectif-total'), EMPLOYES, [], SERIES_INDICATEURS);
+    expect(donnees.valeur).toBe(20);
+    expect(donnees.tendance).toEqual({ valeur: 13, periode: 'ce mois', hausseFavorable: true });
     expect(calculerDonnees(ind('ind-effectif-total'), EMPLOYES, ['site:Paris'], SERIES_INDICATEURS).valeur).toBe(4);
   });
 
-  it('répartition : regroupe les employés filtrés par valeur du champ', () => {
-    const donnees = calculerDonnees(ind('ind-repartition-site'), EMPLOYES, [], SERIES_INDICATEURS);
-    expect(donnees.libelles).toEqual(['Abidjan', 'Dakar', 'Paris', 'Thiès']);
-    expect(donnees.series[0].valeurs).toEqual([6, 6, 5, 6]);
-    expect(calculerDonnees(ind('ind-repartition-filiale'), EMPLOYES, ['filiale:France'], SERIES_INDICATEURS).libelles).toEqual(['France']);
+  it('ancienneté moyenne : en années, à une décimale', () => {
+    const { valeur, unite } = calculerDonnees(ind('ind-anciennete-moyenne'), EMPLOYES, [], SERIES_INDICATEURS);
+    expect(unite).toBe('ans');
+    expect(valeur).toBeGreaterThan(2);
+    expect(valeur! * 10).toBe(Math.round(valeur! * 10));
+  });
+
+  it('répartition H/F : regroupe les employés filtrés par sexe', () => {
+    const donnees = calculerDonnees(ind('ind-repartition-hf'), EMPLOYES, [], SERIES_INDICATEURS);
+    expect(donnees.libelles).toEqual(['Femme', 'Homme']);
+    expect(donnees.series[0].valeurs).toEqual([12, 11]);
   });
 
   it('série : renvoie une copie de la série fictive', () => {
-    const donnees = calculerDonnees(ind('ind-entretiens'), EMPLOYES, [], SERIES_INDICATEURS);
-    expect(donnees).toEqual(jasmine.objectContaining({ valeur: 16, max: 23 }));
+    const donnees = calculerDonnees(ind('ind-delai-recrutement'), EMPLOYES, [], SERIES_INDICATEURS);
+    expect(donnees).toEqual(jasmine.objectContaining({ valeur: 32, unite: 'jours' }));
+    expect(donnees.tendance?.hausseFavorable).toBeFalse();
     donnees.valeur = 0;
-    expect(SERIES_INDICATEURS.find((s) => s.id === 'entretiens')!.donnees.valeur).toBe(16);
+    expect(SERIES_INDICATEURS.find((s) => s.id === 'delai-recrutement')!.donnees.valeur).toBe(32);
   });
 });

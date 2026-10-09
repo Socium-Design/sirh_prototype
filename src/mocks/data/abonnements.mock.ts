@@ -1,4 +1,5 @@
-import type { ProduitSirh } from '../../app/products/workspace/modules/tableau-de-bord/models/indicateur.model';
-
-/** Produits souscrits par le client du prototype : les indicateurs des autres produits sont grisés dans la Bibliothèque. */
-export const PRODUITS_SOUSCRITS: ProduitSirh[] = ['workspace', 'perf', 'workflow'];
+/**
+ * Indicateurs d'options que le client du prototype n'a pas souscrites : ils restent visibles dans la Bibliothèque,
+ * avec un cadenas (« Produit non souscrit »), mais ne peuvent pas être ajoutés.
+ */
+export const INDICATEURS_NON_SOUSCRITS: string[] = ['ind-cout-embauche', 'ind-charges-patronales'];
