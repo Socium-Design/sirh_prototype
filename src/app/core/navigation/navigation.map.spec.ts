@@ -17,6 +17,7 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/workspace/employes')).toBe('workspace-employes');
     expect(navItemFromUrl('/workspace/employes/?q=a#top')).toBe('workspace-employes');
     expect(navItemFromUrl('/perf/evaluation')).toBe('perfs-evaluations');
+    expect(navItemFromUrl('/workspace/tableau-de-bord?tableau=tdb-3')).toBe('workspace-tableau-de-bord');
     expect(navItemFromUrl('/workspace/carrieres')).toBeUndefined();
   });
 

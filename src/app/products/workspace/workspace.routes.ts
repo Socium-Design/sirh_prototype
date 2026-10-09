@@ -11,6 +11,10 @@ export const WORKSPACE_ROUTES: Routes = [
   { path: 'employes', component: EmployesPageComponent, title: 'Employés' },
   { path: 'carrieres', component: CarrieresPageComponent, title: 'Carrières' },
   {
+    path: 'tableau-de-bord',
+    loadChildren: () => import('./modules/tableau-de-bord/tableau-de-bord.routes').then((m) => m.TABLEAU_DE_BORD_ROUTES),
+  },
+  {
     path: 'configuration',
     loadChildren: () => import('./modules/configuration/configuration.routes').then((m) => m.CONFIGURATION_ROUTES),
   },
