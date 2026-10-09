@@ -8,3 +8,8 @@
 .impact__liste {
   gap: var(--bridges-position-gap-sm);
 }
+
+.impact__compteur {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-secondary);
+}

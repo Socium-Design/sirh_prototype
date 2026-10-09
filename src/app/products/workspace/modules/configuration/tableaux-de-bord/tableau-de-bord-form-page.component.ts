@@ -29,7 +29,7 @@ import { EmployesService } from '../../employes/services/employes.service';
 import type { Indicateur } from '../../tableau-de-bord/models/indicateur.model';
 import type { PointDeDepart, StatutTableauDeBord, TableauDeBord, TableauDeBordSaisie } from '../../tableau-de-bord/models/tableau-de-bord.model';
 import { TableauxDeBordService } from '../../tableau-de-bord/services/tableaux-de-bord.service';
-import { LIBELLES_CHAMPS, LIBELLES_OPERATEURS, type Population } from '../populations/models/population.model';
+import { LIBELLES_CHAMPS, libelleCondition, type Population } from '../populations/models/population.model';
 import { employesCouverts } from '../populations/services/population-regles';
 import { PopulationsService } from '../populations/services/populations.service';
 
@@ -261,14 +261,14 @@ export class TableauDeBordFormPageComponent {
       } else if (this.id) {
         const tableau = this.tableau();
         if (!tableau) return this.retourListe();
-        this.form.patchValue({ libelle: tableau.libelle, description: tableau.description, statut: tableau.statut, populationId: tableau.populationId });
+        this.form.patchValue({ libelle: tableau.libelle, description: tableau.description, statut: tableau.statut, populationId: tableau.populationId ?? '' });
       }
       this.form.controls.libelle.updateValueAndValidity();
     });
   }
 
   protected libelleCondition(c: Population['conditions'][number]): string {
-    return `${LIBELLES_CHAMPS[c.champ]} ${LIBELLES_OPERATEURS[c.operateur].toLowerCase()} ${c.valeur}`;
+    return libelleCondition(c);
   }
 
   protected suivant(): void {

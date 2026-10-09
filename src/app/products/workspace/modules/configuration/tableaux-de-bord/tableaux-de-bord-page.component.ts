@@ -124,7 +124,7 @@ export class TableauxDeBordPageComponent {
   ]);
 
   protected readonly lignes = computed<LigneTableau[]>(() =>
-    this.tableaux().map((t) => ({ ...t, populationNom: this.populations().get(t.populationId) ?? '—', activable: peutEtreActive(t) })),
+    this.tableaux().map((t) => ({ ...t, populationNom: (t.populationId && this.populations().get(t.populationId)) || '—', activable: peutEtreActive(t) })),
   );
   protected readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();

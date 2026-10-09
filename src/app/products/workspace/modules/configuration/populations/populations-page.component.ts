@@ -14,19 +14,16 @@ import {
   SocMenuItemIcon,
   SocMessage,
   SocMessageContent,
-  SocTag,
-  SocTooltip,
-  SocTooltipLabel,
   type DataTableCellContext,
   type DataTableColumn,
   type DialogAction,
 } from '@socium-design/angular-components';
-import { LucideEye, LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
+import { LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
 import { forkJoin } from 'rxjs';
-import { SessionService } from '../../../../../core/session/session.service';
 import { extrait } from '../../../../../shared/utils/texte';
 import type { Employe } from '../../employes/models/employe.model';
 import { EmployesService } from '../../employes/services/employes.service';
+import { PopulationFormDialogComponent, type PopulationEnregistree } from './components/population-form-dialog.component';
 import { PopulationImpactDialogComponent } from './components/population-impact-dialog.component';
 import type { Population, PopulationUsage } from './models/population.model';
 import { employesCouverts } from './services/population-regles';
@@ -35,64 +32,52 @@ import { PopulationsService } from './services/populations.service';
 interface LignePopulation extends Population {
   nbEmployes: number;
   usages: PopulationUsage[];
-  supprimable: boolean;
 }
 
+/** « 1 personne », « 12 personnes ». */
+export const personnes = (n: number): string => `${n} personne${n > 1 ? 's' : ''}`;
+
 /**
- * Workspace > Configuration > onglet Populations — liste des populations (groupes d'employés servant de périmètre aux KPIs).
- * Contenu d'onglet : affiché dans la page Configuration, il n'a pas de template de page à lui.
+ * Workspace > Configuration > onglet Populations — liste des populations (groupes d'employés servant de périmètre aux
+ * tableaux de bord). Création et modification en modale. Contenu d'onglet : pas de template de page à lui.
  */
 @Component({
   selector: 'app-populations-page',
-  styles: `.populations__vide { display: block; margin-top: var(--bridges-position-gap-md); }`,
+  styles: `.populations__message { display: block; margin-top: var(--bridges-position-gap-md); }`,
   imports: [
-    SocBadge, SocButton, SocButtonLeftIcon, SocDataTable, SocDataTableBadge, SocDataTableActions,
-    SocMenu, SocMenuItem, SocMenuItemIcon, SocTooltip, SocTooltipLabel, SocDialog, SocMessage, SocMessageContent,
-    PopulationImpactDialogComponent, SocTag, LucidePlus, LucidePencil, LucideTrash, LucideEye,
+    SocBadge, SocButton, SocButtonLeftIcon, SocDataTable, SocDataTableBadge, SocDataTableActions, SocMenu, SocMenuItem, SocMenuItemIcon,
+    SocDialog, SocMessage, SocMessageContent, PopulationFormDialogComponent, PopulationImpactDialogComponent, LucidePlus, LucidePencil, LucideTrash,
   ],
   template: `
-    <ng-template #employesCell let-row>
-      <!-- En rouge quand la population ne couvre personne. -->
-      @if (row.nbEmployes) {
-        {{ row.nbEmployes }}
-      } @else {
-        <soc-tag color="error">0</soc-tag>
-      }
+    <ng-template #voirCell let-row>
+      <button socButton variant="secondary" data-testid="voir" (click)="voir(row)">Voir</button>
     </ng-template>
 
     <ng-template #actionsMenu let-row let-close="close">
       <soc-menu>
-        <button socMenuItem label="Voir détails" (click)="close(); voirDetails(row)">
-          <svg lucideEye socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
-        </button>
         <button socMenuItem label="Modifier" (click)="close(); modifier(row)">
           <svg lucidePencil socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
         </button>
-        @if (row.supprimable) {
-          <button socMenuItem label="Supprimer" (click)="close(); demanderSuppression(row)">
-            <svg lucideTrash socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
-          </button>
-        } @else {
-          <soc-tooltip position="left">
-            <button socMenuItem label="Supprimer" disabled>
-              <svg lucideTrash socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
-            </button>
-            <span socTooltipLabel>Seule la personne qui l'a créée ({{ row.creePar.nom }}) peut supprimer cette population.</span>
-          </soc-tooltip>
-        }
+        <button socMenuItem label="Supprimer" (click)="close(); demanderSuppression(row)">
+          <svg lucideTrash socMenuItemIcon class="size-full" [strokeWidth]="1.5"></svg>
+        </button>
       </soc-menu>
     </ng-template>
 
+    @if (message()) {
+      <soc-message class="populations__message" variant="inline" status="success">
+        <span socMessageContent data-testid="message">{{ message() }}</span>
+      </soc-message>
+    }
+
     <soc-data-table
       title="Populations"
-      subtitle="Groupes d'employés définis par règles, réutilisables dans les dashboards et les modules."
+      subtitle="Groupes d'employés définis par des conditions, utilisés comme périmètre des tableaux de bord."
       [columns]="columns()"
       [rows]="pageRows()"
       [rowKey]="rowKey"
       [searchable]="true"
       (search)="onSearch($event)"
-      [rowClickable]="true"
-      (rowClick)="voirDetails($event)"
       [rowActionsMenu]="actionsMenu"
       [pagination]="pagination()"
       (pageChange)="page.set($event)"
@@ -101,23 +86,19 @@ interface LignePopulation extends Population {
       <soc-badge socDataTableBadge color="primary">{{ lignes().length }}</soc-badge>
       <button socButton socDataTableActions (click)="creer()">
         <svg lucidePlus socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
-        Créer une population
+        Nouvelle population
       </button>
     </soc-data-table>
     @if (charge() && !filtered().length) {
-      <soc-message class="populations__vide" variant="inline" status="info">
+      <soc-message class="populations__message" variant="inline" status="info">
         <span socMessageContent>{{ query() ? 'Aucune population ne correspond à « ' + query() + ' ».' : 'Aucune population pour le moment.' }}</span>
       </soc-message>
     }
 
-    <soc-dialog
-      [open]="!!aConfirmer()"
-      title="Supprimer la population"
-      [primaryAction]="confirmerSuppression"
-      [secondaryAction]="annulerSuppression"
-      (close)="aConfirmer.set(null)"
-    >
-      <p>La population « {{ aConfirmer()?.nom }} » n'est utilisée par aucun élément. Elle sera définitivement supprimée.</p>
+    <app-population-form-dialog [open]="formulaireOuvert()" [population]="enModification()" (enregistre)="apresEnregistrement($event)" (annule)="fermerFormulaire()" />
+
+    <soc-dialog [open]="!!aConfirmer()" title="Supprimer la population ?" [primaryAction]="confirmerSuppression" [secondaryAction]="annulerSuppression" (close)="aConfirmer.set(null)">
+      <p>« {{ aConfirmer()?.nom }} » sera définitivement supprimée.</p>
     </soc-dialog>
 
     @if (impact(); as ligne) {
@@ -135,40 +116,38 @@ interface LignePopulation extends Population {
 export class PopulationsPageComponent {
   private readonly router = inject(Router);
   private readonly service = inject(PopulationsService);
-  private readonly session = inject(SessionService);
   private readonly employes = toSignal(inject(EmployesService).getAll(), { initialValue: [] as Employe[] });
 
   private readonly populations = signal<Population[]>([]);
-  private readonly usages = signal<PopulationUsage[]>([]);
+  private readonly usages = signal<(PopulationUsage & { populationId: string })[]>([]);
   protected readonly charge = signal(false);
+  protected readonly message = signal<string | null>(null);
 
   protected readonly rowKey = (p: LignePopulation) => p.id;
   protected readonly query = signal('');
   protected readonly page = signal(1);
   protected readonly pageSize = signal(10);
+  protected readonly formulaireOuvert = signal(false);
+  /** Population en cours de modification ; `null` en création. */
+  protected readonly enModification = signal<Population | null>(null);
   protected readonly aConfirmer = signal<LignePopulation | null>(null);
   protected readonly impact = signal<LignePopulation | null>(null);
 
-  private readonly employesCell = viewChild.required<TemplateRef<DataTableCellContext<LignePopulation>>>('employesCell');
+  private readonly voirCell = viewChild.required<TemplateRef<DataTableCellContext<LignePopulation>>>('voirCell');
   protected readonly columns = computed<DataTableColumn<LignePopulation>[]>(() => [
     { key: 'nom', header: 'Nom', render: (p) => p.nom },
-    { key: 'description', header: 'Description', render: (p) => extrait(p.description) },
-    { key: 'regles', header: 'Règles', render: (p) => String(p.conditions.length) },
-    { key: 'employes', header: 'Employés couverts', render: this.employesCell() },
-    { key: 'usages', header: 'Utilisée par', render: (p) => (p.usages.length ? `${p.usages.length} élément${p.usages.length > 1 ? 's' : ''}` : '—') },
-    { key: 'creePar', header: 'Créée par', render: (p) => p.creePar.nom },
-    { key: 'modifieeLe', header: 'Modifiée le', render: (p) => new Date(p.modifieeLe).toLocaleDateString('fr-FR') },
+    { key: 'description', header: 'Description', render: (p) => extrait(p.description, 60) },
+    { key: 'effectif', header: 'Effectif concerné', render: (p) => personnes(p.nbEmployes) },
+    { key: 'voir', header: '', render: this.voirCell() },
   ]);
 
-  protected readonly lignes = computed<LignePopulation[]>(() => {
-    const email = this.session.user().email;
-    return this.populations().map((p) => ({
+  protected readonly lignes = computed<LignePopulation[]>(() =>
+    this.populations().map((p) => ({
       ...p,
       nbEmployes: employesCouverts(p, this.employes()).length,
       usages: this.usages().filter((u) => u.populationId === p.id),
-      supprimable: p.creePar.email === email,
-    }));
-  });
+    })),
+  );
 
   protected readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -201,28 +180,43 @@ export class PopulationsPageComponent {
   }
 
   protected creer(): void {
-    this.router.navigate(['/workspace/configuration/populations/nouvelle']);
-  }
-
-  /** Détail en lecture seule : nom, description, filtres (pas les tableaux de bord qui l'utilisent). */
-  protected voirDetails(ligne: LignePopulation): void {
-    this.router.navigate(['/workspace/configuration/populations', ligne.id]);
+    this.message.set(null);
+    this.enModification.set(null);
+    this.formulaireOuvert.set(true);
   }
 
   protected modifier(ligne: LignePopulation): void {
-    this.router.navigate(['/workspace/configuration/populations', ligne.id, 'modifier']);
+    this.message.set(null);
+    this.enModification.set(this.populations().find((p) => p.id === ligne.id) ?? null);
+    this.formulaireOuvert.set(true);
   }
 
-  /** Utilisée quelque part → modale d'impact ; sinon simple confirmation. */
+  protected voir(ligne: LignePopulation): void {
+    this.router.navigate(['/workspace/configuration/populations', ligne.id]);
+  }
+
+  protected fermerFormulaire(): void {
+    this.formulaireOuvert.set(false);
+  }
+
+  protected apresEnregistrement({ creation }: PopulationEnregistree): void {
+    this.formulaireOuvert.set(false);
+    // Pas de toast dans le kit (GAP-DS #12) : message en tête de liste.
+    if (creation) this.message.set('Population créée avec succès');
+    this.charger();
+  }
+
+  /** Utilisée par des tableaux de bord → modale d'impact ; sinon simple confirmation. */
   protected demanderSuppression(ligne: LignePopulation): void {
+    this.message.set(null);
     if (ligne.usages.length) this.impact.set(ligne);
     else this.aConfirmer.set(ligne);
   }
 
-  protected supprimer(ligne: LignePopulation, usagesRetires: string[]): void {
+  protected supprimer(ligne: LignePopulation, tableauxRetires: string[]): void {
     this.aConfirmer.set(null);
     this.impact.set(null);
-    this.service.remove(ligne.id, usagesRetires).subscribe(() => this.charger());
+    this.service.remove(ligne.id, tableauxRetires).subscribe(() => this.charger());
   }
 
   private charger(): void {

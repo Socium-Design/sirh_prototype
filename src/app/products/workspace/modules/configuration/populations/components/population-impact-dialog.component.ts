@@ -5,8 +5,8 @@ import type { PopulationUsage } from '../models/population.model';
 export type ModeImpact = 'modification' | 'suppression';
 
 /**
- * Modale d'impact : liste les éléments (dashboards, modules) qui utilisent la population, tous cochés par défaut.
- * Émet `confirm` avec les ids cochés — ceux qui reçoivent les nouvelles règles (modification) ou perdent la population (suppression).
+ * Modale d'impact : liste les tableaux de bord qui utilisent la population, tous cochés par défaut.
+ * Émet `confirm` avec les ids cochés — ceux qui reçoivent la modification ou perdent la population (suppression).
  */
 @Component({
   selector: 'app-population-impact-dialog',
@@ -15,19 +15,15 @@ export type ModeImpact = 'modification' | 'suppression';
   template: `
     <soc-dialog [open]="open()" [title]="titre()" [primaryAction]="primaryAction()" [secondaryAction]="secondaryAction" (close)="cancel.emit()">
       <div class="impact">
-        <p>{{ explication() }}</p>
+        <p>« {{ populationNom() }} » est utilisée dans les dashboards suivants. Cochez ceux sur lesquels l'impact s'appliquera.</p>
         <div class="impact__liste">
           @for (usage of usages(); track usage.id) {
-            <soc-checkbox
-              [id]="'impact-' + usage.id"
-              [label]="usage.libelle + ' — ' + usage.type + ' ' + usage.produit"
-              [checked]="selection().has(usage.id)"
-              (checkedChange)="basculer(usage.id, $event)"
-            />
+            <soc-checkbox [id]="'impact-' + usage.id" [label]="usage.libelle" [checked]="selection().has(usage.id)" (checkedChange)="basculer(usage.id, $event)" />
           }
         </div>
+        <p class="impact__compteur" data-testid="compteur-impact">{{ selection().size }} / {{ usages().length }} dashboards sélectionnés</p>
         @if (erreur()) {
-          <soc-message variant="inline" status="error"><span socMessageContent>Cochez au moins un élément pour supprimer la population.</span></soc-message>
+          <soc-message variant="inline" status="error"><span socMessageContent>Cochez au moins un dashboard.</span></soc-message>
         }
       </div>
     </soc-dialog>
@@ -53,18 +49,10 @@ export class PopulationImpactDialogComponent {
     });
   }
 
-  protected readonly titre = computed(() => (this.mode() === 'modification' ? 'Impact de la modification' : 'Impact de la suppression'));
-
-  protected readonly explication = computed(() => {
-    const n = this.usages().length;
-    const debut = `« ${this.populationNom()} » est utilisée par ${n} élément${n > 1 ? 's' : ''}.`;
-    return this.mode() === 'modification'
-      ? `${debut} Les éléments cochés appliqueront les nouvelles règles ; les éléments décochés conserveront la version actuelle.`
-      : `${debut} La population sera retirée des éléments cochés ; les éléments décochés la conserveront.`;
-  });
+  protected readonly titre = computed(() => (this.mode() === 'modification' ? 'Modifier la population ?' : 'Supprimer la population ?'));
 
   protected readonly primaryAction = computed<DialogAction>(() => ({
-    label: this.mode() === 'modification' ? 'Appliquer' : 'Supprimer',
+    label: this.mode() === 'modification' ? 'Appliquer les modifications' : 'Supprimer quand même',
     onClick: () => this.valider(),
   }));
   protected readonly secondaryAction: DialogAction = { label: 'Annuler', onClick: () => this.cancel.emit() };

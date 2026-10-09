@@ -1,4 +1,4 @@
-import type { AuteurPopulation } from '../../configuration/populations/models/population.model';
+import type { AuteurPopulation, ReglesPopulation } from '../../configuration/populations/models/population.model';
 
 export type StatutTableauDeBord = 'Actif' | 'Inactif' | 'Archivé';
 
@@ -25,8 +25,13 @@ export interface TableauDeBord {
   libelle: string;
   description: string;
   statut: StatutTableauDeBord;
-  /** Seule règle d'accès : les employés de cette population voient le tableau de bord. */
-  populationId: string;
+  /** Seule règle d'accès : les employés de cette population voient le tableau de bord. `null` : population supprimée. */
+  populationId: string | null;
+  /**
+   * Version des règles de la population conservée par ce tableau quand il a été exclu d'une modification de la population
+   * (modale d'impact) ; absente = le tableau suit la version courante.
+   */
+  reglesFigees?: ReglesPopulation;
   sections: SectionTableau[];
   widgets: Widget[];
   creePar: AuteurPopulation;

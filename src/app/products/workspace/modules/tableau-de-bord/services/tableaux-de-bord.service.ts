@@ -3,6 +3,8 @@ import { Observable, delay, of, throwError } from 'rxjs';
 import { INDICATEURS, SECTIONS_CATALOGUE } from '../../../../../../mocks/data/indicateurs.mock';
 import { INDICATEURS_V0, TABLEAUX_DE_BORD } from '../../../../../../mocks/data/tableaux-de-bord.mock';
 import { SessionService } from '../../../../../core/session/session.service';
+import type { ReglesPopulation } from '../../configuration/populations/models/population.model';
+import { copierRegles } from '../../configuration/populations/services/population-regles';
 import type { Indicateur } from '../models/indicateur.model';
 import type { PointDeDepart, SectionTableau, StatutTableauDeBord, TableauDeBord, TableauDeBordSaisie, Widget } from '../models/tableau-de-bord.model';
 
@@ -122,6 +124,27 @@ export class TableauxDeBordService {
       const section = t.sections.find((s) => s.id === sectionId);
       if (section) section.libelle = libelle.trim();
     });
+  }
+
+  /**
+   * Modification d'une population : les tableaux `idsSuivants` suivent la nouvelle version ; les autres tableaux de cette
+   * population gardent l'ancienne (figée), comme choisi dans la modale d'impact.
+   */
+  appliquerModificationPopulation(populationId: string, idsSuivants: string[], anciennes: ReglesPopulation): Observable<void> {
+    for (const t of this.tableaux.filter((t) => t.populationId === populationId)) {
+      if (idsSuivants.includes(t.id)) delete t.reglesFigees;
+      else t.reglesFigees ??= copierRegles(anciennes);
+    }
+    return of(undefined).pipe(delay(LATENCE));
+  }
+
+  /** Suppression d'une population : les tableaux `ids` la perdent (population « — »). */
+  retirerPopulation(populationId: string, ids: string[]): Observable<void> {
+    for (const t of this.tableaux.filter((t) => t.populationId === populationId && ids.includes(t.id))) {
+      t.populationId = null;
+      delete t.reglesFigees;
+    }
+    return of(undefined).pipe(delay(LATENCE));
   }
 
   /** Change le statut ; l'activation est refusée tant que le tableau n'a pas été prévisualisé. */

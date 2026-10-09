@@ -2,21 +2,11 @@ import { Routes } from '@angular/router';
 import { ONGLETS_CONFIGURATION } from './configuration.tabs';
 
 export const CONFIGURATION_ROUTES: Routes = [
-  // Formulaires plein écran (soc-page-form n'a pas d'emplacement d'onglets) : déclarés avant la page à onglets.
-  {
-    path: 'populations/nouvelle',
-    loadComponent: () => import('./populations/population-form-page.component').then((m) => m.PopulationFormPageComponent),
-    title: 'Créer une population',
-  },
+  // Pages hors onglets (détail, composition), déclarées avant la page à onglets. Les formulaires sont des modales.
   {
     path: 'populations/:id',
     loadComponent: () => import('./populations/population-detail-page.component').then((m) => m.PopulationDetailPageComponent),
     title: 'Population',
-  },
-  {
-    path: 'populations/:id/modifier',
-    loadComponent: () => import('./populations/population-form-page.component').then((m) => m.PopulationFormPageComponent),
-    title: 'Modifier la population',
   },
   {
     path: 'tableaux-de-bord/nouveau',

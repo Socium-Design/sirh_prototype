@@ -53,7 +53,7 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../tableau-
 import { CatalogueService } from '../../tableau-de-bord/services/catalogue.service';
 import { TableauxDeBordService } from '../../tableau-de-bord/services/tableaux-de-bord.service';
 import { construireSections, libelleFiltre, type SectionVue, type WidgetVue } from '../../tableau-de-bord/services/widgets';
-import { LIBELLES_CHAMPS, LIBELLES_OPERATEURS, type Population } from '../populations/models/population.model';
+import { LIBELLES_CHAMPS, libelleCondition, type Population } from '../populations/models/population.model';
 import { employesCouverts, valeursDuChamp } from '../populations/services/population-regles';
 import { PopulationsService } from '../populations/services/populations.service';
 
@@ -447,7 +447,7 @@ export class TableauDeBordCompositionPageComponent {
   }
 
   protected libelleCondition(c: Population['conditions'][number]): string {
-    return `${LIBELLES_CHAMPS[c.champ]} ${LIBELLES_OPERATEURS[c.operateur].toLowerCase()} ${c.valeur}`;
+    return libelleCondition(c);
   }
 
   /** « Modifier » ↔ « Terminer » : le mode est dans l'URL (`?mode=edition`). */

@@ -65,8 +65,8 @@ describe('TableauDeBordFormPageComponent', () => {
       remplir({ populationId: 'pop-6' });
       const criteres = el().querySelector('[data-testid="criteres"]')!;
       expect(criteres.textContent).toContain('Toutes les conditions (ET)');
-      expect(criteres.textContent).toContain('Département est Ressources humaines');
-      expect(criteres.querySelector('[data-testid="nb-couverts"]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('3 employés couverts');
+      expect(criteres.textContent).toContain('Site est Dakar, Thiès');
+      expect(criteres.querySelector('[data-testid="nb-couverts"]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('7 employés couverts');
       expect(bouton('Modifier les critères')).toBeDefined();
     });
 

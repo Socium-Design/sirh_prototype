@@ -156,7 +156,7 @@ describe('TableauDeBordCompositionPageComponent (Bibliothèque, édition)', () =
       const infos = el().querySelector('[data-testid="infos"]')!;
       expect(infos.textContent).toContain('Dashboard effectifs internationaux');
       expect(infos.textContent).toContain('Filiales hors Sénégal');
-      expect(infos.textContent).toContain('Filiale est France');
+      expect(infos.textContent).toContain("Filiale est Côte d'Ivoire, France");
       expect(infos.textContent).toContain('11 employé(s)');
       expect(el().querySelector('[data-testid="catalogue"]')).toBeNull();
       expect(el().querySelectorAll('button[aria-label^="Actions du widget"]').length).toBe(0);
