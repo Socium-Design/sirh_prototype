@@ -169,6 +169,46 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(bouton().getAttribute('aria-label')).toBe('Enregistrer');
     }));
 
+    it('quitter sans changement : pas de confirmation', () => {
+      expect(page['peutQuitter']()).toBeTrue();
+      expect(modale()).toBeNull();
+    });
+
+    it('changements non enregistrés : « Quitter sans enregistrer ? », Rester ou Quitter', fakeAsync(() => {
+      (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const reponses: boolean[] = [];
+      const bouton = (texte: string) => [...modale()!.querySelectorAll('button')].find((b) => b.textContent?.trim() === texte) as HTMLButtonElement;
+
+      page['peutQuitter']().subscribe((r: boolean) => reponses.push(r));
+      fixture.detectChanges();
+      expect(modale()?.textContent).toContain('Quitter sans enregistrer ?');
+      expect(modale()?.textContent).toContain("Les modifications de « Dashboard Managers » n'ont pas été enregistrées.");
+      bouton('Rester sur la page').click();
+      fixture.detectChanges();
+      expect(reponses).toEqual([false]);
+      expect(modale()).toBeNull();
+
+      page['peutQuitter']().subscribe((r: boolean) => reponses.push(r));
+      fixture.detectChanges();
+      bouton('Quitter sans enregistrer').click();
+      expect(reponses).toEqual([false, true]);
+
+      // Une fois enregistré, plus de confirmation ; annuler un changement aussi.
+      (el().querySelector('[data-testid="enregistrer"]') as HTMLButtonElement).click();
+      rafraichir();
+      expect(page['peutQuitter']()).toBeTrue();
+    }));
+
+    it('revenir à l’état enregistré lève la confirmation', () => {
+      (ligne('Pyramide des âges').querySelector('[aria-label="Ajouter Pyramide des âges"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(page['modifie']()).toBeTrue();
+      menu('Pyramide des âges', 'Retirer').click();
+      fixture.detectChanges();
+      expect(page['peutQuitter']()).toBeTrue();
+    });
+
     it('« Prévisualiser » : plein écran, KPI en haut puis graphes sur 2 colonnes, données simulées', () => {
       (el().querySelector('[data-testid="previsualiser"]') as HTMLButtonElement).click();
       fixture.detectChanges();

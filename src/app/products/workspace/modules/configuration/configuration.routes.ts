@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { ONGLETS_CONFIGURATION } from './configuration.tabs';
+import { quitterSansEnregistrer } from './tableaux-de-bord/quitter-sans-enregistrer.guard';
 
 export const CONFIGURATION_ROUTES: Routes = [
   // Pages hors onglets (détail, composition), déclarées avant la page à onglets. Les formulaires sont des modales.
@@ -12,6 +13,7 @@ export const CONFIGURATION_ROUTES: Routes = [
     path: 'tableaux-de-bord/:id',
     loadComponent: () =>
       import('./tableaux-de-bord/tableau-de-bord-composition-page.component').then((m) => m.TableauDeBordCompositionPageComponent),
+    canDeactivate: [quitterSansEnregistrer],
     title: 'Composition du tableau de bord',
   },
   {

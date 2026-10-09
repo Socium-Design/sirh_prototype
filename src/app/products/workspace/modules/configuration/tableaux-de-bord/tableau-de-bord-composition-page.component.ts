@@ -10,6 +10,7 @@ import {
   SocButtonLeftIcon,
   SocCardGrid,
   SocCheckbox,
+  SocDialog,
   SocDrawerDetailItem,
   SocMenu,
   SocMenuItem,
@@ -26,9 +27,10 @@ import {
   SocTag,
   SocTooltip,
   SocTooltipLabel,
+  type DialogAction,
   type SelectOption,
 } from '@socium-design/angular-components';
-import { forkJoin, map } from 'rxjs';
+import { Subject, forkJoin, map, take, type Observable } from 'rxjs';
 import type { Employe } from '../../employes/models/employe.model';
 import { EmployesService } from '../../employes/services/employes.service';
 import { WidgetCarteComponent } from '../../tableau-de-bord/components/widget-carte.component';
@@ -43,6 +45,7 @@ import type { Population } from '../populations/models/population.model';
 import { PopulationsService } from '../populations/services/populations.service';
 import { BibliothequeComponent } from './components/bibliotheque.component';
 import { WidgetDialogComponent, type ModificationWidget } from './components/widget-dialog.component';
+import type { AvecChangementsNonEnregistres } from './quitter-sans-enregistrer.guard';
 
 const LISTE = '/workspace/configuration/tableaux-de-bord';
 const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
@@ -57,10 +60,11 @@ const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
  */
 @Component({
   selector: 'app-tableau-de-bord-composition-page',
+  host: { '(window:beforeunload)': 'avertirAvantDechargement($event)' },
   imports: [
     CdkDropListGroup, CdkDropList, SocPageDetails, SocPageBreadcrumb, SocPageTag, SocPageActions, SocBreadcrumb, SocBadge, SocTag, SocButton,
     SocButtonLeftIcon, SocTooltip, SocTooltipLabel, SocCardGrid, SocPopover, SocPopoverTrigger, SocMenu, SocMenuItem, SocMenuItemIcon, SocMessage,
-    SocMessageContent, SocDrawerDetailItem, SocSelect, SocCheckbox, WidgetCarteComponent, BibliothequeComponent, WidgetDialogComponent,
+    SocMessageContent, SocDialog, SocDrawerDetailItem, SocSelect, SocCheckbox, WidgetCarteComponent, BibliothequeComponent, WidgetDialogComponent,
     LucideEye, LucidePencil, LucideSave, LucideCheck, LucideEllipsis, LucideTrash,
   ],
   styleUrl: './tableau-de-bord-composition-page.component.scss',
@@ -217,11 +221,15 @@ const PROFILS = Object.keys(LIBELLES_PROFILS) as Profil[];
         </soc-page-details>
 
         <app-widget-dialog [vue]="widgetEdite()" [sections]="t.sections" [employes]="employes()" (enregistre)="sauverWidget($event)" (annule)="widgetEdite.set(null)" />
+
+        <soc-dialog [open]="confirmationQuitter()" title="Quitter sans enregistrer ?" [primaryAction]="quitter" [secondaryAction]="rester" (close)="repondre(false)">
+          <p data-testid="quitter">Les modifications de « {{ t.libelle }} » n'ont pas été enregistrées. Elles seront perdues si vous quittez la page.</p>
+        </soc-dialog>
       }
     }
   `,
 })
-export class TableauDeBordCompositionPageComponent {
+export class TableauDeBordCompositionPageComponent implements AvecChangementsNonEnregistres {
   private readonly router = inject(Router);
   private readonly service = inject(TableauxDeBordService);
   protected readonly employes = toSignal(inject(EmployesService).getAll(), { initialValue: [] as Employe[] });
@@ -238,6 +246,17 @@ export class TableauDeBordCompositionPageComponent {
   protected readonly brouillon = signal<TableauDeBord | undefined>(undefined);
   /** Vrai juste après « Enregistrer », jusqu'à la modification suivante (« Enregistré ✓ »). */
   protected readonly enregistre = signal(false);
+  /** Le brouillon diffère de la version enregistrée (graphes, sections, statut, profils). */
+  protected readonly modifie = computed(() => {
+    const brouillon = this.brouillon();
+    const enregistre = this.enregistreSurServeur();
+    return !!brouillon && !!enregistre && JSON.stringify(composition(brouillon)) !== JSON.stringify(composition(enregistre));
+  });
+  /** Confirmation « Quitter sans enregistrer ? » en cours, et la réponse attendue par la garde de sortie. */
+  protected readonly confirmationQuitter = signal(false);
+  private reponseQuitter?: Subject<boolean>;
+  protected readonly quitter: DialogAction = { label: 'Quitter sans enregistrer', onClick: () => this.repondre(true) };
+  protected readonly rester: DialogAction = { label: 'Rester sur la page', onClick: () => this.repondre(false) };
 
   private readonly indicateurs = signal<Indicateur[]>([]);
   private readonly series = signal<SerieIndicateur[]>([]);
@@ -349,6 +368,26 @@ export class TableauDeBordCompositionPageComponent {
     this.modifierBrouillon((t) => ({ ...t, profils: PROFILS.filter((p) => (p === profil ? coche : t.profils.includes(p))) }));
   }
 
+  /** Garde de sortie : sans changement non enregistré, on part ; sinon on demande confirmation. */
+  peutQuitter(): boolean | Observable<boolean> {
+    if (!this.modifie()) return true;
+    this.reponseQuitter?.complete();
+    this.reponseQuitter = new Subject<boolean>();
+    this.confirmationQuitter.set(true);
+    return this.reponseQuitter.pipe(take(1));
+  }
+
+  /** Fermeture ou rechargement de l'onglet avec des changements non enregistrés : avertissement du navigateur. */
+  protected avertirAvantDechargement(event: BeforeUnloadEvent): void {
+    if (this.modifie()) event.preventDefault();
+  }
+
+  protected repondre(quitter: boolean): void {
+    this.confirmationQuitter.set(false);
+    this.reponseQuitter?.next(quitter);
+    this.reponseQuitter = undefined;
+  }
+
   protected retourListe(): void {
     this.router.navigateByUrl(LISTE);
   }
@@ -360,3 +399,6 @@ export class TableauDeBordCompositionPageComponent {
     this.enregistre.set(false);
   }
 }
+
+/** Ce que « Enregistrer » persiste : sert à détecter les changements non enregistrés. */
+const composition = ({ widgets, sections, statut, profils }: TableauDeBord) => ({ widgets, sections, statut, profils });
