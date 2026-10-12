@@ -47,12 +47,19 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 **Quand un composant manque dans le kit :**
 
 1. Chercher dans Labs (README + référence générée).
-2. S'il n'y est pas : ne rien bricoler dans la page — signaler un `GAP-DS` et proposer de le créer dans Labs (dépôt
-   `design_system_angular`) ; attendre l'accord avant de le faire.
-3. Importer les composants Labs **uniquement** depuis `src/app/shared/labs/labs.ts` (jamais
+2. S'il n'y est pas : ne rien bricoler dans la page, et ne pas attendre d'accord. Directement :
+   - créer l'issue `GAP-DS` (labels `GAP-DS` et `labs`) dans `Socium-Design/design_system_angular` ;
+   - créer le composant dans Labs, dans `design_system_angular`, sur une branche `feature/labs-<nom>` (mêmes règles que
+     les autres composants Labs : tests, story, entrée dans `labs/README.md`) ;
+   - ouvrir une PR dans `design_system_angular` avec le lien de l'issue, sans la fusionner.
+3. En attendant la publication, utiliser le composant en local pour avancer sur la page ; la PR du prototype indique la
+   PR du design system dont elle dépend.
+4. Importer les composants Labs **uniquement** depuis `src/app/shared/labs/labs.ts` (jamais
    `@socium-design/angular-components/labs` directement dans une page) : `grep -r "shared/labs/labs" src` liste tous
    les usages, à mettre à jour lors d'une promotion (`SocLabsX` → `SocX` depuis le point d'entrée principal).
-4. Ne jamais promouvoir un composant Labs dans le kit officiel : décision de l'équipe design.
+5. Ne jamais fusionner ni créer de tag dans `design_system_angular` : la revue, la fusion et la publication sont faites
+   par les designers.
+6. Ne jamais promouvoir un composant Labs dans le kit officiel : décision de l'équipe design.
 
 | Composant Labs | Utilisé dans |
 |---|---|
