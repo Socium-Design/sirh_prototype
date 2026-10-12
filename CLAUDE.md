@@ -53,12 +53,19 @@ Quand un composant (ou une prop, une variante) manque dans le kit pendant la cr�
 1. **Chercher d'abord dans Labs** : `@socium-design/angular-components/labs` — lire
    `node_modules/@socium-design/angular-components/labs/README.md` et la section « Labs (expérimental) » de
    `docs/generated/components.md`.
-2. **S'il n'existe pas dans Labs : ne rien bricoler dans la page.** Le signaler comme `GAP-DS` et **proposer** de le
-   créer dans Labs, dans le dépôt `design_system_angular` — puis **attendre l'accord** avant de le faire.
-3. **Ne jamais importer un composant Labs comme s'il était stable** : tous les imports Labs passent par
+2. **S'il n'existe pas dans Labs : ne rien bricoler dans la page, et ne pas attendre d'accord.** Directement :
+   - créer l'issue `GAP-DS` (labels `GAP-DS` et `labs`) dans `Socium-Design/design_system_angular` ;
+   - créer le composant dans Labs, dans le dépôt `design_system_angular`, sur une branche `feature/labs-<nom>` — mêmes
+     règles que les autres composants Labs : tests, story, entrée dans `labs/README.md` ;
+   - ouvrir une PR dans `design_system_angular` avec le lien de l'issue, **sans la fusionner**.
+3. **En attendant la publication, utiliser le composant en local** pour avancer sur la page ; dans la PR du prototype,
+   **indiquer la PR du design system dont elle dépend**.
+4. **Ne jamais importer un composant Labs comme s'il était stable** : tous les imports Labs passent par
    `src/app/shared/labs/labs.ts` (point d'entrée unique, jamais `/labs` directement ailleurs), pour les retrouver
    d'un coup lors d'une promotion.
-4. **Ne jamais promouvoir un composant Labs dans le kit officiel** : c'est une décision de l'équipe design.
+5. **Ne jamais fusionner ni créer de tag dans `design_system_angular`** : la revue, la fusion et la publication sont
+   faites par les designers.
+6. **Ne jamais promouvoir un composant Labs dans le kit officiel** : c'est une décision de l'équipe design.
 
 La feuille de style du kit (`styles.css` : tokens, polices, styles des composants) est déjà chargée par `angular.json` ;
 aucune configuration Tailwind n'est nécessaire. Pour un style propre à l'application, utiliser le SCSS du composant et
@@ -109,7 +116,8 @@ unique et cohérent, partagé par tout le prototype.
 
 - [ ] Composants standalone, nouvelle syntaxe de contrôle (`@if`/`@for`)
 - [ ] Routes chargées en `loadChildren`, pas importées en dur
-- [ ] Aucun composant improvisé — tout vient du kit, de Labs (via `shared/labs/labs.ts`) ou est `GAP-DS`
+- [ ] Chaque composant vient du kit, de Labs (via `shared/labs/labs.ts`), ou d'un nouveau composant Labs créé pour
+  l'occasion : issue `GAP-DS` + PR du design system indiquées dans la PR du prototype
 - [ ] Entrée ajoutée dans `navigation.map.ts` ; `npm run build` et `npm run test:ci` verts
 - [ ] Page vérifiée dans le navigateur (actions, recherche, pagination, états vides), pas seulement compilée
 - [ ] Test de la page écrit
