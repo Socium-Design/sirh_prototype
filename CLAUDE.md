@@ -116,7 +116,8 @@ unique et cohérent, partagé par tout le prototype.
 
 - [ ] Composants standalone, nouvelle syntaxe de contrôle (`@if`/`@for`)
 - [ ] Routes chargées en `loadChildren`, pas importées en dur
-- [ ] Aucun composant improvisé — tout vient du kit, de Labs (via `shared/labs/labs.ts`) ou est `GAP-DS`
+- [ ] Chaque composant vient du kit, de Labs (via `shared/labs/labs.ts`), ou d'un nouveau composant Labs créé pour
+  l'occasion : issue `GAP-DS` + PR du design system indiquées dans la PR du prototype
 - [ ] Entrée ajoutée dans `navigation.map.ts` ; `npm run build` et `npm run test:ci` verts
 - [ ] Page vérifiée dans le navigateur (actions, recherche, pagination, états vides), pas seulement compilée
 - [ ] Test de la page écrit
