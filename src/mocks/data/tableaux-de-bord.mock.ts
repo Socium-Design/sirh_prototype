@@ -30,13 +30,16 @@ export const TABLEAUX_DE_BORD: TableauDeBord[] = [
     modele: 'admin-rh',
     sections: sections(),
     widgets: [
-      // « Répartition H/F » filtrée sur les actifs ET les sortis : par défaut, les filtres globaux excluent les sortis (conflit).
-      ...widgets('tdb-1', gabarit('admin-rh')).map((w) =>
-        w.indicateurId === 'ind-turnover-global'
-          ? { ...w, titre: 'Turnover mensuel', filtres: ['site:Dakar', 'site:Thiès'] }
-          : w.indicateurId === 'ind-repartition-hf'
-            ? { ...w, filtres: ['statut:Actif', 'statut:Inactif'] }
-            : w,
+      // Critères de filtre des cartes : « Répartition H/F » se filtre par statut — choisir « Inactif » contredit les filtres
+      // globaux par défaut (employés sortis exclus) : la carte le signale.
+      ...widgets('tdb-1', gabarit('admin-rh')).map((w): Widget =>
+        w.indicateurId === 'ind-effectif-total'
+          ? { ...w, filtres: ['filiale', 'site'] }
+          : w.indicateurId === 'ind-turnover-global'
+            ? { ...w, titre: 'Turnover mensuel', filtres: ['site'] }
+            : w.indicateurId === 'ind-repartition-hf'
+              ? { ...w, filtres: ['statut', 'site'] }
+              : w,
       ),
       {
         id: 'tdb-1-w10',

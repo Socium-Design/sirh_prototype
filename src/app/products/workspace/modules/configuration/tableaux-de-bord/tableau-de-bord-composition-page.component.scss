@@ -19,8 +19,7 @@
 }
 
 .actions,
-.section__entete,
-.widget__filtres {
+.section__entete {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -47,7 +46,8 @@
 }
 
 .infos__titre {
-  font-size: var(--bridges-size-text-text-size-xs);
+  // 11 px : entre les jetons tiny (10) et xs (12), comme les libellés compacts du panneau.
+  font-size: calc((var(--bridges-size-text-text-size-tiny) + var(--bridges-size-text-text-size-xs)) / 2);
   color: var(--bridges-color-text-secondary);
   letter-spacing: 0.04em;
 }
@@ -81,18 +81,8 @@
   color: var(--bridges-color-text-primary);
 }
 
-.widget__filtres {
-  gap: var(--bridges-position-gap-xs);
-}
-
-.widget__filtre-icone {
-  flex-shrink: 0;
-  width: var(--bridges-size-icon-xs);
-  height: var(--bridges-size-icon-xs);
-  color: var(--bridges-color-text-tertiary);
-}
-
-.widget__sans-filtre {
+// Nombre de KPI d'une section : petit texte gris à côté du titre.
+.section__compte {
   font-size: var(--bridges-size-text-text-size-xs);
   color: var(--bridges-color-text-secondary);
 }

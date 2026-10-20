@@ -1,3 +1,4 @@
+import type { ChampCondition } from '../../configuration/populations/models/population.model';
 import type { Indicateur } from '../models/indicateur.model';
 import type { TableauDeBord, Widget, WidgetWorkflow } from '../models/tableau-de-bord.model';
 import type { StatutDemande } from '../models/workflow.model';
@@ -44,7 +45,7 @@ export function modifierWidget(
   tableau: TableauDeBord,
   widgetId: string,
   indicateur: Indicateur,
-  changes: { titre: string; description: string; sectionId: string; filtres: string[]; populationId?: string; statuts?: StatutDemande[] },
+  changes: { titre: string; description: string; sectionId: string; filtres: ChampCondition[]; populationId?: string; statuts?: StatutDemande[] },
 ): TableauDeBord {
   const personnalisation = (valeur: string, parDefaut: string) => {
     const texte = valeur.trim();
@@ -66,7 +67,8 @@ export function modifierWidget(
         ...(populationId ? { populationId } : {}),
         ...(workflow ? { workflow } : {}),
         sectionId: changes.sectionId,
-        filtres: [...changes.filtres],
+        // Seuls les critères proposés par l'indicateur sont gardés.
+        filtres: changes.filtres.filter((c) => indicateur.filtresDisponibles.includes(c)),
       };
     }),
   };

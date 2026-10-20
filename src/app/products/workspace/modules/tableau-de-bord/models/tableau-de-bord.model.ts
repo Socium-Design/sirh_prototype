@@ -1,5 +1,5 @@
 import type { AppShellProduct } from '@socium-design/angular-components';
-import type { ReglesPopulation } from '../../configuration/populations/models/population.model';
+import type { ChampCondition, ReglesPopulation } from '../../configuration/populations/models/population.model';
 import type { StatutDemande } from './workflow.model';
 
 export type StatutTableauDeBord = 'Actif' | 'Inactif' | 'Archivé';
@@ -42,8 +42,11 @@ export interface Widget {
   titre?: string;
   description?: string;
   sectionId: string;
-  /** Filtres appliqués, au format `<champ>:<valeur>` (ex. `site:Dakar`). */
-  filtres: string[];
+  /**
+   * Critères de filtre de la carte (Filiale, Site, Département…), choisis dans « Modifier le KPI ». Chaque critère devient
+   * une liste déroulante dans la carte (« Site : Tous ») ; la valeur choisie est un état d'affichage, pas enregistré.
+   */
+  filtres: ChampCondition[];
   /** Filtre « Population » (KPI filtrables par population uniquement). */
   populationId?: string;
   /** Statistique de workflow personnalisé uniquement. */

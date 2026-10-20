@@ -1,22 +1,36 @@
 import type { Employe } from '../../employes/models/employe.model';
-import { LIBELLES_CHAMPS, type Population } from '../../configuration/populations/models/population.model';
-import { employesCouverts } from '../../configuration/populations/services/population-regles';
+import { LIBELLES_CHAMPS, type ChampCondition, type Population } from '../../configuration/populations/models/population.model';
+import { employesCouverts, valeursDuChamp } from '../../configuration/populations/services/population-regles';
 import type { DonneesGraphique, Indicateur, SerieIndicateur } from '../models/indicateur.model';
 import type { SectionTableau, TableauDeBord, Widget } from '../models/tableau-de-bord.model';
-import { LIBELLES_STATUTS_DEMANDE, type WorkflowPersonnalise } from '../models/workflow.model';
+import type { WorkflowPersonnalise } from '../models/workflow.model';
 import { FILTRES_GLOBAUX_PAR_DEFAUT, appliquerFiltresGlobaux, filtresEnConflit, type FiltresGlobaux } from './filtres-globaux';
-import { calculerDonnees, lireFiltre } from './indicateurs-donnees';
+import { calculerDonnees, filtrerEmployes, lireFiltre } from './indicateurs-donnees';
 
-/** Widget prêt à afficher : titre et description effectifs, données du graphique, filtres lisibles. */
+/** Valeur « Tous » d'une liste de critère (aucun filtre sur ce critère). */
+export const TOUS = 'tous';
+
+/** Critère de filtre d'une carte, tel qu'affiché : sa liste déroulante (« Site : Tous ») et la valeur choisie. */
+export interface CritereVue {
+  champ: ChampCondition;
+  libelle: string;
+  options: { value: string; label: string }[];
+  valeur: string;
+}
+
+/** Valeurs choisies dans les listes de critères des cartes : par widget, par critère (état d'affichage). */
+export type ValeursCriteres = Record<string, Partial<Record<ChampCondition, string>>>;
+
+/** Widget prêt à afficher : titre et description effectifs, données du graphique, critères de filtre de la carte. */
 export interface WidgetVue {
   widget: Widget;
   indicateur: Indicateur;
   titre: string;
   description: string;
   donnees: DonneesGraphique;
-  /** Filtres de la carte (champs, population, statuts de demande), lisibles. */
-  filtres: { valeur: string; libelle: string }[];
-  /** Filtres de la carte non appliqués parce qu'ils contredisent les filtres globaux (le global l'emporte). */
+  /** Listes de critères affichées dans la carte, au-dessus du graphique. */
+  criteres: CritereVue[];
+  /** Valeurs choisies dans la carte non appliquées parce qu'elles contredisent les filtres globaux (le global l'emporte). */
   filtresIgnores: string[];
 }
 
@@ -29,7 +43,8 @@ export interface SectionVue extends SectionTableau {
  * - `employes` : périmètre de données de la personne qui consulte (pas la population adressée, qui dit seulement qui voit
  *   le tableau) ;
  * - `filtresGlobaux` : filtres de la consultation ; absents = ceux par défaut (composition, prévisualisation) ;
- * - `populations` (filtre « Population » d'une carte) et `workflows` (statistiques de workflow personnalisé).
+ * - `populations` (filtre « Population » d'une carte) et `workflows` (statistiques de workflow personnalisé) ;
+ * - `valeurs` : valeur choisie dans chaque liste de critère des cartes (absente = « Tous »).
  */
 export interface ContexteWidgets {
   employes: Employe[];
@@ -37,6 +52,7 @@ export interface ContexteWidgets {
   workflows: WorkflowPersonnalise[];
   series: SerieIndicateur[];
   filtresGlobaux?: FiltresGlobaux;
+  valeurs?: ValeursCriteres;
 }
 
 /** Libellé lisible d'un filtre `champ:valeur` (ex. « Site : Dakar »). */
@@ -51,9 +67,13 @@ export function construireWidget(widget: Widget, indicateur: Indicateur, ctx: Co
   const population = indicateur.filtrablePopulation ? ctx.populations.find((p) => p.id === widget.populationId) : undefined;
   let perimetre = appliquerFiltresGlobaux(ctx.employes, globaux);
   if (population) perimetre = employesCouverts(population, perimetre);
-  const ignores = filtresEnConflit(widget.filtres, globaux);
-  const appliques = widget.filtres.filter((f) => !ignores.includes(f));
-  const contexte = { employes: perimetre, facteur: reference ? perimetre.length / reference : 0, workflows: ctx.workflows };
+  const choix = ctx.valeurs?.[widget.id] ?? {};
+  const choisis = widget.filtres.flatMap((champ) => (choix[champ] && choix[champ] !== TOUS ? [`${champ}:${choix[champ]}`] : []));
+  const ignores = filtresEnConflit(choisis, globaux);
+  const appliques = choisis.filter((f) => !ignores.includes(f));
+  // Les séries fictives suivent la part du périmètre retenue (filtres globaux, population et valeurs choisies dans la carte).
+  const retenus = filtrerEmployes(perimetre, appliques).length;
+  const contexte = { employes: perimetre, facteur: reference ? retenus / reference : 0, workflows: ctx.workflows };
   const workflow = ctx.workflows.find((w) => w.id === widget.workflow?.workflowId);
   return {
     widget,
@@ -61,11 +81,12 @@ export function construireWidget(widget: Widget, indicateur: Indicateur, ctx: Co
     titre: widget.titre ?? indicateur.titre,
     description: widget.description ?? (workflow ? `Demandes « ${workflow.libelle} », par mois et par statut.` : indicateur.description),
     donnees: calculerDonnees(indicateur, contexte, appliques, ctx.series, widget.workflow),
-    filtres: [
-      ...(population ? [{ valeur: `population:${population.id}`, libelle: `Population : ${population.nom}` }] : []),
-      ...(widget.workflow?.statuts ?? []).map((s) => ({ valeur: `statut-demande:${s}`, libelle: `Statut : ${LIBELLES_STATUTS_DEMANDE[s]}` })),
-      ...widget.filtres.map((f) => ({ valeur: f, libelle: libelleFiltre(f) })),
-    ],
+    criteres: widget.filtres.map((champ) => ({
+      champ,
+      libelle: LIBELLES_CHAMPS[champ],
+      options: [{ value: TOUS, label: 'Tous' }, ...valeursDuChamp(champ, ctx.employes).map((v) => ({ value: v, label: v }))],
+      valeur: choix[champ] ?? TOUS,
+    })),
     filtresIgnores: ignores.map(libelleFiltre),
   };
 }

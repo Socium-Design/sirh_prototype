@@ -64,11 +64,12 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 | Composant Labs | Utilisé dans |
 |---|---|
 | `soc-labs-workspace-layout` | Composition d'un tableau de bord (barre du haut + 3 colonnes défilant séparément ; panneaux repliables sous 1280 px — `collapsibleBelow`, PR design_system_angular#35, pas encore publiée) |
-| `soc-labs-compact-field` | Composition — panneau « Informations » (Libellé, Description, Population) |
+| `soc-labs-compact-field` | Composition — panneau « Informations » (Libellé, Description, Produit, Population adressée), taille `sm` (PR design_system_angular#41, pas encore publiée) |
 | `soc-labs-pill-toggle` | Composition — statut (Actif / Inactif / Archivé) |
 | `soc-labs-chart-type-chip` | Composition — cartes de graphe et lignes de la Bibliothèque |
 | `soc-labs-drop-zone` | Composition — état vide et emplacement « Ajouter un graphe » (glisser-déposer CDK) |
-| `soc-labs-list-row` | Bibliothèque — lignes du catalogue (ajouté, verrouillé, glisser) |
+| `soc-labs-list-row` | Bibliothèque — lignes du catalogue (ajouté, verrouillé, glisser), `appearance="flush"` (PR design_system_angular#40, pas encore publiée) |
+| `soc-labs-widget-card` | Cartes des widgets (composition, prévisualisation, consultation) : titre sur 2 lignes, critères de filtre dans la carte (PR design_system_angular#39, pas encore publiée) |
 | `soc-labs-icon-button` | Composition (retour, menu d'une carte), Bibliothèque (« + », replier une section) |
 | `soc-labs-inline-edit` | Bibliothèque — renommage sur place des sections |
 | `soc-labs-fullscreen-overlay` | Composition — « Prévisualiser » |

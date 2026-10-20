@@ -14,8 +14,10 @@ describe('TableauDeBordCompositionPageComponent', () => {
   let page: Page;
   const el = () => fixture.nativeElement as HTMLElement;
   const widgets = () => [...el().querySelectorAll('[data-testid="widget"]')] as HTMLElement[];
-  const titresWidgets = () => widgets().map((w) => w.querySelector('soc-card p')?.textContent?.trim());
-  const sections = () => [...el().querySelectorAll('[data-testid="section"]')].map((s) => s.querySelector('.section__titre')?.textContent?.trim() + ' · ' + s.querySelector('soc-badge')?.textContent?.trim());
+  const titresWidgets = () => widgets().map((w) => w.querySelector('soc-labs-widget-card')?.getAttribute('aria-label'));
+  const sections = () =>
+    [...el().querySelectorAll('[data-testid="section"]')].map((s) => s.querySelector('.section__titre')?.textContent?.trim() + ' · ' + s.querySelector('.section__compte')?.textContent?.trim());
+  const carteWidget = (titre: string) => widgets().find((w) => w.querySelector('soc-labs-widget-card')?.getAttribute('aria-label') === titre)!;
   const saisir = (champ: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, valeur: string, evenement = 'input') => {
     champ.value = valeur;
     champ.dispatchEvent(new Event(evenement, { bubbles: true }));
@@ -65,12 +67,12 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(sections()).toEqual(['Gestion du capital humain · 1 KPI', 'Mouvement du personnel · 1 KPI', 'Absences de mon équipe · 2 KPI']);
       expect(el().querySelector('[data-testid="bibliotheque"]')).toBeNull();
       expect(el().querySelector('button[aria-label^="Actions du graphe"]')).toBeNull();
-      expect(widgets()[0].textContent).toContain('Aucun filtre');
-      expect(widgets()[0].querySelector('soc-labs-chart-type-chip')).not.toBeNull();
-      // Description entière (coupée à 2 lignes en CSS), pas de sous-titre tronqué à 96 caractères.
-      const description = widgets()[0].querySelector('[data-testid="description"]') as HTMLElement;
-      expect(description.textContent?.trim()).toBe('Nombre de collaborateurs actifs à date dans le périmètre du tableau de bord.');
-      expect(getComputedStyle(description).webkitLineClamp).toBe('2');
+      // Plus de pastilles de filtre ni de pied « Aucun filtre » ; pas d'icône de type à côté du titre.
+      expect(widgets()[0].textContent).not.toContain('Aucun filtre');
+      expect(widgets()[0].querySelector('[socLabsWidgetCardIcon]')).toBeNull();
+      expect(widgets()[0].querySelector('soc-labs-chart-type-chip')).toBeNull();
+      // Description entière (coupée à 2 lignes par la carte Labs), pas tronquée à 96 caractères.
+      expect(widgets()[0].textContent).toContain('Nombre de collaborateurs actifs à date dans le périmètre du tableau de bord.');
       expect(el().querySelector('soc-labs-drop-zone')).toBeNull();
     });
 
@@ -90,7 +92,7 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(modifier.textContent?.trim()).toBe('Modifier');
       expect(modifier.querySelector('svg[lucidePencil]')).not.toBeNull();
       expect(modifier.className).toContain('bg-primary-default');
-      expect(previsualiser.className).toContain('bg-secondary-default');
+      expect(previsualiser.className).toContain('bg-tertiary-default');
     });
 
     it('« Modifier » passe en édition (dans l’URL)', () => {
@@ -229,14 +231,17 @@ describe('TableauDeBordCompositionPageComponent', () => {
       menu('Effectif total', 'Modifier').click();
       fixture.detectChanges();
       expect(modale()?.textContent).toContain('Modifier le KPI');
-      expect(modale()?.textContent).toContain('Rechercher et sélectionner des filtres');
+      expect(modale()?.textContent).toContain('Choisir des critères (Site, Filiale…)');
       const dialogue = page['widgetEdite']();
       expect(dialogue.titre).toBe('Effectif total');
-      page['sauverWidget']({ titre: 'Effectif de l’équipe', description: '', sectionId: 'capital-humain', filtres: ['site:Dakar'] });
+      page['sauverWidget']({ titre: 'Effectif de l’équipe', description: '', sectionId: 'capital-humain', filtres: ['site', 'filiale'] });
       fixture.detectChanges();
       expect(modale()).toBeNull();
       const carte = widgets().find((w) => w.textContent?.includes('Effectif de l’équipe'))!;
-      expect(carte.textContent).toContain('Site : Dakar');
+      const listes = [...carte.querySelectorAll('[data-testid="filtre-carte"]')] as HTMLElement[];
+      expect(listes.map((l) => l.getAttribute('data-champ'))).toEqual(['site', 'filiale']);
+      expect(listes[0].textContent).toContain('Site');
+      expect(listes[0].textContent).toContain('Tous');
     });
 
     it('statut modifiable (pastilles) ; « Enregistrer » persiste puis affiche « Enregistré ✓ »', fakeAsync(() => {
@@ -275,7 +280,8 @@ describe('TableauDeBordCompositionPageComponent', () => {
       fixture.detectChanges();
       page['sauverWidget']({ titre: 'Effectif total', description: '', sectionId: 'capital-humain', filtres: [], populationId: 'pop-2', statuts: [] });
       fixture.detectChanges();
-      expect(widgets().find((w) => w.textContent?.includes('Effectif total'))!.textContent).toContain('Population : Fonctions support');
+      expect(page['brouillon']().widgets[0].populationId).toBe('pop-2');
+      expect(widgets()[0].textContent).not.toContain('Population : Fonctions support');
     });
 
     it('statistique de workflow : « + » demande un nom et un workflow, puis ajoute un histogramme empilé (plusieurs fois possible)', fakeAsync(() => {
@@ -305,7 +311,7 @@ describe('TableauDeBordCompositionPageComponent', () => {
       expect(modale()?.querySelector('[data-testid="filtre-population"]')).not.toBeNull();
       page['sauverWidget']({ titre: 'Demandes de matériel', description: '', sectionId: 'workflows-personnalises', filtres: [], populationId: '', statuts: ['refusee'] });
       fixture.detectChanges();
-      expect(widgets().find((w) => w.textContent?.includes('Demandes de matériel'))!.textContent).toContain('Statut : Refusée');
+      expect(page['brouillon']().widgets.at(-1).workflow.statuts).toEqual(['refusee']);
     }));
 
     it('panneaux « Informations » et « Bibliothèque » repliables sous 1280 px ; la zone de dépôt déplie la Bibliothèque', fakeAsync(() => {
@@ -319,6 +325,48 @@ describe('TableauDeBordCompositionPageComponent', () => {
       tick();
       expect(document.activeElement).toBe(el().querySelector('[data-testid="bibliotheque"] soc-search-bar input'));
     }));
+
+    it('critères de filtre : une liste du kit par critère dans la carte, au-dessus du graphique ; choisir une valeur filtre la carte', fakeAsync(() => {
+      const service = TestBed.inject(TableauxDeBordService);
+      let tdb: any;
+      service.getById('tdb-3').subscribe((t) => (tdb = t));
+      tick(300);
+      const effectif = tdb.widgets[0];
+      page['brouillon'].update((t: any) => ({ ...t, widgets: t.widgets.map((w: any) => (w.id === effectif.id ? { ...w, filtres: ['site'] } : w)) }));
+      fixture.detectChanges();
+      const carte = carteWidget('Effectif total');
+      const liste = carte.querySelector('[data-testid="filtre-carte"]') as HTMLElement;
+      expect(liste.tagName).toBe('SOC-TABLE-FILTER-SELECT');
+      expect(carte.querySelector('soc-labs-widget-card')!.contains(liste)).toBeTrue();
+      // Au-dessus du graphique / de la valeur.
+      expect(liste.compareDocumentPosition(carte.querySelector('app-widget-graphique')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const valeur = () => carte.querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s+/g, ' ').trim();
+      expect(valeur()).toBe('18 collaborateurs');
+      page['changerCritere'](effectif.id, { champ: 'site', valeur: 'Paris' });
+      fixture.detectChanges();
+      expect(valeur()).not.toBe('18 collaborateurs');
+      expect(carte.querySelector('[data-testid="filtre-carte"]')?.textContent).toContain('Paris');
+      page['changerCritere'](effectif.id, { champ: 'site', valeur: 'tous' });
+      fixture.detectChanges();
+      expect(valeur()).toBe('18 collaborateurs');
+    }));
+
+    it('« Enregistrer » est le bouton principal sans icône ; « Prévisualiser » en contour avec l’œil', () => {
+      const enregistrer = el().querySelector('[data-testid="enregistrer"]') as HTMLElement;
+      expect(enregistrer.textContent?.trim()).toBe('Enregistrer');
+      expect(enregistrer.querySelector('svg')).toBeNull();
+      expect(enregistrer.className).toContain('bg-primary-default');
+      const previsualiser = el().querySelector('[data-testid="previsualiser"]') as HTMLElement;
+      expect(previsualiser.className).toContain('bg-tertiary-default');
+      expect(previsualiser.querySelector('svg[lucideEye]')).not.toBeNull();
+    });
+
+    it('Bibliothèque : lignes « flush », compteur teinté de la couleur de la catégorie', () => {
+      const lignes = [...el().querySelectorAll('[data-testid="bibliotheque"] soc-labs-list-row')];
+      expect(lignes.every((l) => l.getAttribute('data-appearance') === 'flush')).toBeTrue();
+      const compteurs = [...el().querySelectorAll('[data-testid="compteur"]')];
+      expect(compteurs.every((c) => c.tagName === 'SOC-TAG')).toBeTrue();
+    });
 
     it('quitter sans changement : pas de confirmation', () => {
       expect(page['peutQuitter']()).toBeTrue();

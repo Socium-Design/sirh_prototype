@@ -27,8 +27,8 @@ const COULEURS_STATUTS: Record<StatutDemande, CouleurSerie> = { validee: 'green'
 /**
  * Ce qui fait varier les données d'un widget :
  * - `employes` : employés du périmètre (après filtres globaux et filtre « Population » de la carte) ;
- * - `facteur` : part de ce périmètre dans le périmètre de référence, appliquée aux séries fictives (historique, workflows)
- *   pour qu'elles suivent elles aussi les filtres (données fictives) ;
+ * - `facteur` : part retenue (après les valeurs choisies dans la carte) du périmètre de référence, appliquée aux séries
+ *   fictives (historique, workflows) pour qu'elles suivent elles aussi les filtres (données fictives) ;
  * - `workflows` : workflows personnalisés du client.
  */
 export interface ContexteDonnees {
@@ -46,8 +46,8 @@ function ajuster(valeur: number, facteur: number): number {
 
 /**
  * Données d'un indicateur pour un widget. Effectif, ancienneté et répartitions sont recalculés sur les employés du périmètre
- * (après filtres) ; les séries fictives sont mises à l'échelle du périmètre (leurs filtres de carte sont affichés mais ne
- * changent pas le mock) ; une statistique de workflow trace les demandes du workflow choisi, par mois et par statut.
+ * (après filtres) ; les séries fictives sont mises à l'échelle du périmètre retenu (`facteur`) ; une statistique de
+ * workflow trace les demandes du workflow choisi, par mois et par statut.
  */
 export function calculerDonnees(
   indicateur: Indicateur,

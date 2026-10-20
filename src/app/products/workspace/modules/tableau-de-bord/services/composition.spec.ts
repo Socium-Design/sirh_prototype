@@ -31,15 +31,16 @@ describe('composition', () => {
     expect(retirerWidget(managers, managers.widgets[0].id).widgets.length).toBe(3);
   });
 
-  it('modifie titre, description, section et filtres ; un texte identique au catalogue n’est pas stocké', () => {
+  it('modifie titre, description, section et critères de filtre ; un texte identique au catalogue n’est pas stocké', () => {
     const w = managers.widgets[0];
     const modifie = modifierWidget(managers, w.id, ind(w.indicateurId), {
       titre: 'Effectif de l’équipe',
       description: ind(w.indicateurId).description,
       sectionId: 'absences',
-      filtres: ['site:Dakar'],
+      filtres: ['site', 'sexe'],
     }).widgets[0];
-    expect(modifie).toEqual({ id: w.id, indicateurId: w.indicateurId, titre: 'Effectif de l’équipe', sectionId: 'absences', filtres: ['site:Dakar'] });
+    // « Sexe » n'est pas un critère de l'effectif total : il n'est pas gardé.
+    expect(modifie).toEqual({ id: w.id, indicateurId: w.indicateurId, titre: 'Effectif de l’équipe', sectionId: 'absences', filtres: ['site'] });
   });
 
   it('filtre « Population » (KPI filtrables seulement) et statuts d’une statistique de workflow', () => {

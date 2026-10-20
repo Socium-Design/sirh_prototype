@@ -32,7 +32,7 @@ import type { Population } from '../configuration/populations/models/population.
 import { PopulationsService } from '../configuration/populations/services/populations.service';
 import type { Employe } from '../employes/models/employe.model';
 import { EmployesService } from '../employes/services/employes.service';
-import { WidgetCarteComponent } from './components/widget-carte.component';
+import { WidgetCarteComponent, type ChoixCritere } from './components/widget-carte.component';
 import type { Indicateur, SerieIndicateur } from './models/indicateur.model';
 import type { TableauDeBord } from './models/tableau-de-bord.model';
 import type { WorkflowPersonnalise } from './models/workflow.model';
@@ -40,7 +40,7 @@ import { CatalogueService } from './services/catalogue.service';
 import { sectionsConsultation } from './services/consultation';
 import { DEFINITIONS_FILTRES_GLOBAUX, filtresGlobauxParDefaut, type CleFiltreGlobal, type FiltresGlobaux } from './services/filtres-globaux';
 import { TableauxDeBordService } from './services/tableaux-de-bord.service';
-import { construireWidgets } from './services/widgets';
+import { construireWidgets, type ValeursCriteres } from './services/widgets';
 
 const CONFIGURATION = '/workspace/configuration/tableaux-de-bord';
 
@@ -51,8 +51,8 @@ const CONFIGURATION = '/workspace/configuration/tableaux-de-bord';
  *   porté par l'URL (`?tableau=<id>`), comme le bouton « Visualiser » de la Configuration ; un tableau hors de cette liste
  *   (inactif, autre population) s'affiche seul, sans menu.
  * - Filtres globaux (statut de l'employé, du compte, compte configuré, statut paie) appliqués à toutes les cartes ; par
- *   défaut les employés sortis et les comptes désactivés sont exclus. Un filtre de carte qui les contredit n'est pas
- *   appliqué (le global l'emporte) et la carte le signale.
+ *   défaut les employés sortis et les comptes désactivés sont exclus. Chaque carte a ses listes de critères (« Site :
+ *   Tous ») ; une valeur qui contredit un filtre global n'est pas appliquée (le global l'emporte) et la carte le signale.
  * Cartes en sections « Indicateurs clés » (KPI avec tendance), « Effectifs et mouvements », « Rémunération et absentéisme »,
  * « Workflows personnalisés ». Données : périmètre de l'utilisateur connecté (données fictives). Pas d'édition ici :
  * « Modifier » mène à la composition dans la Configuration.
@@ -110,7 +110,14 @@ const CONFIGURATION = '/workspace/configuration/tableaux-de-bord';
               <p class="section__titre">{{ section.libelle }}</p>
               <soc-card-grid [columns]="section.kpi ? 4 : 2">
                 @for (vue of section.widgets; track vue.widget.id) {
-                  <app-widget-carte [vue]="vue" [avecPied]="!!vue.indicateur.classifieNonHistorise || vue.filtresIgnores.length > 0" data-testid="widget">
+                  <app-widget-carte
+                    [vue]="vue"
+                    [icone]="true"
+                    [tronquee]="true"
+                    [avecPied]="!!vue.indicateur.classifieNonHistorise"
+                    (critere)="changerCritere(vue.widget.id, $event)"
+                    data-testid="widget"
+                  >
                     <soc-popover appWidgetActions position="bottom-end" [open]="menuOuvert() === vue.widget.id" (openChange)="menuOuvert.set($event ? vue.widget.id : null)">
                       <soc-tooltip socPopoverTrigger>
                         <button socButton variant="ghost" [attr.aria-label]="'Actions du graphe ' + vue.titre">
@@ -124,18 +131,11 @@ const CONFIGURATION = '/workspace/configuration/tableaux-de-bord';
                         </button>
                       </soc-menu>
                     </soc-popover>
-                    <div appWidgetPied class="widget__pied">
-                      @if (vue.filtresIgnores.length) {
-                        <soc-message variant="inline" status="info" data-testid="filtre-ignore">
-                          <span socMessageContent>Filtre {{ vue.filtresIgnores.join(', ') }} non appliqué : les filtres globaux l'emportent.</span>
-                        </soc-message>
-                      }
-                      @if (vue.indicateur.classifieNonHistorise) {
-                        <soc-message variant="inline" status="warning" data-testid="classifie">
-                          <span socMessageContent>Données classifiées sans historisation — affichage temps réel uniquement.</span>
-                        </soc-message>
-                      }
-                    </div>
+                    @if (vue.indicateur.classifieNonHistorise) {
+                      <soc-message appWidgetPied variant="inline" status="warning" data-testid="classifie">
+                        <span socMessageContent>Données classifiées sans historisation — affichage temps réel uniquement.</span>
+                      </soc-message>
+                    }
                   </app-widget-carte>
                 }
               </soc-card-grid>
@@ -173,6 +173,8 @@ export class TableauDeBordPageComponent {
   protected readonly menuOuvert = signal<string | null>(null);
 
   protected readonly filtres = signal<FiltresGlobaux>(filtresGlobauxParDefaut());
+  /** Valeurs choisies dans les listes de critères des cartes (« Site : Dakar »), propres à cette consultation. */
+  private readonly valeurs = signal<ValeursCriteres>({});
   protected readonly definitionsFiltres = DEFINITIONS_FILTRES_GLOBAUX.map((d) => ({
     ...d,
     options: d.valeurs.map((v): MultiSelectOption => ({ value: v, label: v })),
@@ -205,7 +207,14 @@ export class TableauDeBordPageComponent {
   protected readonly sections = computed(() => {
     const t = this.tableau();
     if (!t) return [];
-    const ctx = { employes: this.employes(), populations: this.populations(), workflows: this.workflows(), series: this.series(), filtresGlobaux: this.filtres() };
+    const ctx = {
+      employes: this.employes(),
+      populations: this.populations(),
+      workflows: this.workflows(),
+      series: this.series(),
+      filtresGlobaux: this.filtres(),
+      valeurs: this.valeurs(),
+    };
     return sectionsConsultation(construireWidgets(t, this.indicateurs(), ctx));
   });
 
@@ -241,6 +250,11 @@ export class TableauDeBordPageComponent {
 
   protected changerFiltre(cle: CleFiltreGlobal, valeurs: string[]): void {
     this.filtres.update((f) => ({ ...f, [cle]: [...valeurs] }));
+  }
+
+  /** Valeur choisie dans la liste d'un critère d'une carte : filtre cette carte (données fictives). */
+  protected changerCritere(widgetId: string, { champ, valeur }: ChoixCritere): void {
+    this.valeurs.update((v) => ({ ...v, [widgetId]: { ...v[widgetId], [champ]: valeur } }));
   }
 
   protected reinitialiserFiltres(): void {

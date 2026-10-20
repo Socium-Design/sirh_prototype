@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { TABLEAUX_DE_BORD } from '../../../../../mocks/data/tableaux-de-bord.mock';
 import { TableauxDeBordService } from './services/tableaux-de-bord.service';
 import { TableauDeBordPageComponent } from './tableau-de-bord-page.component';
 
@@ -12,9 +13,11 @@ describe('TableauDeBordPageComponent (consultation)', () => {
   let query: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   const el = () => fixture.nativeElement as HTMLElement;
   const widgets = () => [...el().querySelectorAll('[data-testid="widget"]')] as HTMLElement[];
-  const titres = () => widgets().map((w) => w.querySelector('soc-card p')?.textContent?.trim());
+  const titre = (w: HTMLElement) => w.querySelector('soc-labs-widget-card')?.getAttribute('aria-label');
+  const titres = () => widgets().map(titre);
   const sections = () => [...el().querySelectorAll('[data-testid="section"] .section__titre')].map((s) => s.textContent?.trim());
-  const carte = (titre: string) => widgets().find((w) => w.querySelector('soc-card p')?.textContent?.trim() === titre)!;
+  const carte = (t: string) => widgets().find((w) => titre(w) === t)!;
+  const idWidget = (indicateurId: string) => TABLEAUX_DE_BORD[0].widgets.find((w) => w.indicateurId === indicateurId)!.id;
   const kpi = (titre: string) => carte(titre).querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s+/g, ' ').trim();
   const panneauVisible = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]')].find((p) => p.style.visibility === 'visible')!;
   const detecter = () => {
@@ -100,8 +103,23 @@ describe('TableauDeBordPageComponent (consultation)', () => {
     expect(el().querySelector('[data-testid="reinitialiser"]')).toBeNull();
   }));
 
-  it('filtre de carte contraire à un filtre global : le global l’emporte et la carte le signale', fakeAsync(() => {
+  it('critères de carte : listes du kit dans la carte (« Site : Tous »), choisir une valeur filtre la carte', fakeAsync(() => {
     ouvrir();
+    const listes = [...carte('Effectif total').querySelectorAll('[data-testid="filtre-carte"]')] as HTMLElement[];
+    expect(listes.map((l) => l.getAttribute('data-champ'))).toEqual(['filiale', 'site']);
+    expect(listes[1].textContent).toContain('Tous');
+    expect(carte('Pyramide des âges').querySelector('[data-testid="filtre-carte"]')).toBeNull();
+    page['changerCritere'](idWidget('ind-effectif-total'), { champ: 'site', valeur: 'Dakar' });
+    fixture.detectChanges();
+    expect(kpi('Effectif total')).not.toBe('18 collaborateurs');
+    expect(carte('Effectif total').querySelectorAll('[data-testid="filtre-carte"]')[1].textContent).toContain('Dakar');
+  }));
+
+  it('valeur de carte contraire à un filtre global : le global l’emporte et la carte le signale', fakeAsync(() => {
+    ouvrir();
+    expect(carte('Répartition H/F').querySelector('[data-testid="filtre-ignore"]')).toBeNull();
+    page['changerCritere'](idWidget('ind-repartition-hf'), { champ: 'statut', valeur: 'Inactif' });
+    fixture.detectChanges();
     expect(carte('Répartition H/F').querySelector('[data-testid="filtre-ignore"]')?.textContent).toContain(
       "Filtre Statut : Inactif non appliqué : les filtres globaux l'emportent.",
     );
@@ -113,9 +131,10 @@ describe('TableauDeBordPageComponent (consultation)', () => {
 
   it('description tronquée à 96 caractères ; avertissement sur les données classifiées sans historisation', fakeAsync(() => {
     ouvrir();
-    const sousTitre = carte('Pyramide des âges').querySelectorAll('soc-card p')[1].textContent!.trim();
-    expect(sousTitre.length).toBe(97);
-    expect(sousTitre.endsWith('…')).toBeTrue();
+    // Description tronquée à 96 caractères + « … ».
+    const texte = carte('Pyramide des âges').textContent!;
+    expect(texte).toContain("Répartition des collaborateurs par tranche d'âge, pour anticiper les départs à la retraite et éq…");
+    expect(texte).not.toContain('équilibrer les recrutements');
     expect(carte('Répartition H/F').querySelector('[data-testid="classifie"]')?.textContent).toContain(
       'Données classifiées sans historisation — affichage temps réel uniquement.',
     );
