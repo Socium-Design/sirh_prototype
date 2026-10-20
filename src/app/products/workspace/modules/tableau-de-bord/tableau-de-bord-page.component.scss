@@ -21,3 +21,27 @@
   line-height: var(--bridges-size-text-line-height-lg);
   color: var(--bridges-color-text-primary);
 }
+
+.entete__tableaux {
+  min-width: calc(var(--bridges-size-icon-lg) * 10);
+}
+
+// Barre des filtres globaux : un champ par filtre, sur une ligne quand la largeur le permet.
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--bridges-position-gap-md);
+}
+
+.filtres__champ {
+  flex: 1 1 calc(var(--bridges-size-icon-lg) * 8);
+  min-width: 0;
+}
+
+.widget__pied {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xs);
+  width: 100%;
+}

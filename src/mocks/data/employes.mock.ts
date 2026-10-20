@@ -37,6 +37,7 @@ export function trancheAnciennete(dateEntree: string, reference = DATE_DONNEES):
 
 /** Employés fictifs, partagés par tous les produits (Workspace, Perf, Job…). Ne jamais en inventer d'autres localement. */
 export const EMPLOYES: Employe[] = NOMS.map(([nom, prenom, sexe], i) => {
+  const inactif = i % 7 === 3;
   const dateEntree = `${2018 + (i % 7)}-${String((i % 12) + 1).padStart(2, '0')}-${String((i % 27) + 1).padStart(2, '0')}`;
   return {
     id: String(i + 1),
@@ -49,10 +50,14 @@ export const EMPLOYES: Employe[] = NOMS.map(([nom, prenom, sexe], i) => {
     structure: STRUCTURES[POSTES[i % POSTES.length][1]],
     site: SITES[i % SITES.length][0],
     filiale: SITES[i % SITES.length][1],
-    statut: i % 7 === 3 ? 'Inactif' : 'Actif',
+    statut: inactif ? 'Inactif' : 'Actif',
     typeContrat: CONTRATS[i % CONTRATS.length],
     sexe,
     dateEntree,
     anciennete: trancheAnciennete(dateEntree),
+    // Un employé sorti a son compte désactivé et sort de la paie ; quelques comptes actifs sont aussi désactivés ou non configurés.
+    statutCompte: inactif || i % 11 === 5 ? 'Désactivé' : 'Actif',
+    compteConfigure: i % 5 !== 2,
+    statutPaie: inactif ? 'Sorti de paie' : i % 6 === 4 ? 'Suspendu' : 'En paie',
   };
 });

@@ -29,6 +29,7 @@ export const formaterNombre = (valeur: number): string => valeur.toLocaleString(
  * GAP-DS — le design system n'a pas de composant graphique. Solution provisoire : Chart.js, isolé ici.
  * Le jour où le kit fournit un graphique, seul ce composant change (même entrée : type + données).
  * Carte KPI : valeur chiffrée, unité et tendance (flèche verte si l'évolution est favorable, rouge sinon).
+ * Histogramme empilé : un segment par série, de la couleur imposée par la série si elle en a une.
  * `compact` : mini-graphe (composition), sans légende.
  */
 @Component({
@@ -109,15 +110,19 @@ export class WidgetGraphiqueComponent {
     Chart.defaults.color = texte;
 
     const circulaire = def.chartJs === 'pie';
-    const datasets = d.series.map((s, i) => ({
-      label: s.libelle,
-      data: s.valeurs,
-      backgroundColor: circulaire ? couleurs : couleurs[i % PALETTE.length],
-      borderColor: circulaire ? jeton('color-surface-neutral-white') : couleurs[i % PALETTE.length],
-      tension: 0.3,
-      pointRadius: compact ? 0 : 3,
-    }));
-    const axes = { grid: { color: grille, display: !compact }, ticks: { display: !compact }, beginAtZero: true };
+    const datasets = d.series.map((s, i) => {
+      // Couleur imposée par le sens de la série (statut validé / refusé / en attente), sinon la palette dans l'ordre.
+      const couleur = s.couleur ? jeton(`color-accent-${s.couleur}-text`) : couleurs[i % PALETTE.length];
+      return {
+        label: s.libelle,
+        data: s.valeurs,
+        backgroundColor: circulaire ? couleurs : couleur,
+        borderColor: circulaire ? jeton('color-surface-neutral-white') : couleur,
+        tension: 0.3,
+        pointRadius: compact ? 0 : 3,
+      };
+    });
+    const axes = { grid: { color: grille, display: !compact }, ticks: { display: !compact }, beginAtZero: true, stacked: !!def.empile };
     return {
       type: def.chartJs,
       data: { labels: d.libelles, datasets },

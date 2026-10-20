@@ -22,3 +22,9 @@ export const SESSION_LANGUAGES = [
   { value: 'fr', label: 'FR' },
   { value: 'en', label: 'EN' },
 ];
+
+/**
+ * Tableaux de bord accessibles à l'utilisateur connecté, dans l'ordre du menu déroulant de la consultation. En vrai : les
+ * tableaux actifs du produit dont la population adressée contient l'utilisateur.
+ */
+export const SESSION_TABLEAUX_ACCESSIBLES = ['tdb-1', 'tdb-3', 'tdb-2'];

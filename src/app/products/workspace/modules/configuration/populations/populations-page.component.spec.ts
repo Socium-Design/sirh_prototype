@@ -105,7 +105,7 @@ describe('PopulationsPageComponent', () => {
     action('Équipe Sénégal', 'Supprimer').click();
     fixture.detectChanges();
     expect(dialogue()?.textContent).toContain('est utilisée dans les dashboards suivants');
-    expect(dialogue()?.textContent).toContain('Dashboard RH Global');
+    expect(dialogue()?.textContent).toContain('Admin RH Global');
     boutonDialogue('Supprimer quand même').click();
     detecter();
     expect(ligne('Équipe Sénégal')).toBeUndefined();

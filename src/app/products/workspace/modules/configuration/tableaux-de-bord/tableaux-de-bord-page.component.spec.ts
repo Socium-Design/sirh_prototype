@@ -36,53 +36,59 @@ describe('TableauxDeBordPageComponent', () => {
 
   afterEach(() => fixture.destroy());
 
-  it('colonnes Nom | Modèle de base | Profils | Statut | Date de création, boutons Détail et Visualiser', () => {
+  it('colonnes Libellé | Modèle de base | Produit | Population adressée | Statut | Date de création, sans profils ; boutons Détail et Visualiser', () => {
     expect(rows().length).toBe(5);
-    expect([...el().querySelectorAll('thead th')].map((th) => th.textContent?.trim()).filter(Boolean)).toEqual(['Nom', 'Modèle de base', 'Profils', 'Statut', 'Date de création']);
-    expect(cellules('Dashboard Direction Générale').slice(0, 2)).toEqual(['Dashboard Direction Générale', 'Direction Générale']);
-    const pastilles = [...ligne('Dashboard Direction Générale').querySelectorAll('td')[2].querySelectorAll('soc-tag')].map((t) => t.textContent?.trim());
-    expect(pastilles).toEqual(['Direction générale', 'Admin RH']);
-    expect(cellules('Dashboard Direction Générale').slice(3, 5)).toEqual(['Actif', '03/06/2026']);
-    expect(ligne('Dashboard Direction Générale').querySelector('[data-testid="detail"]')?.textContent?.trim()).toBe('Détail');
-    expect(ligne('Dashboard Direction Générale').querySelector('[data-testid="visualiser"]')?.textContent?.trim()).toBe('Visualiser');
-    expect(cellules('Dashboard masse salariale')[3]).toBe('Archivé');
-    expect(cellules('Dashboard effectifs internationaux')[3]).toBe('Inactif');
+    expect([...el().querySelectorAll('thead th')].map((th) => th.textContent?.trim()).filter(Boolean)).toEqual([
+      'Libellé',
+      'Modèle de base',
+      'Produit',
+      'Population adressée',
+      'Statut',
+      'Date de création',
+    ]);
+    expect(cellules('Direction générale').slice(0, 6)).toEqual(['Direction générale', 'Direction Générale', 'Workspace', 'Équipe Sénégal', 'Actif', '03/06/2026']);
+    expect(cellules('Mon équipe').slice(2, 4)).toEqual(['Workspace', 'Managers – périmètre hiérarchique']);
+    expect(cellules('Dashboard effectifs internationaux').slice(2, 5)).toEqual(['Perf', 'Filiales hors Sénégal', 'Inactif']);
+    expect(cellules('Dashboard masse salariale')[4]).toBe('Archivé');
+    expect(el().textContent).not.toContain('Profils');
+    expect(ligne('Direction générale').querySelector('[data-testid="detail"]')?.textContent?.trim()).toBe('Détail');
+    expect(ligne('Direction générale').querySelector('[data-testid="visualiser"]')?.textContent?.trim()).toBe('Visualiser');
     expect(el().querySelector('soc-search-bar input')?.getAttribute('placeholder')).toBe('Rechercher un tableau de bord...');
   });
 
   it('« Détail » ouvre la composition en lecture seule, « Visualiser » la consultation de ce tableau', () => {
     const navigate = spyOn(TestBed.inject(Router), 'navigate');
-    (ligne('Dashboard Managers').querySelector('[data-testid="detail"]') as HTMLButtonElement).click();
+    (ligne('Mon équipe').querySelector('[data-testid="detail"]') as HTMLButtonElement).click();
     expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-3']);
-    (ligne('Dashboard Managers').querySelector('[data-testid="visualiser"]') as HTMLButtonElement).click();
+    (ligne('Mon équipe').querySelector('[data-testid="visualiser"]') as HTMLButtonElement).click();
     expect(navigate).toHaveBeenCalledWith(['/workspace/tableau-de-bord'], { queryParams: { tableau: 'tdb-3' } });
   });
 
   it('recherche, avec les deux états vides', () => {
-    rechercher('managers');
-    expect(rows().map((r) => r.querySelector('td')?.textContent?.trim())).toEqual(['Dashboard Managers']);
+    rechercher('équipe');
+    expect(rows().map((r) => r.querySelector('td')?.textContent?.trim())).toEqual(['Mon équipe']);
     rechercher('introuvable');
     expect(rows().length).toBe(0);
     expect(el().querySelector('[data-testid="vide"]')?.textContent).toContain('Aucun résultat pour cette recherche.');
   });
 
   it('« Dupliquer » crée « X (copie) »', fakeAsync(() => {
-    action('Dashboard Managers', 'Dupliquer').click();
+    action('Mon équipe', 'Dupliquer').click();
     detecter();
     expect(rows().length).toBe(6);
-    expect(ligne('Dashboard Managers (copie)')).toBeTruthy();
+    expect(ligne('Mon équipe (copie)')).toBeTruthy();
   }));
 
   it('« Supprimer » : confirmation puis suppression ; liste vide → « Aucun tableau de bord configuré. »', fakeAsync(() => {
-    action('Dashboard Managers', 'Supprimer').click();
+    action('Mon équipe', 'Supprimer').click();
     fixture.detectChanges();
     expect(modale()?.textContent).toContain('Supprimer le tableau de bord ?');
     expect(modale()?.textContent).toContain(
-      '"Dashboard Managers" sera définitivement supprimé. Les utilisateurs concernés perdront l\'accès à ce tableau de bord.',
+      '"Mon équipe" sera définitivement supprimé. Les utilisateurs concernés perdront l\'accès à ce tableau de bord.',
     );
     boutonModale('Supprimer').click();
     detecter();
-    expect(ligne('Dashboard Managers')).toBeUndefined();
+    expect(ligne('Mon équipe')).toBeUndefined();
 
     for (const nom of rows().map((r) => r.querySelector('td')!.textContent!.trim())) {
       action(nom, 'Supprimer').click();
@@ -101,7 +107,7 @@ describe('TableauxDeBordPageComponent', () => {
     fixture.detectChanges();
     expect(modale()).toBeNull();
 
-    action('Dashboard Managers', 'Modifier').click();
+    action('Mon équipe', 'Modifier').click();
     fixture.detectChanges();
     expect(modale()?.textContent).toContain('Modifier le tableau de bord');
   });

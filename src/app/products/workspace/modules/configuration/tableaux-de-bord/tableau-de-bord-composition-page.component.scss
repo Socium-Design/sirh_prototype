@@ -52,7 +52,7 @@
   letter-spacing: 0.04em;
 }
 
-// Même libellé que soc-labs-compact-field (petites capitales), pour les champs qui n'en sont pas (statut, profils) :
+// Même libellé que soc-labs-compact-field (petites capitales), pour le statut, qui n'en est pas un :
 // GAP-DS design_system_angular#28 (pas d'emplacement de contenu libre dans le champ compact).
 .infos__libelle {
   text-transform: uppercase;

@@ -21,11 +21,13 @@ import {
   type DialogAction,
 } from '@socium-design/angular-components';
 import { forkJoin } from 'rxjs';
-import type { Gabarit, TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
+import type { Gabarit, Produit, TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
 import { CatalogueService } from '../../tableau-de-bord/services/catalogue.service';
 import { TableauxDeBordService } from '../../tableau-de-bord/services/tableaux-de-bord.service';
 import { TableauDeBordDialogComponent } from './components/tableau-de-bord-dialog.component';
-import { ProfilsComponent, StatutTableauComponent } from './components/pastilles.component';
+import type { Population } from '../populations/models/population.model';
+import { PopulationsService } from '../populations/services/populations.service';
+import { StatutTableauComponent } from './components/pastilles.component';
 
 /**
  * Workspace > Configuration > onglet Gestion des tableaux de bord — liste des tableaux de bord du client.
@@ -36,7 +38,7 @@ import { ProfilsComponent, StatutTableauComponent } from './components/pastilles
   selector: 'app-tableaux-de-bord-page',
   imports: [
     SocDataTable, SocDataTableBadge, SocDataTableActions, SocDataTableFilters, SocBadge, SocButton, SocButtonLeftIcon, SocMenu, SocMenuItem,
-    SocMenuItemIcon, SocMessage, SocMessageContent, SocSearchBar, SocDialog, ProfilsComponent, StatutTableauComponent, TableauDeBordDialogComponent,
+    SocMenuItemIcon, SocMessage, SocMessageContent, SocSearchBar, SocDialog, StatutTableauComponent, TableauDeBordDialogComponent,
     LucidePlus, LucidePencil, LucideCopy, LucideTrash,
   ],
   styles: `
@@ -44,9 +46,6 @@ import { ProfilsComponent, StatutTableauComponent } from './components/pastilles
     .tableaux__boutons { display: flex; gap: var(--bridges-position-gap-xs); }
   `,
   template: `
-    <ng-template #profilsCell let-row>
-      <app-profils [profils]="row.profils" />
-    </ng-template>
     <ng-template #statutCell let-row>
       <app-statut-tableau [statut]="row.statut" />
     </ng-template>
@@ -73,7 +72,7 @@ import { ProfilsComponent, StatutTableauComponent } from './components/pastilles
 
     <soc-data-table
       title="Tableaux de bord"
-      subtitle="Chaque tableau de bord présente ses graphes sur le périmètre de sa population, aux profils choisis."
+      subtitle="Chaque tableau de bord apparaît sur un produit, pour sa population adressée ; chacun y voit les données de son périmètre."
       [columns]="columns()"
       [rows]="pageRows()"
       [rowKey]="rowKey"
@@ -108,11 +107,13 @@ export class TableauxDeBordPageComponent {
   private readonly service = inject(TableauxDeBordService);
   private readonly catalogue = inject(CatalogueService);
 
-  private readonly profilsCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('profilsCell');
   private readonly statutCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('statutCell');
   private readonly boutonsCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('boutonsCell');
   protected readonly tableaux = signal<TableauDeBord[]>([]);
   private readonly gabarits = signal<Gabarit[]>([]);
+  private readonly produits = signal<Produit[]>([]);
+  private readonly populations = signal<Population[]>([]);
+  private readonly populationsService = inject(PopulationsService);
   protected readonly charge = signal(false);
 
   protected readonly rowKey = (t: TableauDeBord) => t.id;
@@ -125,9 +126,10 @@ export class TableauxDeBordPageComponent {
   protected readonly aSupprimer = signal<TableauDeBord | null>(null);
 
   protected readonly columns = computed<DataTableColumn<TableauDeBord>[]>(() => [
-    { key: 'libelle', header: 'Nom', render: (t) => t.libelle },
+    { key: 'libelle', header: 'Libellé', render: (t) => t.libelle },
     { key: 'modele', header: 'Modèle de base', render: (t) => this.gabarits().find((g) => g.id === t.modele)?.libelle ?? '—' },
-    { key: 'profils', header: 'Profils', render: this.profilsCell() },
+    { key: 'produit', header: 'Produit', render: (t) => this.produits().find((p) => p.id === t.produit)?.libelle ?? t.produit },
+    { key: 'population', header: 'Population adressée', render: (t) => this.populations().find((p) => p.id === t.populationId)?.nom ?? '—' },
     { key: 'statut', header: 'Statut', render: this.statutCell() },
     { key: 'creeLe', header: 'Date de création', render: (t) => new Date(t.creeLe).toLocaleDateString('fr-FR') },
     { key: 'boutons', header: '', render: this.boutonsCell() },
@@ -199,8 +201,11 @@ export class TableauxDeBordPageComponent {
   }
 
   private charger(): void {
-    forkJoin([this.service.getAll(), this.catalogue.getGabarits()]).subscribe(([tableaux, gabarits]) => {
+    const requetes = [this.service.getAll(), this.catalogue.getGabarits(), this.catalogue.getProduitsSouscrits(), this.populationsService.getAll()] as const;
+    forkJoin(requetes).subscribe(([tableaux, gabarits, produits, populations]) => {
       this.gabarits.set(gabarits);
+      this.produits.set(produits);
+      this.populations.set(populations);
       this.tableaux.set(tableaux);
       this.charge.set(true);
     });

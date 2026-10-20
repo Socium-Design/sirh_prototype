@@ -11,6 +11,7 @@ import {
   LucideUserPlus,
   LucideUsers,
   LucideWallet,
+  LucideWorkflow,
 } from '@lucide/angular';
 import { SocBadge, SocSearchBar } from '@socium-design/angular-components';
 import { SocLabsChartTypeChip, SocLabsIconButton, SocLabsInlineEdit, SocLabsListRow, SocLabsListRowAction, SocLabsListRowLeading } from '../../../../../../shared/labs/labs';
@@ -21,7 +22,8 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
 /**
  * Bibliothèque de la composition : catalogue d'indicateurs par section (repliables, renommables sur place pour ce tableau
  * de bord), recherche, compteur des graphes ajoutés (seulement s'il y en a). Ajout par « + » ou glisser-déposer (CDK) ;
- * ligne « ajoutée » ; ligne verrouillée pour un indicateur non souscrit.
+ * ligne « ajoutée » ; ligne verrouillée pour un indicateur non souscrit. Une statistique générique (workflow personnalisé)
+ * n'est jamais « ajoutée » : on peut l'ajouter autant de fois que voulu (la page demande alors son nom et son workflow).
  * Labs : `soc-labs-list-row`, `soc-labs-chart-type-chip`, `soc-labs-icon-button`, `soc-labs-inline-edit`.
  */
 @Component({
@@ -29,7 +31,7 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
   imports: [
     CdkDropList, CdkDrag, CdkDragPlaceholder, SocBadge, SocSearchBar, SocLabsListRow, SocLabsListRowLeading, SocLabsListRowAction,
     SocLabsChartTypeChip, SocLabsIconButton, SocLabsInlineEdit, LucidePlus, LucideCheck, LucideChevronDown, LucideChevronRight, LucideUsers,
-    LucideUserPlus, LucideArrowLeftRight, LucideWallet, LucideCalendarX, LucideFolder,
+    LucideUserPlus, LucideArrowLeftRight, LucideWallet, LucideCalendarX, LucideWorkflow, LucideFolder,
   ],
   styleUrl: './bibliotheque.component.scss',
   template: `
@@ -58,6 +60,7 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
               @case ('mouvements') { <svg lucideArrowLeftRight class="size-full" [strokeWidth]="1.5"></svg> }
               @case ('masse-salariale') { <svg lucideWallet class="size-full" [strokeWidth]="1.5"></svg> }
               @case ('absences') { <svg lucideCalendarX class="size-full" [strokeWidth]="1.5"></svg> }
+              @case ('workflows-personnalises') { <svg lucideWorkflow class="size-full" [strokeWidth]="1.5"></svg> }
               @default { <svg lucideFolder class="size-full" [strokeWidth]="1.5"></svg> }
             }
           </span>
@@ -121,8 +124,17 @@ export class BibliothequeComponent {
   protected readonly recherche = signal('');
   private readonly repliees = signal<ReadonlySet<string>>(new Set());
 
-  /** Indicateurs déjà présents dans le tableau de bord. */
-  protected readonly ajoutes = computed(() => new Set(this.tableau().widgets.map((w) => w.indicateurId)));
+  /** Indicateurs déjà présents dans le tableau de bord (hors statistiques génériques, ajoutables plusieurs fois). */
+  protected readonly ajoutes = computed(() => {
+    const generiques = new Set(this.catalogue().flatMap((s) => s.indicateurs).filter((i) => i.generique).map((i) => i.id));
+    return new Set(this.tableau().widgets.map((w) => w.indicateurId).filter((id) => !generiques.has(id)));
+  });
+  /** Nombre de graphes du tableau par indicateur (compteur de section, statistiques génériques comprises). */
+  private readonly nombres = computed(() => {
+    const nombres = new Map<string, number>();
+    for (const w of this.tableau().widgets) nombres.set(w.indicateurId, (nombres.get(w.indicateurId) ?? 0) + 1);
+    return nombres;
+  });
 
   /** Sections du catalogue, sous le nom choisi pour ce tableau, filtrées par la recherche. */
   protected readonly sections = computed(() => {
@@ -132,7 +144,7 @@ export class BibliothequeComponent {
         ...section,
         libelleCatalogue: section.libelle,
         libelle: this.tableau().sections.find((s) => s.id === section.id)?.libelle ?? section.libelle,
-        ajoutes: section.indicateurs.filter((i) => this.ajoutes().has(i.id)).length,
+        ajoutes: section.indicateurs.reduce((n, i) => n + (this.nombres().get(i.id) ?? 0), 0),
         indicateurs: section.indicateurs.filter((i) => !q || i.titre.toLowerCase().includes(q)),
       }))
       .filter((section) => section.indicateurs.length > 0);

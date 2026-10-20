@@ -63,7 +63,7 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 
 | Composant Labs | Utilisé dans |
 |---|---|
-| `soc-labs-workspace-layout` | Composition d'un tableau de bord (barre du haut + 3 colonnes défilant séparément) |
+| `soc-labs-workspace-layout` | Composition d'un tableau de bord (barre du haut + 3 colonnes défilant séparément ; panneaux repliables sous 1280 px — `collapsibleBelow`, PR design_system_angular#35, pas encore publiée) |
 | `soc-labs-compact-field` | Composition — panneau « Informations » (Libellé, Description, Population) |
 | `soc-labs-pill-toggle` | Composition — statut (Actif / Inactif / Archivé) |
 | `soc-labs-chart-type-chip` | Composition — cartes de graphe et lignes de la Bibliothèque |
@@ -72,6 +72,11 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 | `soc-labs-icon-button` | Composition (retour, menu d'une carte), Bibliothèque (« + », replier une section) |
 | `soc-labs-inline-edit` | Bibliothèque — renommage sur place des sections |
 | `soc-labs-fullscreen-overlay` | Composition — « Prévisualiser » |
+
+**Composant Labs pas encore publié** — en attendant la publication d'une PR du design system, le prototype dépend d'une
+archive locale du kit construite depuis la branche de la PR : `vendor/socium-design-angular-components-<version>.tgz`,
+référencée dans `package.json` (`"file:vendor/…"`). À la publication, remettre la version publiée
+(`npm install @socium-design/angular-components@<version>`) et supprimer l'archive de `vendor/`.
 
 **Patron « espace de travail »** — `tableau-de-bord-composition-page.component.ts` : `soc-labs-workspace-layout` comme
 racine de la page (l'hôte de la page prend `height: 100%` de la zone de contenu du shell), `cdkDropListGroup` sur le

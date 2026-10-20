@@ -1,12 +1,14 @@
-import { LIBELLES_ROLES, type RoleDemo } from '../../../../../core/session/session.service';
+import type { AppShellProduct } from '@socium-design/angular-components';
 import type { ReglesPopulation } from '../../configuration/populations/models/population.model';
+import type { StatutDemande } from './workflow.model';
 
 export type StatutTableauDeBord = 'Actif' | 'Inactif' | 'Archivé';
 
-/** Profils qui consultent un tableau de bord : les rôles de démonstration de la consultation. */
-export type Profil = RoleDemo;
-
-export const LIBELLES_PROFILS: Record<Profil, string> = LIBELLES_ROLES;
+/** Produit du SIRH sur lequel un tableau de bord apparaît. */
+export interface Produit {
+  id: AppShellProduct;
+  libelle: string;
+}
 
 /** Modèle de base (point de départ) d'un tableau de bord. */
 export type ModeleBase = 'vide' | 'direction-generale' | 'admin-rh' | 'manager';
@@ -17,14 +19,19 @@ export interface Gabarit {
   description: string;
   /** Indicateurs ajoutés à la création. */
   indicateurs: string[];
-  /** Profils proposés par défaut. */
-  profils: Profil[];
 }
 
 /** Section d'un tableau de bord : reprend une section du catalogue, renommable pour ce tableau. */
 export interface SectionTableau {
   id: string;
   libelle: string;
+}
+
+/** Statistique de workflow personnalisé : le workflow choisi à l'ajout et les statuts affichés. */
+export interface WidgetWorkflow {
+  workflowId: string;
+  /** Statuts affichés (filtre de la carte) ; vide = tous. */
+  statuts: StatutDemande[];
 }
 
 /** Indicateur du catalogue ajouté à un tableau de bord, avec ses personnalisations. */
@@ -37,6 +44,10 @@ export interface Widget {
   sectionId: string;
   /** Filtres appliqués, au format `<champ>:<valeur>` (ex. `site:Dakar`). */
   filtres: string[];
+  /** Filtre « Population » (KPI filtrables par population uniquement). */
+  populationId?: string;
+  /** Statistique de workflow personnalisé uniquement. */
+  workflow?: WidgetWorkflow;
 }
 
 export interface TableauDeBord {
@@ -44,7 +55,12 @@ export interface TableauDeBord {
   libelle: string;
   description: string;
   statut: StatutTableauDeBord;
-  /** Population / scope : périmètre de données de tous les graphes. `null` : population supprimée. */
+  /** Produit sur lequel le tableau de bord apparaît. */
+  produit: AppShellProduct;
+  /**
+   * Population adressée : les personnes qui voient le tableau de bord (comme une liste de diffusion). Les données affichées,
+   * elles, suivent le périmètre de la personne qui consulte. `null` : population supprimée.
+   */
   populationId: string | null;
   /**
    * Version des règles de la population conservée par ce tableau quand il a été exclu d'une modification de la population
@@ -52,7 +68,6 @@ export interface TableauDeBord {
    */
   reglesFigees?: ReglesPopulation;
   modele: ModeleBase;
-  profils: Profil[];
   sections: SectionTableau[];
   widgets: Widget[];
   /** Date de création, au format ISO (AAAA-MM-JJ). */
@@ -64,5 +79,6 @@ export interface TableauDeBordSaisie {
   libelle: string;
   description: string;
   statut: StatutTableauDeBord;
+  produit: AppShellProduct;
   populationId: string;
 }
