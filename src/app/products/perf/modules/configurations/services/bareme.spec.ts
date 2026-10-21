@@ -1,6 +1,6 @@
 import { DEFINITIONS_NOTES } from '../../../../../../mocks/data/baremes-notes.mock';
 import type { BaremeNote } from '../models/bareme.model';
-import { baremeValide, erreurDenominateur, estDesactive, formaterDateModification, maintenantIsoLocal, noteSurBareme } from './bareme';
+import { baremeValide, erreurDenominateur, estDesactive, formaterDateModification, maintenantIsoLocal, noteSurBareme, resumeBareme } from './bareme';
 
 describe('Barèmes des notes', () => {
   const definition = (id: string) => DEFINITIONS_NOTES.find((d) => d.id === id)!;
@@ -54,6 +54,27 @@ describe('Barèmes des notes', () => {
     it('les barèmes objectif et compétence ont une mention « affichés sur 100 »', () => {
       expect(definition('objectif').mentionDesactive).toBe('Barème désactivé : objectifs affichés sur 100');
       expect(definition('competence').mentionDesactive).toBe('Barème désactivé : compétences affichées sur 100');
+    });
+  });
+
+  describe('résumé d’une carte fermée', () => {
+    it('barème actif : dénominateur · décimales · application', () => {
+      expect(resumeBareme(definition('finale'), bareme({ id: 'finale', denominateur: 20, decimales: 2, appliquerAuxFinalisees: true }))).toBe(
+        '/20 · 2 décimales · appliqué aux évaluations finalisées',
+      );
+      expect(resumeBareme(definition('finale'), bareme({ id: 'finale', denominateur: 5, decimales: 1, appliquerAuxFinalisees: false }))).toBe(
+        '/5 · 1 décimale · appliqué aux nouvelles évaluations uniquement',
+      );
+      expect(resumeBareme(definition('potentiel'), bareme({ id: 'potentiel', denominateur: 100, decimales: 0 }))).toContain('/100 · 0 décimale ·');
+    });
+
+    it('note « Visible sur l’évaluation » masquée : le barème reste résumé', () => {
+      expect(resumeBareme(definition('finale'), bareme({ id: 'finale', actif: false }))).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
+    });
+
+    it('barème objectif / compétence désactivé : « affichage sur 100 »', () => {
+      expect(resumeBareme(definition('objectif'), bareme({ actif: false }))).toBe('Barème désactivé : affichage sur 100');
+      expect(resumeBareme(definition('competence'), bareme({ id: 'competence', actif: false }))).toBe('Barème désactivé : affichage sur 100');
     });
   });
 
