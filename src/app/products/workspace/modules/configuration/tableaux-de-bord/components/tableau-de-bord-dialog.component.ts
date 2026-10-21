@@ -226,7 +226,7 @@ export class TableauDeBordDialogComponent {
     const saisie: TableauDeBordSaisie = {
       libelle,
       description,
-      statut: existant?.statut === 'Archivé' && statut === 'Inactif' ? 'Archivé' : statut,
+      statut,
       produit: produit as AppShellProduct,
       populationId,
     };
@@ -248,7 +248,7 @@ export class TableauDeBordDialogComponent {
     this.form.reset({
       libelle: tableau?.libelle ?? '',
       description: tableau?.description ?? '',
-      statut: tableau?.statut === 'Actif' ? 'Actif' : 'Inactif',
+      statut: tableau?.statut ?? 'Inactif',
       produit: tableau?.produit ?? '',
       populationId: tableau?.populationId ?? '',
       modele: tableau?.modele ?? (GABARIT_PAR_DEFAUT as ModeleBase),

@@ -80,7 +80,7 @@ export const TABLEAUX_DE_BORD: TableauDeBord[] = [
     id: 'tdb-4',
     libelle: 'Dashboard masse salariale',
     description: 'Suivi de la masse salariale des fonctions support.',
-    statut: 'Archivé',
+    statut: 'Inactif',
     produit: 'workspace',
     populationId: 'pop-2',
     modele: 'vide',

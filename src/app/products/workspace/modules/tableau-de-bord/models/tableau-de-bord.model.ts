@@ -2,7 +2,7 @@ import type { AppShellProduct } from '@socium-design/angular-components';
 import type { ChampCondition, ReglesPopulation } from '../../configuration/populations/models/population.model';
 import type { StatutDemande } from './workflow.model';
 
-export type StatutTableauDeBord = 'Actif' | 'Inactif' | 'Archivé';
+export type StatutTableauDeBord = 'Actif' | 'Inactif';
 
 /** Produit du SIRH sur lequel un tableau de bord apparaît. */
 export interface Produit {

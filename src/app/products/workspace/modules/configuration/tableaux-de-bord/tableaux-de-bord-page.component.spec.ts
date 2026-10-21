@@ -39,18 +39,23 @@ describe('TableauxDeBordPageComponent', () => {
   it('colonnes Libellé | Modèle de base | Produit | Population adressée | Statut | Date de création, sans profils ; boutons Détail et Visualiser', () => {
     expect(rows().length).toBe(5);
     expect([...el().querySelectorAll('thead th')].map((th) => th.textContent?.trim()).filter(Boolean)).toEqual([
-      'Libellé',
+      'Nom',
       'Modèle de base',
       'Produit',
       'Population adressée',
       'Statut',
       'Date de création',
     ]);
-    expect(cellules('Direction générale').slice(0, 6)).toEqual(['Direction générale', 'Direction Générale', 'Workspace', 'Équipe Sénégal', 'Actif', '03/06/2026']);
+    expect(cellules('Direction générale').slice(0, 6)).toEqual(['Direction générale', 'Direction Générale', 'Workspace', 'Équipe Sénégal', 'Actif', '3 juin 2026']);
     expect(cellules('Mon équipe').slice(2, 4)).toEqual(['Workspace', 'Managers – périmètre hiérarchique']);
     expect(cellules('Dashboard effectifs internationaux').slice(2, 5)).toEqual(['Perf', 'Filiales hors Sénégal', 'Inactif']);
-    expect(cellules('Dashboard masse salariale')[4]).toBe('Archivé');
+    expect(cellules('Dashboard masse salariale')[4]).toBe('Inactif');
     expect(el().textContent).not.toContain('Profils');
+    // Comme le Figma Make : pas de titre de section, coche sur « Actif », icônes sur Détail et Visualiser.
+    expect(el().querySelector('soc-badge')).toBeNull();
+    expect(ligne('Direction générale').querySelector('app-statut-tableau svg')).not.toBeNull();
+    expect(ligne('Dashboard masse salariale').querySelector('app-statut-tableau svg')).toBeNull();
+    expect(ligne('Direction générale').querySelectorAll('[data-testid="detail"] svg, [data-testid="visualiser"] svg').length).toBe(2);
     expect(ligne('Direction générale').querySelector('[data-testid="detail"]')?.textContent?.trim()).toBe('Détail');
     expect(ligne('Direction générale').querySelector('[data-testid="visualiser"]')?.textContent?.trim()).toBe('Visualiser');
     expect(el().querySelector('soc-search-bar input')?.getAttribute('placeholder')).toBe('Rechercher un tableau de bord...');

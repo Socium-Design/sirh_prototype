@@ -46,10 +46,10 @@ describe('TableauxDeBordService', () => {
   it('enregistre la composition (informations, produit, graphes, sections, statut)', fakeAsync(() => {
     const { libelle, description, populationId, sections } = lire('tdb-3')!;
     service
-      .enregistrerComposition('tdb-3', { libelle: ` ${libelle} 2 `, description, produit: 'perfs', populationId, widgets: [], sections, statut: 'Archivé' })
+      .enregistrerComposition('tdb-3', { libelle: ` ${libelle} 2 `, description, produit: 'perfs', populationId, widgets: [], sections, statut: 'Inactif' })
       .subscribe();
     tick(300);
-    expect(lire('tdb-3')).toEqual(jasmine.objectContaining({ libelle: `${libelle} 2`, produit: 'perfs', widgets: [], statut: 'Archivé' }));
+    expect(lire('tdb-3')).toEqual(jasmine.objectContaining({ libelle: `${libelle} 2`, produit: 'perfs', widgets: [], statut: 'Inactif' }));
   }));
 
   it('tableaux accessibles : ceux de la session, actifs et du produit demandé, dans l’ordre du menu', fakeAsync(() => {

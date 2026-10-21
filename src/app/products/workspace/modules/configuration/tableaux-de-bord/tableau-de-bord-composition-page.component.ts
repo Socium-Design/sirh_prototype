@@ -339,12 +339,11 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   /** Valeurs choisies dans les listes de critères des cartes (état d'affichage, non enregistré). */
   protected readonly valeurs = signal<ValeursCriteres>({});
 
-  /** Statut en lecture seule : une pastille du kit (Actif vert, Archivé ambre ; Inactif en bleu faute de gris : GAP-DS design_system_angular#29). */
-  protected readonly couleursStatuts: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'information', Archivé: 'warning' };
+  /** Statut en lecture seule : une pastille du kit (Actif vert ; Inactif en bleu faute de gris : GAP-DS design_system_angular#29). */
+  protected readonly couleursStatuts: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'information' };
   protected readonly optionsStatuts: LabsPillOption<StatutTableauDeBord>[] = [
     { value: 'Actif', label: 'Actif', color: 'green' },
     { value: 'Inactif', label: 'Inactif', color: 'gray' },
-    { value: 'Archivé', label: 'Archivé', color: 'amber' },
   ];
   protected readonly mode = computed(() => (this.edition() ? 'edit' : 'read'));
   protected readonly optionsPopulations = computed<LabsCompactFieldOption[]>(() => this.populations().map((p) => ({ value: p.id, label: p.nom })));
