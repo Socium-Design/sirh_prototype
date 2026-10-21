@@ -3,7 +3,7 @@ import { NAV_ROUTES, navItemFromUrl, productFromUrl, routeForNavItem, routeForPr
 describe('navigation.map', () => {
   it('maps URL segments to design-system products (perf → perfs)', () => {
     expect(productFromUrl('/workspace/employes')).toBe('workspace');
-    expect(productFromUrl('/perf/formation')).toBe('perfs');
+    expect(productFromUrl('/perf/configurations')).toBe('perfs');
     expect(productFromUrl('/job')).toBe('job');
     expect(productFromUrl('/')).toBe('workspace');
   });
@@ -17,7 +17,6 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/workspace/employes')).toBe('workspace-employes');
     expect(navItemFromUrl('/workspace/accueil')).toBe('workspace-accueil');
     expect(navItemFromUrl('/workspace/employes/?q=a#top')).toBe('workspace-employes');
-    expect(navItemFromUrl('/perf/evaluation')).toBe('perfs-evaluations');
     expect(navItemFromUrl('/workspace/tableau-de-bord?tableau=tdb-3')).toBe('workspace-tableau-de-bord');
     expect(navItemFromUrl('/workspace/carrieres')).toBeUndefined();
   });
@@ -29,6 +28,8 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/workspace/configuration/populations/nouvelle')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/configuration/populations/pop-1/modifier')).toBe('workspace-configurations');
     expect(navItemFromUrl('/workspace/employes-archives')).toBeUndefined();
+    expect(navItemFromUrl('/perf/configurations')).toBe('perfs-configurations');
+    expect(navItemFromUrl('/perf/configurations/notes-evaluation')).toBe('perfs-configurations');
   });
 
   it('highlights the item of a coming-soon page', () => {
@@ -39,6 +40,8 @@ describe('navigation.map', () => {
     expect(routeForNavItem('workspace-employes')).toBe('/workspace/employes');
     expect(routeForNavItem('workspace-structures')).toBe('/a-venir/workspace-structures');
     expect(routeForNavItem('workspace-configurations')).toBe('/workspace/configuration');
+    expect(routeForNavItem('perfs-configurations')).toBe('/perf/configurations');
+    expect(routeForNavItem('perfs-objectifs')).toBe('/a-venir/perfs-objectifs');
   });
 
   it('opens a built product home, or the coming-soon accueil of an unbuilt product', () => {

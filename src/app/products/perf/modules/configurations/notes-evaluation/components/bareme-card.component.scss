@@ -1,0 +1,75 @@
+:host {
+  display: block;
+}
+
+.bareme__groupe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-sm);
+}
+
+.bareme__label {
+  font-family: var(--bridges-shape-text-label-font);
+  font-weight: var(--bridges-shape-text-label-weight);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+}
+
+.bareme__choix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bridges-position-gap-sm);
+}
+
+.bareme__champs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bridges-position-gap-lg);
+  align-items: start;
+}
+
+.bareme__apercu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--bridges-position-gap-sm);
+  padding: var(--bridges-position-padding-lg) var(--bridges-position-padding-xl);
+  border: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
+  border-radius: var(--bridges-shape-figure-radius-md);
+  background: var(--bridges-color-background-layer-1);
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-md);
+  color: var(--bridges-color-text-primary); // text-secondary sur layer-1 = 4,39:1 (< 4,5)
+}
+
+.bareme__apercu-valeur {
+  font-family: var(--bridges-shape-text-heading-1-font);
+  font-weight: var(--bridges-shape-text-heading-1-weight);
+  font-size: var(--bridges-size-text-text-size-2xl);
+  color: var(--bridges-color-accent-blue-text); // 6,4:1 sur layer-1 (text-action : 3,5:1)
+}
+
+.bareme__finalisees {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xs);
+  padding-top: var(--bridges-position-padding-lg);
+  border-top: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
+}
+
+.bareme__aide {
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-xs);
+  color: var(--bridges-color-text-secondary);
+}
+
+.bareme__regle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-2xs);
+}
+
+.bareme__regle-titre {
+  font-weight: var(--bridges-shape-text-label-weight);
+  color: var(--bridges-color-text-primary);
+}

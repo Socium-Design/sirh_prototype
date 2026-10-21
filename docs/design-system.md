@@ -73,6 +73,8 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 | `soc-labs-icon-button` | Composition (retour, menu d'une carte), Bibliothèque (« + », replier une section) |
 | `soc-labs-inline-edit` | Bibliothèque — renommage sur place des sections |
 | `soc-labs-fullscreen-overlay` | Composition — « Prévisualiser » |
+| `soc-labs-settings-card` | Perfs > Configurations > Notes d'évaluation — cartes de barème (sur-titre, interrupteur, état désactivé, « Règle de calcul ») et « Ce qui sera mis à jour automatiquement » (PR design_system_angular#51, pas encore publiée) |
+| `soc-labs-icon-tile` | Perfs > Configurations > Notes d'évaluation — icônes de « Ce qui sera mis à jour automatiquement » |
 
 **Composant Labs pas encore publié** — en attendant la publication d'une PR du design system, le prototype dépend d'une
 archive locale du kit construite depuis la branche de la PR : `vendor/socium-design-angular-components-<version>.tgz`,

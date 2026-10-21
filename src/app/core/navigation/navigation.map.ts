@@ -31,9 +31,8 @@ export const NAV_ROUTES: Record<string, string> = {
   'workspace-tableau-de-bord': '/workspace/tableau-de-bord',
   // Page à onglets (Populations, Gestion des tableaux de bord) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
   'workspace-configurations': '/workspace/configuration',
-  'perfs-formations': '/perf/formation',
-  'perfs-evaluations': '/perf/evaluation',
-  'perfs-objectifs': '/perf/objectifs',
+  // Page à onglets (Configuration des objectifs, Notes d'évaluation, Parcours de validation) : comme Workspace.
+  'perfs-configurations': '/perf/configurations',
   'job-offres': '/job/offres',
 };
 

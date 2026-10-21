@@ -1,11 +1,10 @@
 import { Routes } from '@angular/router';
-import { FormationPageComponent } from './modules/formation/formation-page.component';
-import { EvaluationPageComponent } from './modules/evaluation/evaluation-page.component';
-import { ObjectifsPageComponent } from './modules/objectifs/objectifs-page.component';
 
+/** Perfs : seule « Configurations » est construite ; les autres items du menu mènent à « Bientôt disponible ». */
 export const PERF_ROUTES: Routes = [
-  { path: '', redirectTo: 'formation', pathMatch: 'full' },
-  { path: 'formation', component: FormationPageComponent, title: 'Formation' },
-  { path: 'evaluation', component: EvaluationPageComponent, title: 'Évaluation' },
-  { path: 'objectifs', component: ObjectifsPageComponent, title: 'Objectifs' },
+  { path: '', redirectTo: 'configurations', pathMatch: 'full' },
+  {
+    path: 'configurations',
+    loadChildren: () => import('./modules/configurations/configurations.routes').then((m) => m.CONFIGURATIONS_ROUTES),
+  },
 ];
