@@ -39,6 +39,17 @@ export function baremeValide(definition: DefinitionNote, bareme: BaremeNote): bo
   return estDesactive(definition, bareme) || erreurDenominateur(bareme.denominateur) === null;
 }
 
+/**
+ * Résumé d'une carte fermée : « /20 · 2 décimales · appliqué aux évaluations finalisées » (ou « … nouvelles évaluations
+ * uniquement ») ; barème objectif / compétence désactivé : « Barème désactivé : affichage sur 100 ».
+ */
+export function resumeBareme(definition: DefinitionNote, bareme: BaremeNote): string {
+  if (estDesactive(definition, bareme)) return 'Barème désactivé : affichage sur 100';
+  const decimales = `${bareme.decimales} décimale${bareme.decimales > 1 ? 's' : ''}`;
+  const application = bareme.appliquerAuxFinalisees ? 'appliqué aux évaluations finalisées' : 'appliqué aux nouvelles évaluations uniquement';
+  return `/${bareme.denominateur ?? '—'} · ${decimales} · ${application}`;
+}
+
 /** Date ISO locale → « 20/08/2026 11:00 ». */
 export function formaterDateModification(iso: string): string {
   const [date, heure = ''] = iso.split('T');

@@ -10,6 +10,7 @@ import {
   erreurDenominateur,
   estDesactive,
   noteSurBareme,
+  resumeBareme,
 } from '../../services/bareme';
 
 const OPTIONS_DECIMALES: SelectOption[] = [
@@ -21,7 +22,9 @@ const OPTIONS_DECIMALES: SelectOption[] = [
 /**
  * Carte de barème d'une note (Perfs > Configurations > Notes d'évaluation) : `soc-labs-settings-card` (Labs, GAP-DS
  * design_system_angular#49 : sur-titre, interrupteur d'en-tête, état désactivé, encadré « Règle de calcul »).
- * Présentationnelle : la page possède les valeurs, la carte émet chaque changement (`changer`).
+ * Présentationnelle : la page possède les valeurs et l'ouverture, la carte émet chaque changement (`changer`,
+ * `ouvertureChange`). Repliable (design_system_angular#54) : fermée, l'en-tête montre le résumé du barème et un badge
+ * « Modifié » / « Erreur » ; une valeur invalide garde la carte ouverte (`lockExpanded`).
  */
 @Component({
   selector: 'app-bareme-card',
@@ -30,7 +33,20 @@ const OPTIONS_DECIMALES: SelectOption[] = [
   template: `
     @let def = definition();
     @let b = bareme();
-    <soc-labs-settings-card overline="BARÈME" [title]="def.titre" [disabled]="desactive()" [disabledNote]="def.mentionDesactive" [attr.data-note]="def.id">
+    <soc-labs-settings-card
+      overline="BARÈME"
+      [title]="def.titre"
+      [disabled]="desactive()"
+      [disabledNote]="def.mentionDesactive"
+      collapsible
+      [expanded]="ouverte() || !!erreur()"
+      (expandedChange)="ouvertureChange.emit($event)"
+      [lockExpanded]="!!erreur()"
+      [summary]="resume()"
+      [badge]="badge()?.libelle"
+      [badgeTone]="badge()?.ton ?? 'information'"
+      [attr.data-note]="def.id"
+    >
       <soc-switch
         socLabsSettingsCardAction
         [label]="def.interrupteur === 'activation' ? 'Activer le barème' : 'Visible sur l’évaluation'"
@@ -100,7 +116,12 @@ const OPTIONS_DECIMALES: SelectOption[] = [
 export class BaremeCardComponent {
   readonly definition = input.required<DefinitionNote>();
   readonly bareme = input.required<BaremeNote>();
+  /** Carte ouverte (accordéon tenu par la page, non enregistré). Une carte en erreur reste ouverte. */
+  readonly ouverte = input(false);
+  /** Réglage différent du dernier enregistré : badge « Modifié ». */
+  readonly modifie = input(false);
   readonly changer = output<Partial<BaremeNote>>();
+  readonly ouvertureChange = output<boolean>();
 
   protected readonly choix = CHOIX_RAPIDES;
   /**
@@ -113,6 +134,11 @@ export class BaremeCardComponent {
 
   protected readonly desactive = computed(() => estDesactive(this.definition(), this.bareme()));
   protected readonly erreur = computed(() => (this.desactive() ? null : erreurDenominateur(this.bareme().denominateur)));
+  protected readonly resume = computed(() => resumeBareme(this.definition(), this.bareme()));
+  /** « Erreur » l'emporte sur « Modifié ». */
+  protected readonly badge = computed<{ libelle: string; ton: 'error' | 'information' } | undefined>(() =>
+    this.erreur() ? { libelle: 'Erreur', ton: 'error' } : this.modifie() ? { libelle: 'Modifié', ton: 'information' } : undefined,
+  );
   protected readonly apercu = computed(() => {
     const { denominateur, decimales } = this.bareme();
     return erreurDenominateur(denominateur) ? '—' : `${noteSurBareme(SCORE_APERCU, denominateur!, decimales)} / ${denominateur}`;

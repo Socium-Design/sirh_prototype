@@ -12,6 +12,14 @@ describe('NotesEvaluationPageComponent', () => {
     [...carte(note).querySelectorAll('soc-selectable-chips button')].find((b) => b.textContent?.trim() === `${n}`) as HTMLButtonElement;
   const interrupteur = (note: string) => carte(note).querySelector('[data-testid="interrupteur"] [role="switch"]') as HTMLButtonElement;
   const bouton = (id: string) => el().querySelector(`[data-testid="${id}"]`) as HTMLButtonElement;
+  const ouverte = (note: string) => carte(note).getAttribute('data-expanded') === 'true';
+  const resume = (note: string) => texte(carte(note).querySelector('[data-region="summary"]'));
+  const badge = (note: string) => texte(carte(note).querySelector('[data-region="badge"]'));
+  const chevron = (note: string) => carte(note).querySelector('[data-region="toggle"]') as HTMLButtonElement;
+  const deplier = (note: string) => {
+    chevron(note).click();
+    fixture.detectChanges();
+  };
   const saisir = (note: string, valeur: string) => {
     champ(note).value = valeur;
     champ(note).dispatchEvent(new Event('input', { bubbles: true }));
@@ -24,6 +32,12 @@ describe('NotesEvaluationPageComponent', () => {
     tick(300); // le service simule 200 ms de latence réseau
     fixture.detectChanges();
   }));
+
+  /** Les cartes sont fermées à l'arrivée : la plupart des tests travaillent cartes ouvertes. */
+  const toutDeplier = () => {
+    bouton('tout-deplier').click();
+    fixture.detectChanges();
+  };
 
   it('5 cartes « BARÈME » dans l’ordre, avec leur interrupteur et leur règle de calcul', () => {
     const cartes = [...el().querySelectorAll('soc-labs-settings-card[data-note]')];
@@ -48,6 +62,7 @@ describe('NotesEvaluationPageComponent', () => {
   });
 
   it('l’aperçu suit le choix rapide, la saisie et les décimales, en direct', () => {
+    toutDeplier();
     chip('finale', 10).click();
     fixture.detectChanges();
     expect(apercu('finale')).toContain('8,20 / 10');
@@ -58,6 +73,7 @@ describe('NotesEvaluationPageComponent', () => {
   });
 
   it('dénominateur hors bornes ou non entier : erreur, aperçu « — », Enregistrer désactivé', () => {
+    toutDeplier();
     for (const valeur of ['1001', '0', '-4', '2.5']) {
       saisir('finale', valeur);
       expect(texte(carte('finale'))).withContext(valeur).toContain('Saisissez un entier entre 1 et 1000.');
@@ -82,6 +98,7 @@ describe('NotesEvaluationPageComponent', () => {
   });
 
   it('« Activer le barème » rend la carte modifiable ; une carte désactivée n’est pas validée', () => {
+    toutDeplier();
     expect(bouton('enregistrer').disabled).toBeFalse();
     interrupteur('objectif').click();
     fixture.detectChanges();
@@ -91,6 +108,7 @@ describe('NotesEvaluationPageComponent', () => {
   });
 
   it('Enregistrer → « Enregistré ✓ » et date mise à jour ; une modification suivante rend « Enregistrer »', fakeAsync(() => {
+    toutDeplier();
     expect(texte(bouton('derniere-modification'))).toBe('Dernière modification par Admin Test Manu le 20/08/2026 11:00');
     chip('finale', 100).click();
     fixture.detectChanges();
@@ -106,6 +124,7 @@ describe('NotesEvaluationPageComponent', () => {
   }));
 
   it('Annuler restaure les dernières valeurs enregistrées', fakeAsync(() => {
+    toutDeplier();
     chip('finale', 50).click();
     interrupteur('objectif').click();
     fixture.detectChanges();
@@ -122,6 +141,84 @@ describe('NotesEvaluationPageComponent', () => {
     expect(apercu('potentiel')).toContain('16,40 / 20');
     expect(champ('potentiel').value).toBe('20');
   }));
+
+  describe('accordéon', () => {
+    it('5 cartes repliables, toutes fermées à l’arrivée, avec le résumé du réglage', () => {
+      const notes = ['finale', 'potentiel', 'performance', 'objectif', 'competence'];
+      expect(notes.every((n) => !ouverte(n))).toBeTrue();
+      expect(resume('finale')).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
+      expect(resume('objectif')).toBe('Barème désactivé : affichage sur 100');
+      expect(resume('competence')).toBe('Barème désactivé : affichage sur 100');
+      expect(chevron('finale').getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('plusieurs cartes ouvertes à la fois ; le résumé suit le réglage', () => {
+      deplier('finale');
+      deplier('potentiel');
+      expect(ouverte('finale') && ouverte('potentiel')).toBeTrue();
+      chip('finale', 10).click();
+      (carte('finale').querySelector('[data-testid="finalisees"] [role="switch"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      deplier('finale');
+      expect(ouverte('finale')).toBeFalse();
+      expect(resume('finale')).toBe('/10 · 2 décimales · appliqué aux évaluations finalisées');
+    });
+
+    it('« Tout déplier » puis « Tout replier »', () => {
+      expect(texte(bouton('tout-deplier'))).toBe('Tout déplier');
+      toutDeplier();
+      expect(['finale', 'potentiel', 'performance', 'objectif', 'competence'].every(ouverte)).toBeTrue();
+      expect(texte(bouton('tout-deplier'))).toBe('Tout replier');
+      toutDeplier();
+      expect(ouverte('finale')).toBeFalse();
+      expect(texte(bouton('tout-deplier'))).toBe('Tout déplier');
+    });
+
+    it('l’interrupteur d’en-tête fonctionne carte fermée, sans la déplier', () => {
+      interrupteur('objectif').click();
+      fixture.detectChanges();
+      expect(interrupteur('objectif').getAttribute('aria-checked')).toBe('true');
+      expect(ouverte('objectif')).toBeFalse();
+      expect(resume('objectif')).toBe('/5 · 1 décimale · appliqué aux nouvelles évaluations uniquement');
+    });
+
+    it('badge « Modifié » sur la carte changée, retiré par Annuler', () => {
+      expect(badge('finale')).toBe('');
+      interrupteur('finale').click();
+      fixture.detectChanges();
+      expect(badge('finale')).toBe('Modifié');
+      expect(badge('potentiel')).toBe('');
+      bouton('annuler').click();
+      fixture.detectChanges();
+      expect(badge('finale')).toBe('');
+    });
+
+    it('badge « Modifié » retiré par Enregistrer', fakeAsync(() => {
+      interrupteur('performance').click();
+      fixture.detectChanges();
+      expect(badge('performance')).toBe('Modifié');
+      bouton('enregistrer').click();
+      tick(300);
+      fixture.detectChanges();
+      expect(badge('performance')).toBe('');
+    }));
+
+    it('valeur invalide : carte ouverte, badge « Erreur », impossible à refermer tant que l’erreur reste', () => {
+      deplier('finale');
+      saisir('finale', '0');
+      expect(badge('finale')).toBe('Erreur');
+      expect(chevron('finale').getAttribute('aria-disabled')).toBe('true');
+      deplier('finale');
+      expect(ouverte('finale')).toBeTrue();
+      toutDeplier(); // « Tout replier » n'y peut rien non plus
+      toutDeplier();
+      expect(ouverte('finale')).toBeTrue();
+      saisir('finale', '20');
+      expect(badge('finale')).toBe('');
+      deplier('finale');
+      expect(ouverte('finale')).toBeFalse();
+    });
+  });
 
   it('« Ce qui sera mis à jour automatiquement » : 3 lignes avec icône', () => {
     const bloc = el().querySelector('[data-testid="mises-a-jour"]')!;

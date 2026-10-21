@@ -10,6 +10,11 @@
   max-width: calc(var(--bridges-position-padding-4xl) * 16); // 768 px, ≈ la largeur des cartes en prod à 1440 px
 }
 
+.notes__outils {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .maj {
   display: flex;
   flex-direction: column;
