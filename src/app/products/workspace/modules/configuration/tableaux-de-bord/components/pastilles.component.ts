@@ -1,36 +1,28 @@
 import { Component, input } from '@angular/core';
+import { LucideCircleCheck } from '@lucide/angular';
 import { SocTag, type TagColor } from '@socium-design/angular-components';
-import { type Profil, type StatutTableauDeBord } from '../../../tableau-de-bord/models/tableau-de-bord.model';
+import { type StatutTableauDeBord } from '../../../tableau-de-bord/models/tableau-de-bord.model';
 
-/** Libellés courts des pastilles (le tableau du kit ne gère pas la largeur des colonnes : GAP-DS #4). */
-export const PASTILLES_PROFILS: Record<Profil, string> = { 'admin-rh': 'Admin RH', manager: 'Manager', 'direction-generale': 'Direction générale' };
-export const COULEURS_PROFILS: Record<Profil, TagColor> = { 'admin-rh': 'purple', manager: 'orange', 'direction-generale': 'information' };
-export const COULEURS_STATUTS: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'warning', Archivé: 'error' };
+export const COULEURS_STATUTS: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'warning' };
 
-/** Profils d'un tableau de bord, en pastilles colorées. */
-@Component({
-  selector: 'app-profils',
-  imports: [SocTag],
-  styles: `:host { display: flex; flex-wrap: wrap; gap: var(--bridges-position-gap-xs); }`,
-  template: `
-    @for (profil of profils(); track profil) {
-      <soc-tag [color]="couleurs[profil]">{{ libelles[profil] }}</soc-tag>
-    } @empty {
-      —
-    }
-  `,
-})
-export class ProfilsComponent {
-  readonly profils = input.required<Profil[]>();
-  protected readonly couleurs = COULEURS_PROFILS;
-  protected readonly libelles = PASTILLES_PROFILS;
-}
-
-/** Statut d'un tableau de bord (Actif / Inactif / Archivé). */
+/** Statut d'un tableau de bord (Actif / Inactif) ; « Actif » porte une coche, comme le Figma Make. */
 @Component({
   selector: 'app-statut-tableau',
-  imports: [SocTag],
-  template: `<soc-tag [color]="couleurs[statut()]">{{ statut() }}</soc-tag>`,
+  imports: [SocTag, LucideCircleCheck],
+  styles: `
+    .statut { display: inline-flex; align-items: center; gap: var(--bridges-position-gap-2xs); }
+    .statut__icone { width: var(--bridges-size-icon-xs); height: var(--bridges-size-icon-xs); }
+  `,
+  template: `
+    <soc-tag [color]="couleurs[statut()]">
+      <span class="statut">
+        @if (statut() === 'Actif') {
+          <svg lucideCircleCheck class="statut__icone" [strokeWidth]="2" aria-hidden="true"></svg>
+        }
+        {{ statut() }}
+      </span>
+    </soc-tag>
+  `,
 })
 export class StatutTableauComponent {
   readonly statut = input.required<StatutTableauDeBord>();

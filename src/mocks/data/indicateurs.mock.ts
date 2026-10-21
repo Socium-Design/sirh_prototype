@@ -7,9 +7,13 @@ export const SECTIONS_CATALOGUE: SectionCatalogue[] = [
   { id: 'mouvements', libelle: 'Mouvement du personnel' },
   { id: 'masse-salariale', libelle: 'Masse salariale' },
   { id: 'absences', libelle: 'Absences et congés' },
+  { id: 'workflows-personnalises', libelle: 'Workflows personnalisés' },
 ];
 
-/** Catalogue des indicateurs — géré par les devs, en lecture seule pour le client. */
+/**
+ * Catalogue des indicateurs — géré par les devs, en lecture seule pour le client. `filtrablePopulation` : KPI filtrables par
+ * population dans « Modifier le KPI » (liste à valider par le produit).
+ */
 export const INDICATEURS: Indicateur[] = [
   {
     id: 'ind-effectif-total',
@@ -18,6 +22,7 @@ export const INDICATEURS: Indicateur[] = [
     description: 'Nombre de collaborateurs actifs à date dans le périmètre du tableau de bord.',
     typeGraphique: 'kpi',
     filtresDisponibles: ['site', 'departement', 'filiale', 'typeContrat'],
+    filtrablePopulation: true,
     source: { type: 'effectif' },
     tendance: { valeur: 13, periode: 'ce mois', hausseFavorable: true },
   },
@@ -28,6 +33,7 @@ export const INDICATEURS: Indicateur[] = [
     description: "Répartition des collaborateurs par tranche d'âge, pour anticiper les départs à la retraite et équilibrer les recrutements.",
     typeGraphique: 'barres-horizontales',
     filtresDisponibles: ['site', 'sexe', 'departement'],
+    filtrablePopulation: true,
     source: { type: 'serie', serieId: 'pyramide-ages' },
   },
   {
@@ -37,6 +43,7 @@ export const INDICATEURS: Indicateur[] = [
     description: "Ancienneté moyenne des collaborateurs, en années, calculée depuis leur date d'entrée.",
     typeGraphique: 'kpi',
     filtresDisponibles: ['site', 'departement', 'typeContrat'],
+    filtrablePopulation: true,
     source: { type: 'anciennete-moyenne' },
     tendance: { valeur: 0.2, periode: 'ce mois', hausseFavorable: true },
   },
@@ -47,6 +54,7 @@ export const INDICATEURS: Indicateur[] = [
     description: 'Part des femmes et des hommes dans le périmètre.',
     typeGraphique: 'camembert',
     filtresDisponibles: ['site', 'departement', 'statut'],
+    filtrablePopulation: true,
     source: { type: 'repartition', champ: 'sexe' },
     classifieNonHistorise: true,
   },
@@ -131,5 +139,16 @@ export const INDICATEURS: Indicateur[] = [
     typeGraphique: 'courbe',
     filtresDisponibles: ['site', 'departement', 'filiale'],
     source: { type: 'serie', serieId: 'absenteisme' },
+  },
+  {
+    id: 'ind-workflow-personnalise',
+    sectionId: 'workflows-personnalises',
+    titre: 'Statistique de workflow personnalisé',
+    description: 'Demandes du workflow personnalisé choisi, par mois et par statut.',
+    typeGraphique: 'barres-empilees',
+    filtresDisponibles: [],
+    source: { type: 'workflow' },
+    filtrablePopulation: true,
+    generique: true,
   },
 ];

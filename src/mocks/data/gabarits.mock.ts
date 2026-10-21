@@ -7,14 +7,12 @@ export const GABARITS: Gabarit[] = [
     libelle: 'Gabarit vide',
     description: 'Partez de zéro et ajoutez vos graphes depuis la bibliothèque.',
     indicateurs: [],
-    profils: [],
   },
   {
     id: 'direction-generale',
     libelle: 'Direction Générale',
     description: 'Vue synthétique pour le comité de direction : effectifs, masse salariale, turnover et absentéisme.',
     indicateurs: ['ind-effectif-total', 'ind-masse-salariale', 'ind-turnover-global', 'ind-repartition-hf', 'ind-taux-absenteisme'],
-    profils: ['direction-generale'],
   },
   {
     id: 'admin-rh',
@@ -31,14 +29,12 @@ export const GABARITS: Gabarit[] = [
       'ind-absences-motif',
       'ind-taux-absenteisme',
     ],
-    profils: ['admin-rh'],
   },
   {
     id: 'manager',
     libelle: 'Manager',
     description: "Suivi de l'équipe : effectif, absences et turnover de son périmètre.",
     indicateurs: ['ind-effectif-total', 'ind-taux-absenteisme', 'ind-absences-motif', 'ind-turnover-departement'],
-    profils: ['manager'],
   },
 ];
 

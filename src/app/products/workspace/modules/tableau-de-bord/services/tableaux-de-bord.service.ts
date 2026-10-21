@@ -2,15 +2,17 @@ import { Injectable } from '@angular/core';
 import { Observable, delay, of, throwError } from 'rxjs';
 import { GABARITS } from '../../../../../../mocks/data/gabarits.mock';
 import { INDICATEURS, SECTIONS_CATALOGUE } from '../../../../../../mocks/data/indicateurs.mock';
+import { SESSION_TABLEAUX_ACCESSIBLES } from '../../../../../../mocks/data/session.mock';
 import { TABLEAUX_DE_BORD } from '../../../../../../mocks/data/tableaux-de-bord.mock';
 import type { ReglesPopulation } from '../../configuration/populations/models/population.model';
 import { copierRegles } from '../../configuration/populations/services/population-regles';
+import type { AppShellProduct } from '@socium-design/angular-components';
 import type { ModeleBase, TableauDeBord, TableauDeBordSaisie } from '../models/tableau-de-bord.model';
 
 const LATENCE = 200;
 
-/** Ce que la composition enregistre (bouton « Enregistrer ») : informations, graphes, sections, statut et profils. */
-export type Composition = Pick<TableauDeBord, 'libelle' | 'description' | 'populationId' | 'widgets' | 'sections' | 'statut' | 'profils'>;
+/** Ce que la composition enregistre (bouton « Enregistrer ») : informations, graphes, sections et statut. */
+export type Composition = Pick<TableauDeBord, 'libelle' | 'description' | 'produit' | 'populationId' | 'widgets' | 'sections' | 'statut'>;
 
 /**
  * Accès aux tableaux de bord du client. Simule une API sur le mock partagé ; les modifications vivent en mémoire le temps
@@ -25,11 +27,20 @@ export class TableauxDeBordService {
     return of(structuredClone(this.tableaux)).pipe(delay(LATENCE));
   }
 
+  /**
+   * Tableaux de bord que l'utilisateur connecté peut consulter sur un produit (menu déroulant de la consultation) : les
+   * tableaux actifs de ce produit dont la population adressée le contient (liste de la session fictive).
+   */
+  getAccessibles(produit: AppShellProduct): Observable<TableauDeBord[]> {
+    const accessibles = SESSION_TABLEAUX_ACCESSIBLES.flatMap((id) => this.tableaux.filter((t) => t.id === id && t.statut === 'Actif' && t.produit === produit));
+    return of(structuredClone(accessibles)).pipe(delay(LATENCE));
+  }
+
   getById(id: string): Observable<TableauDeBord | undefined> {
     return of(structuredClone(this.tableaux.find((t) => t.id === id))).pipe(delay(LATENCE));
   }
 
-  /** Crée un tableau de bord ; le modèle de base choisi pré-remplit ses graphes et ses profils. */
+  /** Crée un tableau de bord ; le modèle de base choisi pré-remplit ses graphes. */
   create(saisie: TableauDeBordSaisie, modele: ModeleBase): Observable<TableauDeBord> {
     const gabarit = GABARITS.find((g) => g.id === modele);
     if (!gabarit) return throwError(() => new Error(`Modèle inconnu : ${modele}`));
@@ -37,7 +48,6 @@ export class TableauxDeBordService {
       ...nettoyer(saisie),
       id: this.nouvelId('tdb'),
       modele,
-      profils: [...gabarit.profils],
       sections: SECTIONS_CATALOGUE.map((s) => ({ id: s.id, libelle: s.libelle })),
       widgets: gabarit.indicateurs.map((indicateurId) => ({
         id: this.nouvelId('w'),

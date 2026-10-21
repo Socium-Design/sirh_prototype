@@ -11,25 +11,39 @@ import {
   LucideUserPlus,
   LucideUsers,
   LucideWallet,
+  LucideWorkflow,
 } from '@lucide/angular';
-import { SocBadge, SocSearchBar } from '@socium-design/angular-components';
+import { SocSearchBar, SocTag, type TagColor } from '@socium-design/angular-components';
 import { SocLabsChartTypeChip, SocLabsIconButton, SocLabsInlineEdit, SocLabsListRow, SocLabsListRowAction, SocLabsListRowLeading } from '../../../../../../shared/labs/labs';
 import { TYPES_GRAPHIQUES } from '../../../tableau-de-bord/models/graphique.types';
 import type { TableauDeBord } from '../../../tableau-de-bord/models/tableau-de-bord.model';
 import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../tableau-de-bord/services/catalogue';
 
+/** Couleur de chaque catégorie (pastille du compteur), parmi les couleurs de `soc-tag`. */
+const COULEURS_SECTIONS: Record<string, TagColor> = {
+  'capital-humain': 'information',
+  recrutement: 'purple',
+  mouvements: 'orange',
+  'masse-salariale': 'success',
+  absences: 'warning',
+  'workflows-personnalises': 'error',
+};
+
 /**
  * Bibliothèque de la composition : catalogue d'indicateurs par section (repliables, renommables sur place pour ce tableau
  * de bord), recherche, compteur des graphes ajoutés (seulement s'il y en a). Ajout par « + » ou glisser-déposer (CDK) ;
- * ligne « ajoutée » ; ligne verrouillée pour un indicateur non souscrit.
+ * ligne « ajoutée » signalée par la seule coche (pas de fond bleu, comme le Figma Make) ; ligne verrouillée pour un indicateur non souscrit. Une statistique générique (workflow personnalisé)
+ * n'est jamais « ajoutée » : on peut l'ajouter autant de fois que voulu (la page demande alors son nom et son workflow).
+ * Lignes collées séparées par un trait fin (`soc-labs-list-row` en `appearance="flush"`, Labs) ; compteur de section en
+ * pastille teintée de la couleur de la catégorie, seulement s'il y a des ajouts.
  * Labs : `soc-labs-list-row`, `soc-labs-chart-type-chip`, `soc-labs-icon-button`, `soc-labs-inline-edit`.
  */
 @Component({
   selector: 'app-bibliotheque',
   imports: [
-    CdkDropList, CdkDrag, CdkDragPlaceholder, SocBadge, SocSearchBar, SocLabsListRow, SocLabsListRowLeading, SocLabsListRowAction,
+    CdkDropList, CdkDrag, CdkDragPlaceholder, SocTag, SocSearchBar, SocLabsListRow, SocLabsListRowLeading, SocLabsListRowAction,
     SocLabsChartTypeChip, SocLabsIconButton, SocLabsInlineEdit, LucidePlus, LucideCheck, LucideChevronDown, LucideChevronRight, LucideUsers,
-    LucideUserPlus, LucideArrowLeftRight, LucideWallet, LucideCalendarX, LucideFolder,
+    LucideUserPlus, LucideArrowLeftRight, LucideWallet, LucideCalendarX, LucideWorkflow, LucideFolder,
   ],
   styleUrl: './bibliotheque.component.scss',
   template: `
@@ -58,6 +72,7 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
               @case ('mouvements') { <svg lucideArrowLeftRight class="size-full" [strokeWidth]="1.5"></svg> }
               @case ('masse-salariale') { <svg lucideWallet class="size-full" [strokeWidth]="1.5"></svg> }
               @case ('absences') { <svg lucideCalendarX class="size-full" [strokeWidth]="1.5"></svg> }
+              @case ('workflows-personnalises') { <svg lucideWorkflow class="size-full" [strokeWidth]="1.5"></svg> }
               @default { <svg lucideFolder class="size-full" [strokeWidth]="1.5"></svg> }
             }
           </span>
@@ -71,7 +86,7 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
             data-testid="nom-section"
           />
           @if (section.ajoutes) {
-            <soc-badge color="primary" data-testid="compteur">{{ section.ajoutes }}</soc-badge>
+            <soc-tag size="sm" [color]="couleurSection(section.id)" data-testid="compteur">{{ section.ajoutes }}</soc-tag>
           }
         </div>
 
@@ -80,9 +95,9 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
             @for (indicateur of section.indicateurs; track indicateur.id) {
               @let ajoute = ajoutes().has(indicateur.id);
               <soc-labs-list-row
+                appearance="flush"
                 [title]="indicateur.titre"
                 [subtitle]="indicateur.disponible ? type(indicateur) : 'Produit non souscrit'"
-                [selected]="ajoute"
                 [locked]="!indicateur.disponible"
                 [lockedReason]="indicateur.disponible ? undefined : 'Produit non souscrit'"
                 [draggable]="indicateur.disponible && !ajoute"
@@ -95,7 +110,7 @@ import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../../table
                 <div *cdkDragPlaceholder class="section__emplacement"></div>
                 <soc-labs-chart-type-chip socLabsListRowLeading [type]="indicateur.typeGraphique" [decorative]="true" />
                 @if (ajoute) {
-                  <svg socLabsListRowAction lucideCheck class="ligne__ajoute" [strokeWidth]="2" role="img" [attr.aria-label]="indicateur.titre + ' ajouté'"></svg>
+                  <svg socLabsListRowAction lucideCheck class="ligne__ajoute" [strokeWidth]="1.5" role="img" [attr.aria-label]="indicateur.titre + ' ajouté'"></svg>
                 } @else if (indicateur.disponible) {
                   <soc-labs-icon-button socLabsListRowAction variant="primary-subtle" [ariaLabel]="'Ajouter ' + indicateur.titre" (click)="ajouter.emit(indicateur)">
                     <svg lucidePlus class="size-full"></svg>
@@ -121,8 +136,17 @@ export class BibliothequeComponent {
   protected readonly recherche = signal('');
   private readonly repliees = signal<ReadonlySet<string>>(new Set());
 
-  /** Indicateurs déjà présents dans le tableau de bord. */
-  protected readonly ajoutes = computed(() => new Set(this.tableau().widgets.map((w) => w.indicateurId)));
+  /** Indicateurs déjà présents dans le tableau de bord (hors statistiques génériques, ajoutables plusieurs fois). */
+  protected readonly ajoutes = computed(() => {
+    const generiques = new Set(this.catalogue().flatMap((s) => s.indicateurs).filter((i) => i.generique).map((i) => i.id));
+    return new Set(this.tableau().widgets.map((w) => w.indicateurId).filter((id) => !generiques.has(id)));
+  });
+  /** Nombre de graphes du tableau par indicateur (compteur de section, statistiques génériques comprises). */
+  private readonly nombres = computed(() => {
+    const nombres = new Map<string, number>();
+    for (const w of this.tableau().widgets) nombres.set(w.indicateurId, (nombres.get(w.indicateurId) ?? 0) + 1);
+    return nombres;
+  });
 
   /** Sections du catalogue, sous le nom choisi pour ce tableau, filtrées par la recherche. */
   protected readonly sections = computed(() => {
@@ -132,11 +156,16 @@ export class BibliothequeComponent {
         ...section,
         libelleCatalogue: section.libelle,
         libelle: this.tableau().sections.find((s) => s.id === section.id)?.libelle ?? section.libelle,
-        ajoutes: section.indicateurs.filter((i) => this.ajoutes().has(i.id)).length,
+        ajoutes: section.indicateurs.reduce((n, i) => n + (this.nombres().get(i.id) ?? 0), 0),
         indicateurs: section.indicateurs.filter((i) => !q || i.titre.toLowerCase().includes(q)),
       }))
       .filter((section) => section.indicateurs.length > 0);
   });
+
+  /** Couleur de chaque catégorie du catalogue (compteur d'ajouts) ; une catégorie inconnue est en bleu. */
+  protected couleurSection(sectionId: string): TagColor {
+    return COULEURS_SECTIONS[sectionId] ?? 'information';
+  }
 
   /** La Bibliothèque est en lecture seule : on ne peut rien y déposer. */
   protected readonly refuserDepot = () => false;

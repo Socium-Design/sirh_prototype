@@ -1,5 +1,7 @@
 export type StatutEmploye = 'Actif' | 'Inactif';
 export type Sexe = 'Homme' | 'Femme';
+export type StatutCompte = 'Actif' | 'Désactivé';
+export type StatutPaie = 'En paie' | 'Suspendu' | 'Sorti de paie';
 
 export interface Employe {
   id: string;
@@ -21,4 +23,9 @@ export interface Employe {
   anciennete: string;
   /** Date d'entrée, au format ISO (AAAA-MM-JJ). */
   dateEntree: string;
+  /** Compte utilisateur SIRH de l'employé. */
+  statutCompte: StatutCompte;
+  /** Le compte a été configuré (première connexion faite). */
+  compteConfigure: boolean;
+  statutPaie: StatutPaie;
 }

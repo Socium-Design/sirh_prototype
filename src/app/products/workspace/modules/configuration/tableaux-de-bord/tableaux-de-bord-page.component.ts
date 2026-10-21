@@ -1,13 +1,11 @@
 import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { LucideCopy, LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
+import { LucideCopy, LucideEye, LucideLayoutGrid, LucidePencil, LucidePlus, LucideTrash } from '@lucide/angular';
 import {
-  SocBadge,
   SocButton,
   SocButtonLeftIcon,
   SocDataTable,
   SocDataTableActions,
-  SocDataTableBadge,
   SocDataTableFilters,
   SocDialog,
   SocMenu,
@@ -21,11 +19,16 @@ import {
   type DialogAction,
 } from '@socium-design/angular-components';
 import { forkJoin } from 'rxjs';
-import type { Gabarit, TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
+import type { Gabarit, Produit, TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
 import { CatalogueService } from '../../tableau-de-bord/services/catalogue.service';
 import { TableauxDeBordService } from '../../tableau-de-bord/services/tableaux-de-bord.service';
 import { TableauDeBordDialogComponent } from './components/tableau-de-bord-dialog.component';
-import { ProfilsComponent, StatutTableauComponent } from './components/pastilles.component';
+import type { Population } from '../populations/models/population.model';
+import { PopulationsService } from '../populations/services/populations.service';
+import { StatutTableauComponent } from './components/pastilles.component';
+
+/** « 13 janv. 2026 », comme le Figma Make. */
+const DATE_CREATION = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 
 /**
  * Workspace > Configuration > onglet Gestion des tableaux de bord — liste des tableaux de bord du client.
@@ -35,25 +38,32 @@ import { ProfilsComponent, StatutTableauComponent } from './components/pastilles
 @Component({
   selector: 'app-tableaux-de-bord-page',
   imports: [
-    SocDataTable, SocDataTableBadge, SocDataTableActions, SocDataTableFilters, SocBadge, SocButton, SocButtonLeftIcon, SocMenu, SocMenuItem,
-    SocMenuItemIcon, SocMessage, SocMessageContent, SocSearchBar, SocDialog, ProfilsComponent, StatutTableauComponent, TableauDeBordDialogComponent,
-    LucidePlus, LucidePencil, LucideCopy, LucideTrash,
+    SocDataTable, SocDataTableActions, SocDataTableFilters, SocButton, SocButtonLeftIcon, SocMenu, SocMenuItem,
+    SocMenuItemIcon, SocMessage, SocMessageContent, SocSearchBar, SocDialog, StatutTableauComponent, TableauDeBordDialogComponent,
+    LucidePlus, LucidePencil, LucideCopy, LucideTrash, LucideEye, LucideLayoutGrid,
   ],
   styles: `
     .tableaux__vide { display: block; margin-top: var(--bridges-position-gap-md); }
     .tableaux__boutons { display: flex; gap: var(--bridges-position-gap-xs); }
+    .tableaux__nom { font-weight: var(--bridges-shape-text-label-weight); color: var(--bridges-color-text-primary); }
   `,
   template: `
-    <ng-template #profilsCell let-row>
-      <app-profils [profils]="row.profils" />
+    <ng-template #libelleCell let-row>
+      <span class="tableaux__nom">{{ row.libelle }}</span>
     </ng-template>
     <ng-template #statutCell let-row>
       <app-statut-tableau [statut]="row.statut" />
     </ng-template>
     <ng-template #boutonsCell let-row>
       <div class="tableaux__boutons">
-        <button socButton variant="secondary" data-testid="detail" (click)="detail(row)">Détail</button>
-        <button socButton variant="secondary" data-testid="visualiser" (click)="visualiser(row)">Visualiser</button>
+        <button socButton variant="secondary" data-testid="detail" (click)="detail(row)">
+          <svg lucideEye socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
+          Détail
+        </button>
+        <button socButton variant="secondary" data-testid="visualiser" (click)="visualiser(row)">
+          <svg lucideLayoutGrid socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
+          Visualiser
+        </button>
       </div>
     </ng-template>
 
@@ -72,8 +82,6 @@ import { ProfilsComponent, StatutTableauComponent } from './components/pastilles
     </ng-template>
 
     <soc-data-table
-      title="Tableaux de bord"
-      subtitle="Chaque tableau de bord présente ses graphes sur le périmètre de sa population, aux profils choisis."
       [columns]="columns()"
       [rows]="pageRows()"
       [rowKey]="rowKey"
@@ -82,7 +90,6 @@ import { ProfilsComponent, StatutTableauComponent } from './components/pastilles
       (pageChange)="page.set($event)"
       (pageSizeChange)="onPageSize($event)"
     >
-      <soc-badge socDataTableBadge color="primary">{{ tableaux().length }}</soc-badge>
       <!-- Recherche du tableau remplacée par une soc-search-bar : son texte indicatif n'est pas paramétrable (GAP-DS). -->
       <soc-search-bar socDataTableFilters placeholder="Rechercher un tableau de bord..." [value]="query()" (valueChange)="onSearch($event)" (clear)="onSearch('')" />
       <button socButton socDataTableActions (click)="creer()">
@@ -108,11 +115,14 @@ export class TableauxDeBordPageComponent {
   private readonly service = inject(TableauxDeBordService);
   private readonly catalogue = inject(CatalogueService);
 
-  private readonly profilsCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('profilsCell');
+  private readonly libelleCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('libelleCell');
   private readonly statutCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('statutCell');
   private readonly boutonsCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('boutonsCell');
   protected readonly tableaux = signal<TableauDeBord[]>([]);
   private readonly gabarits = signal<Gabarit[]>([]);
+  private readonly produits = signal<Produit[]>([]);
+  private readonly populations = signal<Population[]>([]);
+  private readonly populationsService = inject(PopulationsService);
   protected readonly charge = signal(false);
 
   protected readonly rowKey = (t: TableauDeBord) => t.id;
@@ -125,11 +135,12 @@ export class TableauxDeBordPageComponent {
   protected readonly aSupprimer = signal<TableauDeBord | null>(null);
 
   protected readonly columns = computed<DataTableColumn<TableauDeBord>[]>(() => [
-    { key: 'libelle', header: 'Nom', render: (t) => t.libelle },
+    { key: 'libelle', header: 'Libellé', render: this.libelleCell() },
     { key: 'modele', header: 'Modèle de base', render: (t) => this.gabarits().find((g) => g.id === t.modele)?.libelle ?? '—' },
-    { key: 'profils', header: 'Profils', render: this.profilsCell() },
+    { key: 'produit', header: 'Produit', render: (t) => this.produits().find((p) => p.id === t.produit)?.libelle ?? t.produit },
+    { key: 'population', header: 'Population adressée', render: (t) => this.populations().find((p) => p.id === t.populationId)?.nom ?? '—' },
     { key: 'statut', header: 'Statut', render: this.statutCell() },
-    { key: 'creeLe', header: 'Date de création', render: (t) => new Date(t.creeLe).toLocaleDateString('fr-FR') },
+    { key: 'creeLe', header: 'Date de création', render: (t) => DATE_CREATION.format(new Date(t.creeLe)) },
     { key: 'boutons', header: '', render: this.boutonsCell() },
   ]);
 
@@ -199,8 +210,11 @@ export class TableauxDeBordPageComponent {
   }
 
   private charger(): void {
-    forkJoin([this.service.getAll(), this.catalogue.getGabarits()]).subscribe(([tableaux, gabarits]) => {
+    const requetes = [this.service.getAll(), this.catalogue.getGabarits(), this.catalogue.getProduitsSouscrits(), this.populationsService.getAll()] as const;
+    forkJoin(requetes).subscribe(([tableaux, gabarits, produits, populations]) => {
       this.gabarits.set(gabarits);
+      this.produits.set(produits);
+      this.populations.set(populations);
       this.tableaux.set(tableaux);
       this.charge.set(true);
     });

@@ -1,18 +1,24 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { SessionService, type RoleDemo } from '../../../../core/session/session.service';
+import { TABLEAUX_DE_BORD } from '../../../../../mocks/data/tableaux-de-bord.mock';
 import { TableauxDeBordService } from './services/tableaux-de-bord.service';
 import { TableauDeBordPageComponent } from './tableau-de-bord-page.component';
 
+type Page = Record<string, any>;
+
 describe('TableauDeBordPageComponent (consultation)', () => {
   let fixture: ComponentFixture<TableauDeBordPageComponent>;
-  let session: SessionService;
+  let page: Page;
+  let query: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   const el = () => fixture.nativeElement as HTMLElement;
   const widgets = () => [...el().querySelectorAll('[data-testid="widget"]')] as HTMLElement[];
-  const titres = () => widgets().map((w) => w.querySelector('soc-card p')?.textContent?.trim());
+  const titre = (w: HTMLElement) => w.querySelector('soc-labs-widget-card')?.getAttribute('aria-label');
+  const titres = () => widgets().map(titre);
   const sections = () => [...el().querySelectorAll('[data-testid="section"] .section__titre')].map((s) => s.textContent?.trim());
-  const carte = (titre: string) => widgets().find((w) => w.querySelector('soc-card p')?.textContent?.trim() === titre)!;
+  const carte = (t: string) => widgets().find((w) => titre(w) === t)!;
+  const idWidget = (indicateurId: string) => TABLEAUX_DE_BORD[0].widgets.find((w) => w.indicateurId === indicateurId)!.id;
+  const kpi = (titre: string) => carte(titre).querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s+/g, ' ').trim();
   const panneauVisible = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]')].find((p) => p.style.visibility === 'visible')!;
   const detecter = () => {
     fixture.detectChanges();
@@ -20,58 +26,115 @@ describe('TableauDeBordPageComponent (consultation)', () => {
     fixture.detectChanges();
   };
 
-  const ouvrir = (role: RoleDemo = 'admin-rh', tableau?: string, avant?: () => void) => {
-    const query = new BehaviorSubject(convertToParamMap(tableau ? { tableau } : {}));
+  const ouvrir = (tableau?: string, avant?: () => void) => {
+    query = new BehaviorSubject(convertToParamMap(tableau ? { tableau } : {}));
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: query.value }, queryParamMap: query } }],
     });
-    session = TestBed.inject(SessionService);
-    session.role.set(role);
     avant?.();
     fixture = TestBed.createComponent(TableauDeBordPageComponent);
+    page = fixture.componentInstance as unknown as Page;
     detecter();
   };
 
   afterEach(() => fixture.destroy());
 
-  it('« Mon tableau de bord » + tag « RH », périmètre, population et date des données', fakeAsync(() => {
+  it('« Mon tableau de bord » : population adressée, périmètre de l’utilisateur, sans filtre « Rôle »', fakeAsync(() => {
     ouvrir();
     expect(el().textContent).toContain('Mon tableau de bord');
-    expect(el().querySelector('[data-testid="role"]')?.textContent?.trim()).toBe('RH');
-    expect(el().textContent).toContain('Périmètre : Socium Enterprises · Population : Équipe Sénégal · Données au 09/10/2026');
-    // Plus de sélecteur de tableau, de filiale ni d'œil pour masquer.
-    expect(el().textContent).not.toContain('Vue consolidée');
-    expect(el().querySelector('[aria-label^="Masquer"]')).toBeNull();
+    expect(el().textContent).toContain('Population adressée : Équipe Sénégal · Données de votre périmètre (Socium Enterprises) au 09/10/2026');
+    expect(el().textContent).not.toContain('Rôle');
+    expect(el().querySelector('[data-testid="role"]')).toBeNull();
   }));
 
-  it('sections Indicateurs clés / Effectifs et mouvements / Rémunération et absentéisme ; KPI avec tendance', fakeAsync(() => {
+  it('menu déroulant des tableaux de bord accessibles ; le choix change le tableau (via l’URL)', fakeAsync(() => {
     ouvrir();
-    expect(sections()).toEqual(['Indicateurs clés', 'Effectifs et mouvements', 'Rémunération et absentéisme']);
-    expect(widgets().length).toBe(9);
-    const effectif = carte('Effectif total');
-    expect(effectif.querySelector('[data-testid="kpi"]')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('11 collaborateurs');
-    expect(effectif.querySelector('[data-testid="tendance"]')?.textContent?.trim()).toBe('+13 ce mois');
-  }));
-
-  it('le filtre « Rôle » change le tableau, donc les sections affichées', fakeAsync(() => {
-    ouvrir();
-    expect(el().querySelector('soc-select')?.textContent).toContain('Administrateur RH');
-    session.role.set('manager');
+    const menu = el().querySelector('[data-testid="tableaux"]')!;
+    expect(menu.textContent).toContain('Tableau de bord');
+    expect(menu.textContent).toContain('Admin RH Global');
+    (menu.querySelector('button') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(el().querySelector('[data-testid="role"]')?.textContent?.trim()).toBe('Manager');
+    expect([...panneauVisible().querySelectorAll('button')].map((b) => b.textContent?.trim())).toEqual(['Admin RH Global', 'Mon équipe', 'Direction générale']);
+
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
+    page['choisirTableau']('tdb-3');
+    expect(navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { tableau: 'tdb-3' } }));
+    query.next(convertToParamMap({ tableau: 'tdb-3' }));
+    fixture.detectChanges();
+    expect(el().textContent).toContain('Mon tableau de bord');
+    expect(el().querySelector('[data-testid="tableaux"]')?.textContent).toContain('Mon équipe');
     expect(titres()).toEqual(['Effectif total', 'Turnover par département', "Taux d'absentéisme", 'Absences par motif']);
-    expect(el().textContent).toContain('Population : Managers – périmètre hiérarchique');
-    session.role.set('direction-generale');
+    expect(el().textContent).toContain('Population adressée : Managers – périmètre hiérarchique');
+  }));
+
+  it('sections Indicateurs clés / Effectifs et mouvements / Rémunération et absentéisme / Workflows personnalisés ; KPI avec tendance', fakeAsync(() => {
+    ouvrir();
+    expect(sections()).toEqual(['Indicateurs clés', 'Effectifs et mouvements', 'Rémunération et absentéisme', 'Workflows personnalisés']);
+    expect(widgets().length).toBe(10);
+    expect(kpi('Effectif total')).toBe('18 collaborateurs');
+    expect(carte('Effectif total').querySelector('[data-testid="tendance"]')?.textContent?.trim()).toBe('+13 ce mois');
+    expect(carte('Demandes de mission').textContent).toContain('Demandes « Demande de mission », par mois et par statut.');
+  }));
+
+  it('filtres globaux : sortis et comptes désactivés exclus par défaut ; les cocher met à jour les cartes ; « Réinitialiser »', fakeAsync(() => {
+    ouvrir();
+    const barre = el().querySelector('[data-testid="filtres-globaux"]')!;
+    expect([...barre.querySelectorAll('soc-multi-select label')].map((l) => l.textContent?.trim())).toEqual([
+      "Statut de l'employé",
+      'Statut du compte',
+      'Compte configuré',
+      'Statut paie',
+    ]);
+    expect(barre.querySelector('[data-testid="filtre-statutEmploye"]')?.textContent).toContain('Actif');
+    expect(barre.querySelector('[data-testid="filtre-statutEmploye"]')?.textContent).not.toContain('Sorti');
+    expect(el().querySelector('[data-testid="reinitialiser"]')).toBeNull();
+
+    page['changerFiltre']('statutEmploye', ['Actif', 'Sorti']);
+    page['changerFiltre']('statutCompte', ['Actif', 'Désactivé']);
     fixture.detectChanges();
-    expect(el().querySelector('[data-testid="role"]')?.textContent?.trim()).toBe('DG');
-    expect(titres()).toContain('Masse salariale mensuelle');
+    expect(kpi('Effectif total')).toBe('23 collaborateurs');
+    page['changerFiltre']('compteConfigure', ['Non']);
+    fixture.detectChanges();
+    expect(kpi('Effectif total')).toBe('5 collaborateurs');
+
+    (el().querySelector('[data-testid="reinitialiser"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(kpi('Effectif total')).toBe('18 collaborateurs');
+    expect(el().querySelector('[data-testid="reinitialiser"]')).toBeNull();
+  }));
+
+  it('critères de carte : listes du kit dans la carte (« Site : Tous »), choisir une valeur filtre la carte', fakeAsync(() => {
+    ouvrir();
+    const listes = [...carte('Effectif total').querySelectorAll('[data-testid="filtre-carte"]')] as HTMLElement[];
+    expect(listes.map((l) => l.getAttribute('data-champ'))).toEqual(['filiale', 'site']);
+    expect(listes[1].textContent).toContain('Tous');
+    expect(carte('Pyramide des âges').querySelector('[data-testid="filtre-carte"]')).toBeNull();
+    page['changerCritere'](idWidget('ind-effectif-total'), { champ: 'site', valeur: 'Dakar' });
+    fixture.detectChanges();
+    expect(kpi('Effectif total')).not.toBe('18 collaborateurs');
+    expect(carte('Effectif total').querySelectorAll('[data-testid="filtre-carte"]')[1].textContent).toContain('Dakar');
+  }));
+
+  it('valeur de carte contraire à un filtre global : le global l’emporte et la carte le signale', fakeAsync(() => {
+    ouvrir();
+    expect(carte('Répartition H/F').querySelector('[data-testid="filtre-ignore"]')).toBeNull();
+    page['changerCritere'](idWidget('ind-repartition-hf'), { champ: 'statut', valeur: 'Inactif' });
+    fixture.detectChanges();
+    expect(carte('Répartition H/F').querySelector('[data-testid="filtre-ignore"]')?.textContent).toContain(
+      "Filtre Statut : Inactif non appliqué : les filtres globaux l'emportent.",
+    );
+    expect(carte('Effectif total').querySelector('[data-testid="filtre-ignore"]')).toBeNull();
+    page['changerFiltre']('statutEmploye', ['Actif', 'Sorti']);
+    fixture.detectChanges();
+    expect(carte('Répartition H/F').querySelector('[data-testid="filtre-ignore"]')).toBeNull();
   }));
 
   it('description tronquée à 96 caractères ; avertissement sur les données classifiées sans historisation', fakeAsync(() => {
     ouvrir();
-    const sousTitre = carte('Pyramide des âges').querySelectorAll('soc-card p')[1].textContent!.trim();
-    expect(sousTitre.length).toBe(97);
-    expect(sousTitre.endsWith('…')).toBeTrue();
+    // Description tronquée à 96 caractères + « … ».
+    const texte = carte('Pyramide des âges').textContent!;
+    expect(texte).toContain("Répartition des collaborateurs par tranche d'âge, pour anticiper les départs à la retraite et éq…");
+    expect(texte).not.toContain('équilibrer les recrutements');
     expect(carte('Répartition H/F').querySelector('[data-testid="classifie"]')?.textContent).toContain(
       'Données classifiées sans historisation — affichage temps réel uniquement.',
     );
@@ -89,17 +152,19 @@ describe('TableauDeBordPageComponent (consultation)', () => {
     expect(navigate).toHaveBeenCalledWith(['/workspace/configuration/tableaux-de-bord', 'tdb-1'], { queryParams: { mode: 'edition' } });
   }));
 
-  it('« Visualiser » (?tableau=) : ce tableau-là, même inactif, sans filtre « Rôle »', fakeAsync(() => {
-    ouvrir('admin-rh', 'tdb-5');
+  it('« Visualiser » (?tableau=) d’un tableau non accessible : ce tableau-là, même inactif, sans menu déroulant', fakeAsync(() => {
+    ouvrir('tdb-5');
     expect(el().textContent).toContain('Dashboard effectifs internationaux');
-    expect(el().querySelector('soc-select')).toBeNull();
-    expect(el().textContent).toContain('Population : Filiales hors Sénégal');
+    expect(el().querySelector('[data-testid="tableaux"]')).toBeNull();
+    expect(el().textContent).toContain('Population adressée : Filiales hors Sénégal');
   }));
 
   it('état vide : « Votre tableau de bord est vide » + « Configurer le tableau de bord »', fakeAsync(() => {
-    ouvrir('manager', undefined, () => {
+    ouvrir('tdb-3', () => {
       const service = TestBed.inject(TableauxDeBordService);
-      service.enregistrerComposition('tdb-3', { libelle: 'Dashboard Managers', description: '', populationId: 'pop-6', widgets: [], sections: [], statut: 'Actif', profils: ['manager'] }).subscribe();
+      service
+        .enregistrerComposition('tdb-3', { libelle: 'Mon équipe', description: '', produit: 'workspace', populationId: 'pop-6', widgets: [], sections: [], statut: 'Actif' })
+        .subscribe();
     });
     expect(el().querySelector('[data-testid="vide"]')?.textContent).toContain('Votre tableau de bord est vide');
     const navigate = spyOn(TestBed.inject(Router), 'navigate');

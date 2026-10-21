@@ -2,15 +2,6 @@ import { Injectable, signal } from '@angular/core';
 import type { EnterpriseOption, LanguageOption } from '@socium-design/angular-components';
 import { SESSION_ENTERPRISES, SESSION_LANGUAGES, SESSION_USER } from '../../../mocks/data/session.mock';
 
-/** Rôle de démonstration : il choisit le tableau de bord consulté (profils du tableau). */
-export type RoleDemo = 'admin-rh' | 'manager' | 'direction-generale';
-
-export const LIBELLES_ROLES: Record<RoleDemo, string> = {
-  'admin-rh': 'Administrateur RH',
-  manager: 'Manager',
-  'direction-generale': 'Direction générale',
-};
-
 /**
  * Session du prototype (utilisateur, entreprise active, langue). Les valeurs viennent du mock partagé ;
  * elles sont disponibles de façon synchrone parce que le shell (header) en a besoin dès le premier rendu.
@@ -23,6 +14,4 @@ export class SessionService {
   readonly languages = signal<LanguageOption[]>(SESSION_LANGUAGES);
   readonly enterprise = signal<string | undefined>(SESSION_ENTERPRISES[0].value);
   readonly language = signal<string | undefined>(SESSION_LANGUAGES[0].value);
-  /** Rôle de démonstration de la consultation des tableaux de bord. */
-  readonly role = signal<RoleDemo>('admin-rh');
 }

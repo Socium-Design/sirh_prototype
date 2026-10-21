@@ -6,7 +6,8 @@
 }
 
 .bibliotheque__titre {
-  font-size: var(--bridges-size-text-text-size-xs);
+  // 11 px : entre les jetons tiny (10) et xs (12), comme les libellés compacts du panneau.
+  font-size: calc((var(--bridges-size-text-text-size-tiny) + var(--bridges-size-text-text-size-xs)) / 2);
   color: var(--bridges-color-text-secondary);
   letter-spacing: 0.04em;
 }
@@ -21,6 +22,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--bridges-position-gap-2xs);
+}
+
+// Lignes collées : l'espacement et le trait viennent de soc-labs-list-row (appearance « flush »).
+.section__liste {
+  gap: 0;
 }
 
 .section__entete {
@@ -41,7 +47,7 @@
 .section__nom {
   flex: 1;
   min-width: 0;
-  font-size: var(--bridges-size-text-text-size-sm);
+  font-size: var(--bridges-size-text-text-size-xs);
   color: var(--bridges-color-text-primary);
 }
 
@@ -49,9 +55,10 @@
   height: 0;
 }
 
+// Coche discrète : seul signe d'une ligne ajoutée (pas de fond bleu).
 .ligne__ajoute {
   flex-shrink: 0;
-  width: var(--bridges-size-icon-sm);
-  height: var(--bridges-size-icon-sm);
-  color: var(--bridges-color-text-success);
+  width: var(--bridges-size-icon-xs);
+  height: var(--bridges-size-icon-xs);
+  color: var(--bridges-color-text-action);
 }

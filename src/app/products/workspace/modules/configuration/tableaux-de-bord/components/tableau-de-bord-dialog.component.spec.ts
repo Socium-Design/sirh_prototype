@@ -37,6 +37,19 @@ describe('TableauDeBordDialogComponent', () => {
     fixture.detectChanges();
   };
 
+  /** Liste déroulante « Produit » : ouvre le panneau du kit, renvoie ses options ou clique sur l'une d'elles. */
+  const panneauOuvert = () => [...document.body.querySelectorAll<HTMLElement>('[role="dialog"]:not([aria-modal])')].find((p) => p.style.visibility === 'visible');
+  const optionsProduits = () => {
+    (modale().querySelector('[data-testid="produit"] button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    return [...panneauOuvert()!.querySelectorAll('button')].map((b) => b.textContent?.trim());
+  };
+  const choisirProduit = (libelle: string) => {
+    optionsProduits();
+    ([...panneauOuvert()!.querySelectorAll('button')].find((b) => b.textContent?.trim() === libelle) as HTMLButtonElement).click();
+    fixture.detectChanges();
+  };
+
   const ouvrir = (tableau: TableauDeBord | null = null) => {
     fixture = TestBed.createComponent(HoteComponent);
     fixture.componentInstance.tableau.set(tableau);
@@ -48,22 +61,30 @@ describe('TableauDeBordDialogComponent', () => {
   describe('création', () => {
     beforeEach(fakeAsync(() => ouvrir()));
 
-    it('étape 1 « Information du tableau de bord » : champs, statut Inactif par défaut, populations avec leur effectif', () => {
+    it('étape 1 « Information du tableau de bord » : libellé, description, statut Inactif par défaut, produit, population adressée avec effectif', () => {
       expect(modale().textContent).toContain('Nouveau tableau de bord');
       expect(modale().querySelector('soc-stepper')?.textContent).toContain('Information du tableau de bord');
-      expect(modale().textContent).toContain('Nom du tableau de bord');
-      expect(modale().textContent).toContain('Périmètre de données pris en compte dans tous les graphes de ce tableau de bord');
+      expect(modale().textContent).toContain('Libellé');
+      expect(modale().textContent).toContain('Produit');
+      expect(modale().textContent).toContain('Population adressée');
+      expect(modale().textContent).toContain('Les personnes qui verront ce tableau de bord.');
+      expect(modale().textContent).not.toContain('Profil');
       expect(modale().querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim()).toBe('Inactif');
       expect(populations().length).toBe(7);
       expect(lignesPopulations()[0]).toBe('Équipe Sénégal · 12 pers.');
       expect(bouton('Annuler')).toBeTruthy();
     });
 
-    it('exige un nom et une population', () => {
+    it('produit : seuls les produits souscrits sont proposés', () => {
+      expect(optionsProduits()).toEqual(['Workspace', 'Perf', 'Workflow', 'Doc']);
+    });
+
+    it('exige un libellé, un produit et une population adressée', () => {
       bouton('Suivant').click();
       fixture.detectChanges();
-      expect(modale().textContent).toContain('Le nom est obligatoire.');
-      expect(modale().textContent).toContain('Choisissez la population du tableau de bord.');
+      expect(modale().textContent).toContain('Le libellé est obligatoire.');
+      expect(modale().textContent).toContain('Choisissez le produit du tableau de bord.');
+      expect(modale().textContent).toContain('Choisissez la population adressée.');
       expect(modale().querySelector('[data-testid="recapitulatif"]')).toBeNull();
     });
 
@@ -77,6 +98,7 @@ describe('TableauDeBordDialogComponent', () => {
 
     it('étape 2 « Point de départ » : 4 gabarits, Direction Générale par défaut, récapitulatif ; le gabarit choisi pré-remplit les graphes', fakeAsync(() => {
       saisir(0, 'Pilotage DSI');
+      choisirProduit('Perf');
       choisirPopulation('DSI actifs hors Paris');
       bouton('Suivant').click();
       fixture.detectChanges();
@@ -86,7 +108,8 @@ describe('TableauDeBordDialogComponent', () => {
       const recap = modale().querySelector('[data-testid="recapitulatif"]')!.textContent!;
       expect(recap).toContain('RÉCAPITULATIF');
       expect(recap).toContain('Pilotage DSI');
-      expect(recap).toContain('DSI actifs hors Paris');
+      expect(recap).toContain('ProduitPerf');
+      expect(recap).toContain('Population adresséeDSI actifs hors Paris');
       expect(recap).toContain('Direction Générale · 5 graphe(s)');
 
       (cartes[3] as HTMLElement).click();
@@ -103,6 +126,7 @@ describe('TableauDeBordDialogComponent', () => {
       const cree = fixture.componentInstance.resultat!;
       expect(cree.libelle).toBe('Pilotage DSI');
       expect(cree.populationId).toBe('pop-3');
+      expect(cree.produit).toBe('perfs');
       expect(cree.statut).toBe('Inactif');
       expect(cree.modele).toBe('manager');
       expect(cree.widgets.length).toBe(4);
@@ -113,13 +137,14 @@ describe('TableauDeBordDialogComponent', () => {
     ouvrir(structuredClone(TABLEAUX_DE_BORD[2]));
     expect(modale().textContent).toContain('Modifier le tableau de bord');
     expect(modale().querySelector('soc-stepper')).toBeNull();
-    expect((modale().querySelector('soc-input-text input') as HTMLInputElement).value).toBe('Dashboard Managers');
+    expect((modale().querySelector('soc-input-text input') as HTMLInputElement).value).toBe('Mon équipe');
     expect(modale().querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim()).toBe('Actif');
+    expect(modale().querySelector('[data-testid="produit"]')?.textContent).toContain('Workspace');
     expect(populations().find((p) => p.textContent?.includes('Managers'))!.querySelector('[role="radio"]')?.getAttribute('aria-checked')).toBe('true');
-    saisir(0, 'Dashboard Managers Dakar');
+    saisir(0, 'Mon équipe Dakar');
     bouton('Suivant — Modifier les indicateurs').click();
     detecter();
-    expect(fixture.componentInstance.resultat?.libelle).toBe('Dashboard Managers Dakar');
+    expect(fixture.componentInstance.resultat?.libelle).toBe('Mon équipe Dakar');
     expect(fixture.componentInstance.resultat?.widgets.length).toBe(4);
   }));
 });

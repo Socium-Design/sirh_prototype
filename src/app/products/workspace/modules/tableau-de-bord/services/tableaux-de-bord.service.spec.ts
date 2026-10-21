@@ -16,45 +16,62 @@ describe('TableauxDeBordService', () => {
 
   it('crée un tableau pré-rempli par le modèle de base choisi', fakeAsync(() => {
     let cree: TableauDeBord | undefined;
-    service.create({ libelle: '  Nouveau  ', description: '', statut: 'Inactif', populationId: 'pop-1' }, 'manager').subscribe((t) => (cree = t));
+    service.create({ libelle: '  Nouveau  ', description: '', statut: 'Inactif', produit: 'perfs', populationId: 'pop-1' }, 'manager').subscribe((t) => (cree = t));
     tick(300);
     expect(cree!.libelle).toBe('Nouveau');
     expect(cree!.modele).toBe('manager');
-    expect(cree!.profils).toEqual(['manager']);
+    expect(cree!.produit).toBe('perfs');
+    expect(cree!.populationId).toBe('pop-1');
+    expect('profils' in cree!).toBeFalse();
     expect(cree!.widgets.map((w) => w.indicateurId)).toEqual(['ind-effectif-total', 'ind-taux-absenteisme', 'ind-absences-motif', 'ind-turnover-departement']);
     expect(cree!.widgets.map((w) => w.sectionId)).toEqual(['capital-humain', 'absences', 'absences', 'mouvements']);
-    expect(cree!.sections.length).toBe(5);
+    expect(cree!.sections.length).toBe(6);
   }));
 
   it('gabarit vide : aucun graphe', fakeAsync(() => {
     let cree: TableauDeBord | undefined;
-    service.create({ libelle: 'Vide', description: '', statut: 'Actif', populationId: 'pop-1' }, 'vide').subscribe((t) => (cree = t));
+    service.create({ libelle: 'Vide', description: '', statut: 'Actif', produit: 'workspace', populationId: 'pop-1' }, 'vide').subscribe((t) => (cree = t));
     tick(300);
     expect(cree!.widgets).toEqual([]);
     expect(cree!.statut).toBe('Actif');
   }));
 
   it('met à jour les informations, en mémoire sans toucher au mock', fakeAsync(() => {
-    service.update('tdb-1', { libelle: 'Renommé', description: 'd', statut: 'Inactif', populationId: 'pop-2' }).subscribe();
+    service.update('tdb-1', { libelle: 'Renommé', description: 'd', statut: 'Inactif', produit: 'doc', populationId: 'pop-2' }).subscribe();
     tick(300);
-    expect(lire('tdb-1')).toEqual(jasmine.objectContaining({ libelle: 'Renommé', statut: 'Inactif', populationId: 'pop-2' }));
-    expect(TABLEAUX_DE_BORD[0].libelle).toBe('Dashboard RH Global');
+    expect(lire('tdb-1')).toEqual(jasmine.objectContaining({ libelle: 'Renommé', statut: 'Inactif', produit: 'doc', populationId: 'pop-2' }));
+    expect(TABLEAUX_DE_BORD[0].libelle).toBe('Admin RH Global');
   }));
 
-  it('enregistre la composition (informations, graphes, sections, statut, profils)', fakeAsync(() => {
+  it('enregistre la composition (informations, produit, graphes, sections, statut)', fakeAsync(() => {
     const { libelle, description, populationId, sections } = lire('tdb-3')!;
     service
-      .enregistrerComposition('tdb-3', { libelle: ` ${libelle} 2 `, description, populationId, widgets: [], sections, statut: 'Archivé', profils: ['admin-rh'] })
+      .enregistrerComposition('tdb-3', { libelle: ` ${libelle} 2 `, description, produit: 'perfs', populationId, widgets: [], sections, statut: 'Inactif' })
       .subscribe();
     tick(300);
-    expect(lire('tdb-3')).toEqual(jasmine.objectContaining({ libelle: `${libelle} 2`, widgets: [], statut: 'Archivé', profils: ['admin-rh'] }));
+    expect(lire('tdb-3')).toEqual(jasmine.objectContaining({ libelle: `${libelle} 2`, produit: 'perfs', widgets: [], statut: 'Inactif' }));
+  }));
+
+  it('tableaux accessibles : ceux de la session, actifs et du produit demandé, dans l’ordre du menu', fakeAsync(() => {
+    let accessibles: TableauDeBord[] = [];
+    service.getAccessibles('workspace').subscribe((t) => (accessibles = t));
+    tick(300);
+    expect(accessibles.map((t) => t.libelle)).toEqual(['Admin RH Global', 'Mon équipe', 'Direction générale']);
+    service.update('tdb-3', { libelle: 'Mon équipe', description: '', statut: 'Inactif', produit: 'workspace', populationId: 'pop-6' }).subscribe();
+    tick(300);
+    service.getAccessibles('workspace').subscribe((t) => (accessibles = t));
+    tick(300);
+    expect(accessibles.map((t) => t.id)).toEqual(['tdb-1', 'tdb-2']);
+    service.getAccessibles('perfs').subscribe((t) => (accessibles = t));
+    tick(300);
+    expect(accessibles).toEqual([]);
   }));
 
   it('duplique en « X (copie) » avec de nouveaux identifiants de graphes', fakeAsync(() => {
     let copie: TableauDeBord | undefined;
     service.dupliquer('tdb-3').subscribe((t) => (copie = t));
     tick(300);
-    expect(copie!.libelle).toBe('Dashboard Managers (copie)');
+    expect(copie!.libelle).toBe('Mon équipe (copie)');
     expect(copie!.id).not.toBe('tdb-3');
     expect(copie!.widgets.length).toBe(4);
     expect(copie!.widgets.some((w) => TABLEAUX_DE_BORD[2].widgets.some((s) => s.id === w.id))).toBeFalse();

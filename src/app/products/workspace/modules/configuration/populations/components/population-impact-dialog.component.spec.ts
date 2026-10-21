@@ -10,9 +10,9 @@ class HoteComponent {
   readonly open = signal(true);
   readonly mode = signal<ModeImpact>('modification');
   readonly usages = [
-    { id: 'tdb-1', libelle: 'Dashboard RH Global' },
-    { id: 'tdb-2', libelle: 'Dashboard Direction Générale' },
-    { id: 'tdb-3', libelle: 'Dashboard Managers' },
+    { id: 'tdb-1', libelle: 'Admin RH Global' },
+    { id: 'tdb-2', libelle: 'Direction générale' },
+    { id: 'tdb-3', libelle: 'Mon équipe' },
   ];
   confirme: string[] | null = null;
   annule = false;

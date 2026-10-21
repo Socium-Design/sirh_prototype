@@ -1,6 +1,7 @@
 import type { SerieIndicateur } from '../../app/products/workspace/modules/tableau-de-bord/models/indicateur.model';
 
-const MOIS = ['Nov.', 'Déc.', 'Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.'];
+/** Mois des séries fictives (12 derniers mois à la date des données). */
+export const MOIS = ['Nov.', 'Déc.', 'Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.'];
 
 /** Séries fictives des indicateurs qui ne se calculent pas à partir des employés (historique, autres produits). */
 export const SERIES_INDICATEURS: SerieIndicateur[] = [

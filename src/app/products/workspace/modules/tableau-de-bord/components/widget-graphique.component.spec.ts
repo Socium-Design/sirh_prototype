@@ -17,8 +17,9 @@ describe('WidgetGraphiqueComponent', () => {
 
   afterEach(() => fixture?.destroy());
 
-  it('propose les cinq types du catalogue', () => {
-    expect(Object.values(TYPES_GRAPHIQUES).map((t) => t.libelle)).toEqual(['Courbe', 'Histogramme', 'Camembert', 'Barres horiz.', 'Carte KPI']);
+  it('propose les six types du catalogue, dont l’histogramme empilé', () => {
+    expect(Object.values(TYPES_GRAPHIQUES).map((t) => t.libelle)).toEqual(['Courbe', 'Histogramme', 'Histogramme empilé', 'Camembert', 'Barres horiz.', 'Carte KPI']);
+    expect(TYPES_GRAPHIQUES['barres-empilees']).toEqual(jasmine.objectContaining({ chartJs: 'bar', empile: true }));
   });
 
   it('carte KPI : valeur, unité et tendance favorable en vert', () => {
@@ -43,6 +44,23 @@ describe('WidgetGraphiqueComponent', () => {
       expect(canvas.getAttribute('aria-label')).toBe('Employés : Dakar 6, Paris 5');
       fixture.destroy();
     }
+  });
+
+  it('histogramme empilé : axes empilés, couleur imposée par la série (statut)', () => {
+    afficher('barres-empilees', {
+      libelles: ['Nov.', 'Déc.'],
+      series: [
+        { libelle: 'Validée', valeurs: [3, 4], couleur: 'green' },
+        { libelle: 'Refusée', valeurs: [1, 0], couleur: 'red' },
+      ],
+    });
+    const graphique = Chart.getChart(fixture.nativeElement.querySelector('canvas'))!;
+    const echelles = graphique.options.scales as Record<string, { stacked?: boolean }>;
+    expect(echelles['x'].stacked).toBeTrue();
+    expect(echelles['y'].stacked).toBeTrue();
+    const css = getComputedStyle(fixture.nativeElement);
+    const couleur = (nom: string) => css.getPropertyValue(`--bridges-color-accent-${nom}-text`).trim();
+    expect(graphique.data.datasets.map((d) => d.backgroundColor)).toEqual([couleur('green'), couleur('red')]);
   });
 
   it('redessine quand les données changent et libère le graphique à la destruction', () => {

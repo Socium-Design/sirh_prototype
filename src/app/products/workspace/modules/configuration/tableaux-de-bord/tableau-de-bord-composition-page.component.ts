@@ -1,10 +1,10 @@
 import { CdkDropList, CdkDropListGroup, type CdkDragDrop } from '@angular/cdk/drag-drop';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LucideArrowLeft, LucideCheck, LucideEllipsis, LucideEye, LucideFilter, LucidePencil, LucideSave, LucideTrash } from '@lucide/angular';
+import { LucideArrowLeft, LucideCheck, LucideEllipsis, LucideEye, LucidePencil, LucideTrash } from '@lucide/angular';
 import {
-  SocBadge,
   SocButton,
   SocButtonLeftIcon,
   SocButtonRightIcon,
@@ -43,28 +43,34 @@ import type { Employe } from '../../employes/models/employe.model';
 import { EmployesService } from '../../employes/services/employes.service';
 import { WidgetCarteComponent } from '../../tableau-de-bord/components/widget-carte.component';
 import type { Indicateur, SerieIndicateur } from '../../tableau-de-bord/models/indicateur.model';
-import { type StatutTableauDeBord, type TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
+import { type Produit, type StatutTableauDeBord, type TableauDeBord } from '../../tableau-de-bord/models/tableau-de-bord.model';
+import type { WorkflowPersonnalise } from '../../tableau-de-bord/models/workflow.model';
 import type { IndicateurCatalogue, SectionAvecIndicateurs } from '../../tableau-de-bord/services/catalogue';
 import { CatalogueService } from '../../tableau-de-bord/services/catalogue.service';
-import { ajouterWidget, modifierWidget, renommerSection, retirerWidget } from '../../tableau-de-bord/services/composition';
+import { ajouterWidget, modifierWidget, renommerSection, retirerWidget, type ParametresStatistique } from '../../tableau-de-bord/services/composition';
 import { TableauxDeBordService, type Composition } from '../../tableau-de-bord/services/tableaux-de-bord.service';
-import { construireSections, construireWidgets, employesDuTableau, type WidgetVue } from '../../tableau-de-bord/services/widgets';
+import { construireSections, construireWidgets, type ContexteWidgets, type ValeursCriteres, type WidgetVue } from '../../tableau-de-bord/services/widgets';
+import type { ChoixCritere } from '../../tableau-de-bord/components/widget-carte.component';
 import type { Population } from '../populations/models/population.model';
 import { PopulationsService } from '../populations/services/populations.service';
 import { BibliothequeComponent } from './components/bibliotheque.component';
-import { ProfilsComponent } from './components/pastilles.component';
+import { StatistiqueWorkflowDialogComponent } from './components/statistique-workflow-dialog.component';
 import { WidgetDialogComponent, type ModificationWidget } from './components/widget-dialog.component';
 import type { AvecChangementsNonEnregistres } from './quitter-sans-enregistrer.guard';
 
 const LISTE = '/workspace/configuration/tableaux-de-bord';
+/** Largeur d'écran sous laquelle les panneaux « Informations » et « Bibliothèque » deviennent repliables (PC portables). */
+export const LARGEUR_PANNEAUX_REPLIABLES = 1280;
 
 /**
  * Workspace > Configuration > Gestion des tableaux de bord > composition d'un tableau de bord (GabaritComposerPage du Figma Make).
  * Espace de travail `soc-labs-workspace-layout` : barre du haut (retour, nom, « Lecture seule » ou indication, actions),
  * panneau « Informations » à gauche, composition au centre, Bibliothèque à droite (édition) ; chaque colonne défile seule.
  * - « Détail » (par défaut) : lecture seule.
- * - `?mode=edition` (« Modifier ») : informations et statut modifiables (profils en lecture seule, comme dans le Figma), ajout depuis la Bibliothèque par « + » ou
- *   glisser-déposer, « Modifier le KPI » ; les changements portent sur un brouillon enregistré par « Enregistrer » (→ « Enregistré ✓ »).
+ * - `?mode=edition` (« Modifier ») : informations (libellé, description, produit, population adressée) et statut modifiables,
+ *   ajout depuis la Bibliothèque par « + » ou glisser-déposer (une statistique de workflow personnalisé demande son nom et
+ *   son workflow), « Modifier le KPI » ; les changements portent sur un brouillon enregistré par « Enregistrer » (→ « Enregistré ✓ »).
+ * - Sous 1280 px de large, les panneaux « Informations » et « Bibliothèque » sont repliables (Labs, GAP-DS design_system_angular#34).
  * - « Prévisualiser » : le tableau en plein écran (`soc-labs-fullscreen-overlay`), sur données simulées.
  * Composants Labs (expérimentaux) : importés via `shared/labs/labs.ts`.
  */
@@ -72,17 +78,23 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
   selector: 'app-tableau-de-bord-composition-page',
   host: { '(window:beforeunload)': 'avertirAvantDechargement($event)' },
   imports: [
-    CdkDropListGroup, CdkDropList, SocBadge, SocTag, SocButton, SocButtonLeftIcon, SocButtonRightIcon, SocCardGrid, SocPopover, SocPopoverTrigger, SocMenu, SocMenuItem,
+    CdkDropListGroup, CdkDropList, SocTag, SocButton, SocButtonLeftIcon, SocButtonRightIcon, SocCardGrid, SocPopover, SocPopoverTrigger, SocMenu, SocMenuItem,
     SocMenuItemIcon, SocMessage, SocMessageContent, SocDialog, SocLabsWorkspaceLayout, SocLabsWorkspaceBack, SocLabsWorkspaceTitle,
     SocLabsWorkspaceHint, SocLabsWorkspaceActions, SocLabsWorkspaceLeft, SocLabsWorkspaceRight, SocLabsCompactField, SocLabsPillToggle,
     SocLabsIconButton, SocLabsDropZone, SocLabsFullscreenOverlay, SocLabsOverlayBadge, WidgetCarteComponent, BibliothequeComponent,
-    WidgetDialogComponent, ProfilsComponent, LucideArrowLeft, LucideEye, LucidePencil, LucideSave, LucideCheck, LucideEllipsis, LucideTrash,
-    LucideFilter,
+    WidgetDialogComponent, StatistiqueWorkflowDialogComponent, LucideArrowLeft, LucideEye, LucidePencil, LucideCheck, LucideEllipsis, LucideTrash,
   ],
   styleUrl: './tableau-de-bord-composition-page.component.scss',
   template: `
     @if (brouillon(); as t) {
-      <soc-labs-workspace-layout leftWidth="240px" rightWidth="280px" cdkDropListGroup>
+      <soc-labs-workspace-layout
+        leftWidth="240px"
+        rightWidth="280px"
+        [collapsibleBelow]="largeurRepliable"
+        [(leftCollapsed)]="infosRepliees"
+        [(rightCollapsed)]="bibliothequeRepliee"
+        cdkDropListGroup
+      >
         <soc-labs-icon-button socLabsWorkspaceBack size="md" ariaLabel="Retour à la liste" tooltip="Retour à la liste" tooltipPosition="bottom" (click)="retourListe()">
           <svg lucideArrowLeft class="size-full"></svg>
         </soc-labs-icon-button>
@@ -93,7 +105,7 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
           <soc-tag socLabsWorkspaceHint color="information">Lecture seule</soc-tag>
         }
         <div socLabsWorkspaceActions class="actions">
-          <button socButton variant="secondary" data-testid="previsualiser" (click)="apercu.set(true)">
+          <button socButton variant="tertiary" data-testid="previsualiser" (click)="apercu.set(true)">
             <svg lucideEye socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
             Prévisualiser
           </button>
@@ -108,17 +120,15 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
               <svg lucideCheck socButtonRightIcon class="size-full" [strokeWidth]="2" aria-hidden="true"></svg>
             </button>
           } @else {
-            <button socButton data-testid="enregistrer" [disabled]="!t.libelle.trim()" (click)="enregistrer()">
-              <svg lucideSave socButtonLeftIcon class="size-full" [strokeWidth]="1.5"></svg>
-              Enregistrer
-            </button>
+            <button socButton data-testid="enregistrer" [disabled]="!t.libelle.trim()" (click)="enregistrer()">Enregistrer</button>
           }
         </div>
 
         <div socLabsWorkspaceLeft class="infos" data-testid="infos">
           <p class="infos__titre">INFORMATIONS</p>
-          <soc-labs-compact-field label="Libellé" [mode]="mode()" [value]="t.libelle" (valueChange)="changerInfos({ libelle: $event })" data-testid="libelle" />
+          <soc-labs-compact-field size="sm" label="Libellé" [mode]="mode()" [value]="t.libelle" (valueChange)="changerInfos({ libelle: $event })" data-testid="libelle" />
           <soc-labs-compact-field
+            size="sm"
             label="Description"
             control="textarea"
             [mode]="mode()"
@@ -127,7 +137,18 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
             data-testid="description"
           />
           <soc-labs-compact-field
-            label="Population"
+            size="sm"
+            label="Produit"
+            control="select"
+            [mode]="mode()"
+            [options]="optionsProduits()"
+            [value]="t.produit"
+            (valueChange)="changerProduit($event)"
+            data-testid="produit"
+          />
+          <soc-labs-compact-field
+            size="sm"
+            label="Population adressée"
             control="select"
             [mode]="mode()"
             [options]="optionsPopulations()"
@@ -142,10 +163,6 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
             } @else {
               <soc-tag class="infos__statut" [color]="couleursStatuts[t.statut]" data-testid="statut">{{ t.statut }}</soc-tag>
             }
-          </div>
-          <div class="infos__champ" role="group" aria-labelledby="profils-libelle">
-            <span class="infos__libelle" id="profils-libelle">Profils</span>
-            <app-profils [profils]="t.profils" data-testid="profils" />
           </div>
         </div>
 
@@ -165,11 +182,11 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
             <div class="section" data-testid="section">
               <div class="section__entete">
                 <p class="section__titre">{{ section.libelle }}</p>
-                <soc-badge color="primary">{{ section.widgets.length }} KPI</soc-badge>
+                <span class="section__compte" data-testid="compte-section">{{ section.widgets.length }} KPI</span>
               </div>
-              <soc-card-grid [columns]="3">
+              <soc-card-grid [columns]="colonnes()">
                 @for (vue of section.widgets; track vue.widget.id) {
-                  <app-widget-carte [vue]="vue" [compact]="true" [pastille]="true" [descriptionDeuxLignes]="true" data-testid="widget">
+                  <app-widget-carte [vue]="vue" [compact]="true" (critere)="changerCritere(vue.widget.id, $event)" data-testid="widget">
                     @if (edition()) {
                       <soc-popover appWidgetActions position="bottom-end" [open]="menuOuvert() === vue.widget.id" (openChange)="menuOuvert.set($event ? vue.widget.id : null)">
                         <soc-labs-icon-button socPopoverTrigger [ariaLabel]="'Actions du graphe ' + vue.titre" tooltip="Actions">
@@ -185,14 +202,6 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
                         </soc-menu>
                       </soc-popover>
                     }
-                    <div appWidgetPied class="widget__filtres" data-testid="filtres">
-                      <svg lucideFilter class="widget__filtre-icone" [strokeWidth]="1.5" aria-hidden="true"></svg>
-                      @for (filtre of vue.filtres; track filtre.valeur) {
-                        <soc-tag color="information">{{ filtre.libelle }}</soc-tag>
-                      } @empty {
-                        <span class="widget__sans-filtre">Aucun filtre</span>
-                      }
-                    </div>
                   </app-widget-carte>
                 }
               </soc-card-grid>
@@ -234,14 +243,14 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
             @if (kpis().length) {
               <soc-card-grid [columns]="4">
                 @for (vue of kpis(); track vue.widget.id) {
-                  <app-widget-carte [vue]="vue" [avecPied]="false" data-testid="apercu-widget" />
+                  <app-widget-carte [vue]="vue" (critere)="changerCritere(vue.widget.id, $event)" data-testid="apercu-widget" />
                 }
               </soc-card-grid>
             }
             @if (graphes().length) {
               <soc-card-grid [columns]="2">
                 @for (vue of graphes(); track vue.widget.id) {
-                  <app-widget-carte [vue]="vue" [avecPied]="false" data-testid="apercu-widget" />
+                  <app-widget-carte [vue]="vue" (critere)="changerCritere(vue.widget.id, $event)" data-testid="apercu-widget" />
                 }
               </soc-card-grid>
             }
@@ -254,7 +263,20 @@ const LISTE = '/workspace/configuration/tableaux-de-bord';
         }
       </soc-labs-fullscreen-overlay>
 
-      <app-widget-dialog [vue]="widgetEdite()" [sections]="t.sections" [employes]="employes()" (enregistre)="sauverWidget($event)" (annule)="widgetEdite.set(null)" />
+      <app-widget-dialog
+        [vue]="widgetEdite()"
+        [sections]="t.sections"
+        [populations]="populations()"
+        (enregistre)="sauverWidget($event)"
+        (annule)="widgetEdite.set(null)"
+      />
+
+      <app-statistique-workflow-dialog
+        [open]="!!statistiqueAAjouter()"
+        [workflows]="workflows()"
+        (ajoute)="ajouterStatistique($event)"
+        (annule)="statistiqueAAjouter.set(null)"
+      />
 
       <soc-dialog [open]="confirmationQuitter()" title="Quitter sans enregistrer ?" [primaryAction]="quitter" [secondaryAction]="rester" (close)="repondre(false)">
         <p data-testid="quitter">Les modifications de « {{ t.libelle }} » n'ont pas été enregistrées. Elles seront perdues si vous quittez la page.</p>
@@ -279,7 +301,7 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   protected readonly brouillon = signal<TableauDeBord | undefined>(undefined);
   /** Vrai juste après « Enregistrer », jusqu'à la modification suivante (« Enregistré ✓ »). */
   protected readonly enregistre = signal(false);
-  /** Le brouillon diffère de la version enregistrée (graphes, sections, statut, profils). */
+  /** Le brouillon diffère de la version enregistrée (informations, graphes, sections, statut). */
   protected readonly modifie = computed(() => {
     const brouillon = this.brouillon();
     const enregistre = this.enregistreSurServeur();
@@ -294,7 +316,19 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   private readonly indicateurs = signal<Indicateur[]>([]);
   private readonly series = signal<SerieIndicateur[]>([]);
   protected readonly catalogue = signal<SectionAvecIndicateurs[]>([]);
-  private readonly populations = signal<Population[]>([]);
+  protected readonly populations = signal<Population[]>([]);
+  protected readonly workflows = signal<WorkflowPersonnalise[]>([]);
+  private readonly produits = signal<Produit[]>([]);
+  /** Statistique générique en attente de son nom et de son workflow (modale d'ajout). */
+  protected readonly statistiqueAAjouter = signal<IndicateurCatalogue | null>(null);
+
+  /** Panneaux repliables sous 1280 px ; repliés par le layout en entrant sous ce seuil. */
+  protected readonly largeurRepliable = LARGEUR_PANNEAUX_REPLIABLES;
+  protected readonly infosRepliees = signal(false);
+  protected readonly bibliothequeRepliee = signal(false);
+  /** Cartes sur 3 colonnes sur grand écran, 2 en dessous de 1440 px (zone centrale trop étroite sinon). */
+  private readonly grandEcran = toSignal(inject(BreakpointObserver).observe('(min-width: 1440px)').pipe(map((r) => r.matches)), { initialValue: true });
+  protected readonly colonnes = computed(() => (this.grandEcran() ? 3 : 2));
 
   protected readonly apercu = signal(false);
   /** Un graphe de la Bibliothèque est glissé au-dessus de la composition. */
@@ -302,29 +336,42 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
   private readonly bibliotheque = viewChild(BibliothequeComponent);
   protected readonly menuOuvert = signal<string | null>(null);
   protected readonly widgetEdite = signal<WidgetVue | null>(null);
+  /** Valeurs choisies dans les listes de critères des cartes (état d'affichage, non enregistré). */
+  protected readonly valeurs = signal<ValeursCriteres>({});
 
-  /** Statut en lecture seule : une pastille du kit (Actif vert, Archivé ambre ; Inactif en bleu faute de gris : GAP-DS design_system_angular#29). */
-  protected readonly couleursStatuts: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'information', Archivé: 'warning' };
+  /** Statut en lecture seule : une pastille du kit (Actif vert ; Inactif en bleu faute de gris : GAP-DS design_system_angular#29). */
+  protected readonly couleursStatuts: Record<StatutTableauDeBord, TagColor> = { Actif: 'success', Inactif: 'information' };
   protected readonly optionsStatuts: LabsPillOption<StatutTableauDeBord>[] = [
     { value: 'Actif', label: 'Actif', color: 'green' },
     { value: 'Inactif', label: 'Inactif', color: 'gray' },
-    { value: 'Archivé', label: 'Archivé', color: 'amber' },
   ];
   protected readonly mode = computed(() => (this.edition() ? 'edit' : 'read'));
   protected readonly optionsPopulations = computed<LabsCompactFieldOption[]>(() => this.populations().map((p) => ({ value: p.id, label: p.nom })));
-  protected readonly populationNom = computed(() => this.populations().find((p) => p.id === this.brouillon()?.populationId)?.nom ?? '—');
-  /** Employés du périmètre : ceux de la population du tableau. */
-  private readonly perimetre = computed(() => {
-    const t = this.brouillon();
-    return t ? employesDuTableau(t, this.populations(), this.employes()) : [];
+  /** Produits souscrits (plus celui du tableau, s'il ne l'est plus, pour ne pas perdre la valeur). */
+  protected readonly optionsProduits = computed<LabsCompactFieldOption[]>(() => {
+    const options = this.produits().map((p) => ({ value: p.id as string, label: p.libelle }));
+    const actuel = this.brouillon()?.produit;
+    return actuel && !options.some((o) => o.value === actuel) ? [...options, { value: actuel, label: actuel }] : options;
   });
+  protected readonly populationNom = computed(() => this.populations().find((p) => p.id === this.brouillon()?.populationId)?.nom ?? '—');
+  /**
+   * Données simulées de la composition : périmètre de l'utilisateur connecté et filtres globaux par défaut (la population
+   * adressée dit qui voit le tableau, pas quelles données il montre).
+   */
+  private readonly contexte = computed<ContexteWidgets>(() => ({
+    employes: this.employes(),
+    populations: this.populations(),
+    workflows: this.workflows(),
+    series: this.series(),
+    valeurs: this.valeurs(),
+  }));
   protected readonly sections = computed(() => {
     const t = this.brouillon();
-    return t ? construireSections(t, this.indicateurs(), this.perimetre(), this.series()) : [];
+    return t ? construireSections(t, this.indicateurs(), this.contexte()) : [];
   });
   protected readonly vues = computed(() => {
     const t = this.brouillon();
-    return t ? construireWidgets(t, this.indicateurs(), this.perimetre(), this.series()) : [];
+    return t ? construireWidgets(t, this.indicateurs(), this.contexte()) : [];
   });
   /** Prévisualisation : cartes KPI en haut, puis les graphes sur 2 colonnes. */
   protected readonly kpis = computed(() => this.vues().filter((v) => v.indicateur.typeGraphique === 'kpi'));
@@ -332,13 +379,23 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
 
   constructor() {
     const catalogue = inject(CatalogueService);
-    forkJoin([this.service.getById(this.id), catalogue.getIndicateurs(), catalogue.getSeries(), catalogue.getCatalogue(), inject(PopulationsService).getAll()]).subscribe(
-      ([tableau, indicateurs, series, sections, populations]) => {
+    forkJoin([
+      this.service.getById(this.id),
+      catalogue.getIndicateurs(),
+      catalogue.getSeries(),
+      catalogue.getCatalogue(),
+      inject(PopulationsService).getAll(),
+      catalogue.getWorkflows(),
+      catalogue.getProduitsSouscrits(),
+    ]).subscribe(
+      ([tableau, indicateurs, series, sections, populations, workflows, produits]) => {
         if (!tableau) return this.retourListe();
         this.indicateurs.set(indicateurs);
         this.series.set(series);
         this.catalogue.set(sections);
         this.populations.set(populations);
+        this.workflows.set(workflows);
+        this.produits.set(produits);
         this.enregistreSurServeur.set(tableau);
         this.brouillon.set(structuredClone(tableau));
       },
@@ -360,8 +417,17 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
     });
   }
 
+  /** Ajout depuis la Bibliothèque ; une statistique générique demande d'abord son nom et son workflow. */
   protected ajouter(indicateur: IndicateurCatalogue): void {
-    if (indicateur.disponible) this.modifierBrouillon((t) => ajouterWidget(t, indicateur));
+    if (!indicateur.disponible) return;
+    if (indicateur.generique) this.statistiqueAAjouter.set(indicateur);
+    else this.modifierBrouillon((t) => ajouterWidget(t, indicateur));
+  }
+
+  protected ajouterStatistique(parametres: ParametresStatistique): void {
+    const indicateur = this.statistiqueAAjouter();
+    this.statistiqueAAjouter.set(null);
+    if (indicateur) this.modifierBrouillon((t) => ajouterWidget(t, indicateur, parametres));
   }
 
   /** Dépôt d'un indicateur de la Bibliothèque dans la composition. */
@@ -388,6 +454,11 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
     if (vue) this.modifierBrouillon((t) => modifierWidget(t, vue.widget.id, vue.indicateur, modification));
   }
 
+  /** Valeur choisie dans la liste d'un critère d'une carte : filtre cette carte (données fictives). */
+  protected changerCritere(widgetId: string, { champ, valeur }: ChoixCritere): void {
+    this.valeurs.update((v) => ({ ...v, [widgetId]: { ...v[widgetId], [champ]: valeur } }));
+  }
+
   protected renommer(sectionId: string, libelle: string): void {
     this.modifierBrouillon((t) => renommerSection(t, sectionId, libelle));
   }
@@ -396,14 +467,21 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
     if (statut) this.modifierBrouillon((t) => ({ ...t, statut }));
   }
 
-  /** Libellé, description, population : modifiables sur place dans le panneau « Informations ». */
+  protected changerProduit(produit: string): void {
+    if (produit) this.modifierBrouillon((t) => ({ ...t, produit: produit as TableauDeBord['produit'] }));
+  }
+
+  /** Libellé, description, population adressée : modifiables sur place dans le panneau « Informations ». */
   protected changerInfos(infos: Partial<Pick<TableauDeBord, 'libelle' | 'description' | 'populationId'>>): void {
     this.modifierBrouillon((t) => ({ ...t, ...infos }));
   }
 
-  /** Clic sur une zone de dépôt : on amène l'utilisateur à la recherche de la Bibliothèque. */
+  /** Clic sur une zone de dépôt : on amène l'utilisateur à la recherche de la Bibliothèque (dépliée si besoin). */
   protected chercherDansBibliotheque(): void {
-    this.bibliotheque()?.focusRecherche();
+    if (this.bibliothequeRepliee()) {
+      this.bibliothequeRepliee.set(false);
+      setTimeout(() => this.bibliotheque()?.focusRecherche());
+    } else this.bibliotheque()?.focusRecherche();
   }
 
   /** Garde de sortie : sans changement non enregistré, on part ; sinon on demande confirmation. */
@@ -439,12 +517,12 @@ export class TableauDeBordCompositionPageComponent implements AvecChangementsNon
 }
 
 /** Ce que « Enregistrer » persiste : sert aussi à détecter les changements non enregistrés. */
-const composition = ({ libelle, description, populationId, widgets, sections, statut, profils }: TableauDeBord): Composition => ({
+const composition = ({ libelle, description, produit, populationId, widgets, sections, statut }: TableauDeBord): Composition => ({
   libelle,
   description,
+  produit,
   populationId,
   widgets,
   sections,
   statut,
-  profils,
 });

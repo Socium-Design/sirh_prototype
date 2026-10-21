@@ -6,7 +6,8 @@
  * passe par ce fichier, pour retrouver d'un coup d'œil où ils servent (`grep -r "shared/labs/labs"`) et, à la promotion,
  * n'avoir qu'à remplacer les imports (`SocLabsX` → `SocX` depuis `@socium-design/angular-components`).
  *
- * Usages actuels : Workspace > Configuration > composition d'un tableau de bord (page + Bibliothèque).
+ * Usages actuels : Workspace > Configuration > composition d'un tableau de bord (page + Bibliothèque) ; Workspace > Tableau
+ * de bord (cartes des widgets : `soc-labs-widget-card`).
  */
 export {
   LABS_CHART_TYPE_LABELS,
@@ -28,6 +29,11 @@ export {
   SocLabsWorkspaceLeft,
   SocLabsWorkspaceRight,
   SocLabsWorkspaceTitle,
+  SocLabsWidgetCard,
+  SocLabsWidgetCardActions,
+  SocLabsWidgetCardFilters,
+  SocLabsWidgetCardFooter,
+  SocLabsWidgetCardIcon,
   type LabsChartType,
   type LabsCompactFieldOption,
   type LabsPillOption,
