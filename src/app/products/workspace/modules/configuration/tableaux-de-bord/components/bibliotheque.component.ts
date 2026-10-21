@@ -32,7 +32,7 @@ const COULEURS_SECTIONS: Record<string, TagColor> = {
 /**
  * Bibliothèque de la composition : catalogue d'indicateurs par section (repliables, renommables sur place pour ce tableau
  * de bord), recherche, compteur des graphes ajoutés (seulement s'il y en a). Ajout par « + » ou glisser-déposer (CDK) ;
- * ligne « ajoutée » ; ligne verrouillée pour un indicateur non souscrit. Une statistique générique (workflow personnalisé)
+ * ligne « ajoutée » signalée par la seule coche (pas de fond bleu, comme le Figma Make) ; ligne verrouillée pour un indicateur non souscrit. Une statistique générique (workflow personnalisé)
  * n'est jamais « ajoutée » : on peut l'ajouter autant de fois que voulu (la page demande alors son nom et son workflow).
  * Lignes collées séparées par un trait fin (`soc-labs-list-row` en `appearance="flush"`, Labs) ; compteur de section en
  * pastille teintée de la couleur de la catégorie, seulement s'il y a des ajouts.
@@ -98,7 +98,6 @@ const COULEURS_SECTIONS: Record<string, TagColor> = {
                 appearance="flush"
                 [title]="indicateur.titre"
                 [subtitle]="indicateur.disponible ? type(indicateur) : 'Produit non souscrit'"
-                [selected]="ajoute"
                 [locked]="!indicateur.disponible"
                 [lockedReason]="indicateur.disponible ? undefined : 'Produit non souscrit'"
                 [draggable]="indicateur.disponible && !ajoute"

@@ -55,7 +55,7 @@
   height: 0;
 }
 
-// Coche discrète : petite, dans le bleu de la ligne ajoutée.
+// Coche discrète : seul signe d'une ligne ajoutée (pas de fond bleu).
 .ligne__ajoute {
   flex-shrink: 0;
   width: var(--bridges-size-icon-xs);
