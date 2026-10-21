@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Socium — Détail d'une évaluation · Options d'affichage des notes</title>
+<style>
+:root{
+  --navy:#0B1B3B;--navy2:#16284d;
+  --blue:#2563EB;--bsoft:#E6F1FB;--btext:#185FA5;
+  --green:#10B981;--gbg:#E1F5EE;--gtx:#0F6E56;
+  --amber:#F59E0B;--abg:#FCEFD6;--atx:#92580B;
+  --violet:#7C3AED;--vbg:#F3E8FF;--vtx:#6B21A8;
+  --gray:#EEF0F3;--gtx2:#5F6470;
+  --bg:#F7F8FA;--sur:#fff;--rh:#F9FAFC;
+  --ln:#E6E8EC;--ls:#F0F1F4;
+  --t1:#1A2230;--t2:#646B78;--t3:#8A909C;--yw:#facc15;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t1);font-size:14px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 32px 60px}
+.bc{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);margin-bottom:16px}
+.bc a{color:var(--btext);cursor:pointer}.bc a:hover{text-decoration:underline}
+.h1{font-size:24px;font-weight:700;margin-bottom:4px}
+.h1-sub{font-size:13px;color:var(--t2);margin-bottom:22px}
+
+/* PICKER BANNER */
+.picker{background:#fff;border:1.5px solid var(--bsoft);border-radius:14px;padding:18px 20px;margin-bottom:26px}
+.picker-title{font-size:13px;font-weight:700;color:var(--btext);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.picker-sub{font-size:12.5px;color:var(--t2);margin-bottom:14px;line-height:1.6}
+.opt-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.opt-btn{border:1.5px solid var(--ln);background:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--t1);cursor:pointer;font-family:inherit;text-align:left;flex:1;min-width:210px}
+.opt-btn:hover{background:var(--rh)}
+.opt-btn.sel{border-color:var(--blue);background:var(--bsoft);color:var(--btext)}
+.opt-btn .d{font-size:11.5px;font-weight:400;color:var(--t2);margin-top:3px;line-height:1.5}
+.opt-btn.sel .d{color:var(--btext)}
+.vis-row{display:flex;gap:22px;flex-wrap:wrap;padding-top:12px;border-top:1px dashed var(--ln)}
+.vis-item{display:flex;align-items:center;gap:9px}
+.vis-lbl{font-size:12.5px;font-weight:600;color:var(--t2)}
+.tgl{position:relative;width:36px;height:21px;flex-shrink:0;cursor:pointer}
+.tgl input{opacity:0;width:0;height:0;position:absolute}
+.tgl-track{position:absolute;inset:0;background:var(--gray);border-radius:20px;transition:background .15s}
+.tgl-track::before{content:'';position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.tgl input:checked + .tgl-track{background:var(--blue)}
+.tgl input:checked + .tgl-track::before{transform:translateX(15px)}
+
+/* ACCORDION (Informations générales) */
+.acc{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.acc-t{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.acc svg{width:16px;height:16px;color:var(--t3)}
+.acc-chev{transition:transform .15s}
+.acc-chev.open{transform:rotate(180deg)}
+.acc-body{margin-bottom:4px}
+.acc-body.collapsed{display:none}
+
+/* PEOPLE CARDS */
+.people-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.people-card{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:16px 18px}
+.pc-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.pc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.pc-note{font-size:19px;font-weight:800;white-space:nowrap;flex-shrink:0}
+.pc-note span{font-size:12px;font-weight:600;color:var(--t3)}
+.pc-note.amber{color:var(--atx)}
+.pc-note.blue{color:var(--btext)}
+.pc-ava{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.pc-ava.amber{background:var(--amber)}.pc-ava.blue{background:var(--blue)}
+.pc-name{font-size:14.5px;font-weight:700}
+.pc-meta{font-size:12px;color:var(--t2);margin-bottom:8px}
+.pc-time{font-size:12px;color:var(--t3);display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--ls)}
+.pc-time svg{width:13px;height:13px}
+.pc-subnotes{display:flex;gap:10px;margin-bottom:8px}
+.pc-subnote{flex:1;background:var(--rh);border:1px solid var(--ln);border-radius:8px;padding:6px 10px}
+.pc-subnote-lbl{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.pc-subnote-val{font-size:14px;font-weight:800}
+.pc-subnote-val span{font-size:10px;font-weight:600;color:var(--t3)}
+.pc-subnote-val.pot{color:var(--violet)}
+.pc-subnote-val.perf{color:#0EA5A5}
+
+/* NOTE CARD (générique) */
+.note-card{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:16px 18px}
+.note-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.note-val{font-size:26px;font-weight:800;color:var(--t1)}
+.note-val span{font-size:15px;font-weight:600;color:var(--t3)}
+.note-bar-track{height:6px;background:var(--ls);border-radius:4px;margin:10px 0 4px;overflow:hidden}
+.note-bar-fill{height:100%;border-radius:4px}
+.note-sub{font-size:11.5px;color:var(--t2)}
+.note-hidden{background:var(--rh);border:1px dashed var(--ln);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:9px;color:var(--t3);font-size:12.5px;font-style:italic}
+.note-hidden svg{width:15px;height:15px;flex-shrink:0}
+
+.pot-color{color:var(--violet)} .pot-fill{background:var(--violet)}
+.perf-color{color:#0EA5A5} .perf-fill{background:#0EA5A5}
+.fin-color{color:var(--blue)} .fin-fill{background:var(--blue)}
+
+.processed-by{margin-top:10px;padding-top:10px;border-top:1px solid var(--ls);font-size:11.5px;color:var(--t2);display:flex;align-items:flex-start;gap:6px}
+.processed-by svg{width:13px;height:13px;flex-shrink:0;margin-top:1px;color:var(--t3)}
+.processed-by b{color:var(--t1);font-weight:600}
+
+/* FORM SECTION */
+.form-bar{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-top:20px}
+.form-bar-t{font-size:14px;font-weight:600}
+.link{color:var(--btext);font-size:13px;cursor:pointer;text-decoration:none;font-weight:600}
+.link:hover{text-decoration:underline}
+
+/* ===== VARIANT LAYOUTS ===== */
+#opt-a .grid3{display:flex;gap:14px}
+#opt-a .grid3 .note-card{flex:1}
+
+#opt-b .b-layout{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+#opt-b .hero{background:linear-gradient(135deg,var(--navy),#152b57);border-radius:14px;padding:24px 26px;color:#fff}
+#opt-b .hero-lbl{font-size:11px;font-weight:700;color:#9fb0d6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+#opt-b .hero-val{font-size:44px;font-weight:800;line-height:1}
+#opt-b .hero-val span{font-size:20px;font-weight:600;color:#9fb0d6}
+#opt-b .hero-sub{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15);font-size:12px;color:#c4cde2}
+#opt-b .hero-sub b{color:#fff}
+#opt-b .mini-stack{display:flex;flex-direction:column;gap:12px}
+#opt-b .mini-card{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+#opt-b .mini-lbl{font-size:12.5px;font-weight:600;color:var(--t2)}
+#opt-b .mini-val{font-size:18px;font-weight:800}
+#opt-b .b-without-fin{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+#opt-c .kpi-strip{display:flex;gap:14px;margin-bottom:16px}
+#opt-c .kpi-card{flex:1}
+#opt-c .kpi-card{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:16px 18px;border-top:3px solid var(--ln)}
+#opt-c .kpi-card.pot{border-top-color:var(--violet)}
+#opt-c .kpi-card.perf{border-top-color:#0EA5A5}
+#opt-c .kpi-card.fin{border-top-color:var(--blue)}
+#opt-c .kpi-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+#opt-c .kpi-val{font-size:24px;font-weight:800}
+
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bc"><a>Campagnes</a><span>›</span><a>eval 9 septembre bis</a><span>›</span><span>Détail de l'évaluation</span></div>
+  <div class="h1">employe finance — Détail de l'évaluation</div>
+  <div class="h1-sub">Auto-évaluation · Période 01/01/2026 – 30/06/2026 · Formulaire "Prod 2 sections pondérées"</div>
+
+  <!-- ===== BANDEAU DE DÉCISION (à retirer une fois l'option choisie) ===== -->
+  <div class="picker">
+    <div class="picker-title">À trancher avant les spécifications</div>
+    <div class="picker-sub">Trois façons de présenter Note Potentiel / Note Performance / Note Finale dans cet écran. Cliquez pour comparer, et testez les interrupteurs de visibilité en bas (identiques à ceux de la configuration) pour voir le rendu quand une note est masquée.</div>
+    <div class="opt-row">
+      <button class="opt-btn sel" data-opt="a">Option A — Trio de cartes égales<div class="d">Extension simple du pattern actuel : 3 cartes de même poids, sous les identités.</div></button>
+      <button class="opt-btn" data-opt="b">Option B — Note finale mise en avant<div class="d">Grande carte pour la Note finale ; Potentiel/Performance en soutien, plus discrets.</div></button>
+      <button class="opt-btn" data-opt="c">Option C — Bandeau de synthèse<div class="d">3 indicateurs façon tableau de bord, au-dessus des identités Évalué/Évaluateur.</div></button>
+    </div>
+    <div class="vis-row">
+      <div class="vis-item"><label class="tgl"><input type="checkbox" id="vis-pot" checked><span class="tgl-track"></span></label><span class="vis-lbl">Note Potentiel visible</span></div>
+      <div class="vis-item"><label class="tgl"><input type="checkbox" id="vis-perf" checked><span class="tgl-track"></span></label><span class="vis-lbl">Note Performance visible</span></div>
+      <div class="vis-item"><label class="tgl"><input type="checkbox" id="vis-fin" checked><span class="tgl-track"></span></label><span class="vis-lbl">Note Finale visible</span></div>
+    </div>
+  </div>
+
+  <div class="acc">
+    <div class="acc-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>Informations générales</div>
+    <span style="font-size:12px;color:var(--t3)">Campagne · Type · Période · Manager</span>
+  </div>
+
+  <div class="acc" id="note-acc-toggle">
+    <div class="acc-t"><svg class="acc-chev open" id="acc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>Note d'évaluation</div>
+    <span style="font-size:12px;color:var(--t3)">Évalué · Évaluateur · Potentiel · Performance · Finale</span>
+  </div>
+
+  <div class="acc-body" id="note-acc-body">
+  <!-- ===== CARTES ÉVALUÉ / ÉVALUATEUR (communes aux 3 options) ===== -->
+  <div class="people-row">
+    <div class="people-card">
+      <div class="pc-label">Évalué</div>
+      <div class="pc-top">
+        <div style="display:flex;align-items:center;gap:10px"><div class="pc-ava amber">EM</div><div class="pc-name">employe finance</div></div>
+        <div class="pc-note amber" data-note="fin">17,5<span>/20</span></div>
+      </div>
+      <div class="pc-meta">Matricule 10203 · Direction Finance · Cadre</div>
+      <div class="pc-subnotes">
+        <div class="pc-subnote" data-note="pot"><div class="pc-subnote-lbl">Potentiel</div><div class="pc-subnote-val pot">3,2<span>/5</span></div></div>
+        <div class="pc-subnote" data-note="perf"><div class="pc-subnote-lbl">Performance</div><div class="pc-subnote-val perf">4,0<span>/5</span></div></div>
+      </div>
+      <div class="pc-time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Note donnée le 09/09/2026 à 08:12</div>
+    </div>
+    <div class="people-card">
+      <div class="pc-label">Évaluateur</div>
+      <div class="pc-top">
+        <div style="display:flex;align-items:center;gap:10px"><div class="pc-ava blue">DF</div><div class="pc-name">Demba FALL</div></div>
+        <div class="pc-note blue" data-note="fin">15,5<span>/20</span></div>
+      </div>
+      <div class="pc-meta">Matricule 10088 · Directeur Financier</div>
+      <div class="pc-subnotes">
+        <div class="pc-subnote" data-note="pot"><div class="pc-subnote-lbl">Potentiel</div><div class="pc-subnote-val pot">3,8<span>/5</span></div></div>
+        <div class="pc-subnote" data-note="perf"><div class="pc-subnote-lbl">Performance</div><div class="pc-subnote-val perf">4,6<span>/5</span></div></div>
+      </div>
+      <div class="pc-time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>Note donnée le 10/09/2026 à 14:35</div>
+    </div>
+  </div>
+
+  <!-- ===== OPTION A ===== -->
+  <div id="opt-a">
+    <div class="grid3">
+      <div class="note-card" data-note="pot">
+        <div class="note-lbl">Note Potentiel</div>
+        <div class="note-val pot-color">3,5<span>/5</span></div>
+      </div>
+      <div class="note-card" data-note="perf">
+        <div class="note-lbl">Note Performance</div>
+        <div class="note-val perf-color">4,4<span>/5</span></div>
+      </div>
+      <div class="note-card" data-note="fin">
+        <div class="note-lbl">Note finale</div>
+        <div class="note-val fin-color">16,4<span>/20</span></div>
+        <div class="processed-by"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Traité par <b>10050 — Fatou NDIAYE</b> le 12/09/2026 à 09:00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== OPTION B ===== -->
+  <div id="opt-b" class="hidden">
+    <div class="b-layout" id="optb-with-fin">
+      <div class="hero" data-note="fin">
+        <div class="hero-lbl">Note finale</div>
+        <div class="hero-val">16,4<span>/20</span></div>
+        <div class="hero-sub">Traité par <b>10050 — Fatou NDIAYE</b> le 12/09/2026 à 09:00</div>
+      </div>
+      <div class="mini-stack">
+        <div class="mini-card" data-note="pot">
+          <div class="mini-lbl">Note Potentiel</div>
+          <div class="mini-val pot-color">3,5/5</div>
+        </div>
+        <div class="mini-card" data-note="perf">
+          <div class="mini-lbl">Note Performance</div>
+          <div class="mini-val perf-color">4,4/5</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="b-without-fin hidden" id="optb-without-fin">
+      <div class="note-card" data-note="pot">
+        <div class="note-lbl">Note Potentiel</div>
+        <div class="note-val pot-color">3,5<span>/5</span></div>
+      </div>
+      <div class="note-card" data-note="perf">
+        <div class="note-lbl">Note Performance</div>
+        <div class="note-val perf-color">4,4<span>/5</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== OPTION C ===== -->
+  <div id="opt-c" class="hidden">
+    <div class="kpi-strip">
+      <div class="kpi-card pot" data-note="pot">
+        <div class="kpi-lbl">Note Potentiel</div>
+        <div class="kpi-val pot-color">3,5<span style="font-size:14px;color:var(--t3);font-weight:600">/5</span></div>
+      </div>
+      <div class="kpi-card perf" data-note="perf">
+        <div class="kpi-lbl">Note Performance</div>
+        <div class="kpi-val perf-color">4,4<span style="font-size:14px;color:var(--t3);font-weight:600">/5</span></div>
+      </div>
+      <div class="kpi-card fin" data-note="fin">
+        <div class="kpi-lbl">Note finale</div>
+        <div class="kpi-val fin-color">16,4<span style="font-size:14px;color:var(--t3);font-weight:600">/20</span></div>
+        <div class="processed-by" style="margin-top:6px;padding-top:6px">Traité par <b>Fatou NDIAYE</b> le 12/09</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="form-bar">
+    <div class="form-bar-t">Formulaire d'évaluation</div>
+    <a class="link">Ouvrir le formulaire détaillé →</a>
+  </div>
+</div>
+
+<script>
+document.getElementById('note-acc-toggle').addEventListener('click', function(){
+  document.getElementById('note-acc-body').classList.toggle('collapsed');
+  document.getElementById('acc-chev').classList.toggle('open');
+});
+
+var NOTE_NAMES = {pot:'Note Potentiel', perf:'Note Performance', fin:'Note finale'};
+
+function currentOpt(){ return document.querySelector('.opt-btn.sel').dataset.opt; }
+
+function applyVisibility(){
+  var vis = {
+    pot: document.getElementById('vis-pot').checked,
+    perf: document.getElementById('vis-perf').checked,
+    fin: document.getElementById('vis-fin').checked
+  };
+  ['a','b','c'].forEach(function(o){
+    var root = document.getElementById('opt-'+o);
+    root.querySelectorAll('[data-note]').forEach(function(el){
+      el.style.display = vis[el.dataset.note] ? '' : 'none';
+    });
+  });
+  document.querySelector('.people-row').querySelectorAll('[data-note]').forEach(function(el){
+    el.style.display = vis[el.dataset.note] ? '' : 'none';
+  });
+  document.getElementById('optb-with-fin').classList.toggle('hidden', !vis.fin);
+  document.getElementById('optb-without-fin').classList.toggle('hidden', vis.fin);
+}
+
+document.querySelectorAll('.opt-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.opt-btn').forEach(function(b){ b.classList.remove('sel'); });
+    this.classList.add('sel');
+    ['a','b','c'].forEach(function(o){ document.getElementById('opt-'+o).classList.toggle('hidden', o!==currentOpt()); });
+  });
+});
+['vis-pot','vis-perf','vis-fin'].forEach(function(id){
+  document.getElementById(id).addEventListener('change', applyVisibility);
+});
+applyVisibility();
+</script>
+</body>
+</html>
