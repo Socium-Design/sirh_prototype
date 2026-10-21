@@ -1,0 +1,67 @@
+:host {
+  display: block;
+}
+
+// Colonne des cartes, alignée sur la prod (les cartes ne prennent pas toute la largeur de l'écran).
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-lg);
+  max-width: calc(var(--bridges-position-padding-4xl) * 16); // 768 px, ≈ la largeur des cartes en prod à 1440 px
+}
+
+.maj {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.maj__ligne {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bridges-position-gap-md);
+  padding: var(--bridges-position-padding-md) 0;
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+
+  & + & {
+    border-top: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
+  }
+
+  p {
+    padding-top: var(--bridges-position-padding-2xs);
+  }
+}
+
+.pied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bridges-position-gap-lg);
+}
+
+.pied__modification {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-xs);
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-xs);
+  color: var(--bridges-color-text-secondary);
+}
+
+.pied__icone {
+  width: var(--bridges-size-icon-sm);
+  height: var(--bridges-size-icon-sm);
+}
+
+.pied__actions {
+  display: flex;
+  gap: var(--bridges-position-gap-sm);
+}
+
+// « Enregistré ✓ » : le kit n'a pas de variante « succès » pour un bouton (GAP-DS design_system_angular#27) → seule la coche passe en vert.
+.enregistre svg {
+  color: var(--bridges-color-text-success);
+}

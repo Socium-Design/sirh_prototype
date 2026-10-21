@@ -63,16 +63,18 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 
 | Composant Labs | Utilisé dans |
 |---|---|
-| `soc-labs-workspace-layout` | Composition d'un tableau de bord (barre du haut + 3 colonnes défilant séparément ; panneaux repliables sous 1280 px — `collapsibleBelow`, PR design_system_angular#35, pas encore publiée) |
-| `soc-labs-compact-field` | Composition — panneau « Informations » (Libellé, Description, Produit, Population adressée), taille `sm` (PR design_system_angular#41, pas encore publiée) |
+| `soc-labs-workspace-layout` | Composition d'un tableau de bord (barre du haut + 3 colonnes défilant séparément ; panneaux repliables sous 1280 px — `collapsibleBelow`, design_system_angular#35, publiée en 0.3.0) |
+| `soc-labs-compact-field` | Composition — panneau « Informations » (Libellé, Description, Produit, Population adressée), taille `sm` (design_system_angular#41, publiée en 0.3.0) |
 | `soc-labs-pill-toggle` | Composition — statut (Actif / Inactif / Archivé) |
 | `soc-labs-chart-type-chip` | Composition — cartes de graphe et lignes de la Bibliothèque |
 | `soc-labs-drop-zone` | Composition — état vide et emplacement « Ajouter un graphe » (glisser-déposer CDK) |
-| `soc-labs-list-row` | Bibliothèque — lignes du catalogue (ajouté, verrouillé, glisser), `appearance="flush"` (PR design_system_angular#40, pas encore publiée) |
-| `soc-labs-widget-card` | Cartes des widgets (composition, prévisualisation, consultation) : titre sur 2 lignes, critères de filtre dans la carte (PR design_system_angular#39, pas encore publiée) |
+| `soc-labs-list-row` | Bibliothèque — lignes du catalogue (ajouté, verrouillé, glisser), `appearance="flush"` (design_system_angular#40, publiée en 0.3.0) |
+| `soc-labs-widget-card` | Cartes des widgets (composition, prévisualisation, consultation) : titre sur 2 lignes, critères de filtre dans la carte (design_system_angular#39, publiée en 0.3.0) |
 | `soc-labs-icon-button` | Composition (retour, menu d'une carte), Bibliothèque (« + », replier une section) |
 | `soc-labs-inline-edit` | Bibliothèque — renommage sur place des sections |
 | `soc-labs-fullscreen-overlay` | Composition — « Prévisualiser » |
+| `soc-labs-settings-card` | Perfs > Configurations > Notes d'évaluation — cartes de barème (sur-titre, interrupteur, état désactivé, « Règle de calcul ») et « Ce qui sera mis à jour automatiquement » (design_system_angular#51, publié en 0.3.1) |
+| `soc-labs-icon-tile` | Perfs > Configurations > Notes d'évaluation — icônes de « Ce qui sera mis à jour automatiquement » |
 
 **Composant Labs pas encore publié** — en attendant la publication d'une PR du design system, le prototype dépend d'une
 archive locale du kit construite depuis la branche de la PR : `vendor/socium-design-angular-components-<version>.tgz`,

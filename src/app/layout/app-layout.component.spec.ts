@@ -12,7 +12,7 @@ describe('AppLayoutComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: '', component: AppLayoutComponent, children: [{ path: 'workspace/employes', component: StubPage }, { path: 'perf/formation', component: StubPage }, { path: 'a-venir/:id', component: StubPage }] },
+          { path: '', component: AppLayoutComponent, children: [{ path: 'workspace/employes', component: StubPage }, { path: 'perf/configurations', component: StubPage }, { path: 'a-venir/:id', component: StubPage }] },
         ]),
       ],
     });
@@ -31,10 +31,10 @@ describe('AppLayoutComponent', () => {
 
   it('suit la navigation : produit et item changent avec l\'URL', async () => {
     const { harness, root } = await setup('/workspace/employes');
-    await harness.navigateByUrl('/perf/formation');
+    await harness.navigateByUrl('/perf/configurations');
     harness.detectChanges();
     expect(root.querySelector('soc-side-navigation')?.textContent).toContain('Perfs');
-    expect(selected(root)).toBe('Formations');
+    expect(selected(root)).toBe('Configurations');
   });
 
   it('un clic sur un item sans page mène à « bientôt disponible »', async () => {
