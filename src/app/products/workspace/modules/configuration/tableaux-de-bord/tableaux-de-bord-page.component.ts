@@ -48,7 +48,7 @@ const DATE_CREATION = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 
     .tableaux__nom { font-weight: var(--bridges-shape-text-label-weight); color: var(--bridges-color-text-primary); }
   `,
   template: `
-    <ng-template #nomCell let-row>
+    <ng-template #libelleCell let-row>
       <span class="tableaux__nom">{{ row.libelle }}</span>
     </ng-template>
     <ng-template #statutCell let-row>
@@ -115,7 +115,7 @@ export class TableauxDeBordPageComponent {
   private readonly service = inject(TableauxDeBordService);
   private readonly catalogue = inject(CatalogueService);
 
-  private readonly nomCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('nomCell');
+  private readonly libelleCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('libelleCell');
   private readonly statutCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('statutCell');
   private readonly boutonsCell = viewChild.required<TemplateRef<DataTableCellContext<TableauDeBord>>>('boutonsCell');
   protected readonly tableaux = signal<TableauDeBord[]>([]);
@@ -135,7 +135,7 @@ export class TableauxDeBordPageComponent {
   protected readonly aSupprimer = signal<TableauDeBord | null>(null);
 
   protected readonly columns = computed<DataTableColumn<TableauDeBord>[]>(() => [
-    { key: 'libelle', header: 'Nom', render: this.nomCell() },
+    { key: 'libelle', header: 'Libellé', render: this.libelleCell() },
     { key: 'modele', header: 'Modèle de base', render: (t) => this.gabarits().find((g) => g.id === t.modele)?.libelle ?? '—' },
     { key: 'produit', header: 'Produit', render: (t) => this.produits().find((p) => p.id === t.produit)?.libelle ?? t.produit },
     { key: 'population', header: 'Population adressée', render: (t) => this.populations().find((p) => p.id === t.populationId)?.nom ?? '—' },

@@ -39,7 +39,7 @@ describe('TableauxDeBordPageComponent', () => {
   it('colonnes Libellé | Modèle de base | Produit | Population adressée | Statut | Date de création, sans profils ; boutons Détail et Visualiser', () => {
     expect(rows().length).toBe(5);
     expect([...el().querySelectorAll('thead th')].map((th) => th.textContent?.trim()).filter(Boolean)).toEqual([
-      'Nom',
+      'Libellé',
       'Modèle de base',
       'Produit',
       'Population adressée',
