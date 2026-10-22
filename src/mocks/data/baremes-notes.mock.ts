@@ -35,7 +35,7 @@ export const DEFINITIONS_NOTES: DefinitionNote[] = [
     libelleDenominateur: 'Dénominateur de la note objectif',
     interrupteur: 'activation',
     regle:
-      'Note de chaque objectif ramenée en pourcentage. Un objectif avec sous-objectifs prend la moyenne de ses sous-objectifs. La moyenne de la section Objectifs est pondérée par le poids de chaque objectif.',
+      'S’applique uniquement à la note affichée dans l’en-tête de la section Objectifs : la moyenne des objectifs et sous-objectifs de la section, pondérée par le poids de chaque objectif. Les notes de chaque objectif ne changent pas : un objectif qualitatif garde le dénominateur de ses paliers.',
     mentionDesactive: 'Barème désactivé : objectifs affichés sur 100',
   },
   {
@@ -44,7 +44,7 @@ export const DEFINITIONS_NOTES: DefinitionNote[] = [
     libelleDenominateur: 'Dénominateur de la note compétence',
     interrupteur: 'activation',
     regle:
-      'Note de chaque compétence ramenée en pourcentage. La moyenne de la section Compétences est une moyenne simple des compétences de la fiche de poste, hors compétences additionnelles.',
+      'S’applique uniquement à la note affichée dans l’en-tête de la section Compétences : la moyenne simple des compétences de la fiche de poste, hors compétences additionnelles. Les notes de chaque compétence ne changent pas.',
     mentionDesactive: 'Barème désactivé : compétences affichées sur 100',
   },
 ];
