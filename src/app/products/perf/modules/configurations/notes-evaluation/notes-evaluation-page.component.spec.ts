@@ -49,7 +49,18 @@ describe('NotesEvaluationPageComponent', () => {
       'Visible sur l’évaluation', 'Visible sur l’évaluation', 'Visible sur l’évaluation', 'Activer le barème', 'Activer le barème',
     ]);
     expect(texte(carte('objectif').querySelector('[data-testid="regle"]'))).toContain('Règle de calcul');
-    expect(texte(carte('objectif').querySelector('[data-testid="regle"]'))).toContain('pondérée par le poids de chaque objectif');
+  });
+
+  it('règle de calcul des barèmes objectif et compétence : seulement la note de l’en-tête de section, notes individuelles inchangées', () => {
+    expect(texte(carte('objectif').querySelector('[data-testid="regle"] p:last-child'))).toBe(
+      'S’applique uniquement à la note affichée dans l’en-tête de la section Objectifs : la moyenne des objectifs et sous-objectifs de la section, pondérée par le poids de chaque objectif. Les notes de chaque objectif ne changent pas : un objectif qualitatif garde le dénominateur de ses paliers.',
+    );
+    expect(texte(carte('competence').querySelector('[data-testid="regle"] p:last-child'))).toBe(
+      'S’applique uniquement à la note affichée dans l’en-tête de la section Compétences : la moyenne simple des compétences de la fiche de poste, hors compétences additionnelles. Les notes de chaque compétence ne changent pas.',
+    );
+  });
+
+  it('cartes objectif et compétence : libellé du dénominateur', () => {
     expect(texte(carte('objectif'))).toContain('Dénominateur de la note objectif');
     expect(texte(carte('competence'))).toContain('Dénominateur de la note compétence');
   });
