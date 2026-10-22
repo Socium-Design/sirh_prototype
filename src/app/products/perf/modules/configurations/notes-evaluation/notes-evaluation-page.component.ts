@@ -39,8 +39,7 @@ const MISES_A_JOUR = [
   template: `
     <div class="notes">
       <div class="notes__outils">
-        <!-- tertiary et non ghost : le texte bleu du ghost fait 3,86:1 sur blanc (< 4,5:1), GAP-DS design_system_angular#56. -->
-        <button socButton variant="tertiary" data-testid="tout-deplier" (click)="toutBasculer()">{{ toutOuvert() ? 'Tout replier' : 'Tout déplier' }}</button>
+        <button socButton variant="ghost" data-testid="tout-deplier" (click)="toutBasculer()">{{ toutOuvert() ? 'Tout replier' : 'Tout déplier' }}</button>
       </div>
       @for (definition of definitions; track definition.id) {
         @if (baremeDe(definition.id); as bareme) {
