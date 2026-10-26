@@ -8,7 +8,7 @@
  *
  * Usages actuels : Workspace > Configuration > composition d'un tableau de bord (page + Bibliothèque) ; Workspace > Tableau
  * de bord (cartes des widgets : `soc-labs-widget-card`) ; Perfs > Configurations > Notes d'évaluation (`soc-labs-settings-card` avec
- * ses slots détails et tags — design_system_angular#63, pas encore publiés —, `soc-labs-icon-tile`).
+ * ses slots détails et tags — design_system_angular#63, publiés en 0.3.4 —, `soc-labs-icon-tile`).
  */
 export {
   LABS_CHART_TYPE_LABELS,
