@@ -1,6 +1,6 @@
 import { DEFINITIONS_NOTES } from '../../../../../../mocks/data/baremes-notes.mock';
 import type { BaremeNote } from '../models/bareme.model';
-import { baremeValide, erreurDenominateur, estDesactive, formaterDateModification, maintenantIsoLocal, noteSurBareme, resumeBareme } from './bareme';
+import { baremeValide, erreurDenominateur, estDesactive, estMasqueePourEvalue, formaterDateModification, maintenantIsoLocal, noteSurBareme, resumeBareme } from './bareme';
 
 describe('Barèmes des notes', () => {
   const definition = (id: string) => DEFINITIONS_NOTES.find((d) => d.id === id)!;
@@ -70,6 +70,14 @@ describe('Barèmes des notes', () => {
 
     it('note « Visible sur l’évaluation » masquée : le barème reste résumé', () => {
       expect(resumeBareme(definition('finale'), bareme({ id: 'finale', actif: false }))).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
+    });
+
+    it('note Potentiel masquée pour l’évalué : « Masquée pour l’évalué · /20 · 2 décimales », carte toujours modifiable', () => {
+      const potentiel = bareme({ id: 'potentiel', actif: false, denominateur: 20, decimales: 2 });
+      expect(resumeBareme(definition('potentiel'), potentiel)).toBe("Masquée pour l'évalué · /20 · 2 décimales");
+      expect(estMasqueePourEvalue(definition('potentiel'), potentiel)).toBeTrue();
+      expect(estDesactive(definition('potentiel'), potentiel)).toBeFalse();
+      expect(estMasqueePourEvalue(definition('finale'), bareme({ id: 'finale', actif: false }))).toBeFalse();
     });
 
     it('barème objectif / compétence désactivé : « affichage sur 100 »', () => {

@@ -7,8 +7,8 @@
  * n'avoir qu'à remplacer les imports (`SocLabsX` → `SocX` depuis `@socium-design/angular-components`).
  *
  * Usages actuels : Workspace > Configuration > composition d'un tableau de bord (page + Bibliothèque) ; Workspace > Tableau
- * de bord (cartes des widgets : `soc-labs-widget-card`) ; Perfs > Configurations > Notes d'évaluation (`soc-labs-settings-card`,
- * `soc-labs-icon-tile`).
+ * de bord (cartes des widgets : `soc-labs-widget-card`) ; Perfs > Configurations > Notes d'évaluation (`soc-labs-settings-card` avec
+ * ses slots détails et tags — design_system_angular#63, publiés en 0.3.4 —, `soc-labs-icon-tile`).
  */
 export {
   LABS_CHART_TYPE_LABELS,
@@ -26,7 +26,9 @@ export {
   SocLabsPillToggle,
   SocLabsSettingsCard,
   SocLabsSettingsCardAction,
+  SocLabsSettingsCardDetails,
   SocLabsSettingsCardFootnote,
+  SocLabsSettingsCardTags,
   SocLabsWorkspaceActions,
   SocLabsWorkspaceBack,
   SocLabsWorkspaceHint,

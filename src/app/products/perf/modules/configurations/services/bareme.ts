@@ -39,13 +39,20 @@ export function baremeValide(definition: DefinitionNote, bareme: BaremeNote): bo
   return estDesactive(definition, bareme) || erreurDenominateur(bareme.denominateur) === null;
 }
 
+/** Une note « Visible par l'évalué » (note Potentiel) dont l'interrupteur est coupé : masquée pour l'évalué seulement. */
+export function estMasqueePourEvalue(definition: DefinitionNote, bareme: BaremeNote): boolean {
+  return definition.interrupteur === 'confidentialite' && !bareme.actif;
+}
+
 /**
  * Résumé d'une carte fermée : « /20 · 2 décimales · appliqué aux évaluations finalisées » (ou « … nouvelles évaluations
- * uniquement ») ; barème objectif / compétence désactivé : « Barème désactivé : affichage sur 100 ».
+ * uniquement ») ; barème objectif / compétence désactivé : « Barème désactivé : affichage sur 100 » ; note Potentiel
+ * masquée pour l'évalué : « Masquée pour l'évalué · /20 · 2 décimales ».
  */
 export function resumeBareme(definition: DefinitionNote, bareme: BaremeNote): string {
   if (estDesactive(definition, bareme)) return 'Barème désactivé : affichage sur 100';
   const decimales = `${bareme.decimales} décimale${bareme.decimales > 1 ? 's' : ''}`;
+  if (estMasqueePourEvalue(definition, bareme)) return `Masquée pour l'évalué · /${bareme.denominateur ?? '—'} · ${decimales}`;
   const application = bareme.appliquerAuxFinalisees ? 'appliqué aux évaluations finalisées' : 'appliqué aux nouvelles évaluations uniquement';
   return `/${bareme.denominateur ?? '—'} · ${decimales} · ${application}`;
 }

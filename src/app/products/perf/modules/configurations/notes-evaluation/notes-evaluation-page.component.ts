@@ -1,23 +1,18 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { LucideChartColumn, LucideCheck, LucideClipboardCheck, LucideClock, LucideDownload } from '@lucide/angular';
+import { LucideCheck, LucideClock } from '@lucide/angular';
 import { SocButton, SocButtonRightIcon } from '@socium-design/angular-components';
-import { SocLabsIconTile, SocLabsSettingsCard } from '../../../../../shared/labs/labs';
-import type { BaremeNote, DerniereModification, NoteId } from '../models/bareme.model';
+import { FeatureFlagsService } from '../../../../../core/feature-flags/feature-flags.service';
+import type { BaremeNote, DefinitionNote, DerniereModification, NoteId } from '../models/bareme.model';
 import { BaremesService } from '../services/baremes.service';
 import { baremeValide, formaterDateModification } from '../services/bareme';
 import { BaremeCardComponent } from './components/bareme-card.component';
 
-/** Lignes de la carte « Ce qui sera mis à jour automatiquement ». */
-const MISES_A_JOUR = [
-  { icone: 'resultats', titre: "Résultats d'évaluation", texte: 'Notes affichées aux managers, employés et RH sur toutes les campagnes, y compris archivées.' },
-  { icone: 'kpi', titre: 'Tableaux de bord & KPI', texte: "Moyennes, comparatifs et graphiques recalculés sur la nouvelle échelle au moment de l'affichage." },
-  { icone: 'exports', titre: 'Exports Excel / PDF', texte: 'Tout nouvel export utilise le dénominateur en vigueur au moment de la génération.' },
-] as const;
-
 /**
  * Perfs > Configurations > Notes d'évaluation : barèmes des 5 notes (finale, potentiel, performance, objectif, compétence)
- * en cartes repliables, toutes fermées à l'arrivée (« Tout déplier / Tout replier » au-dessus),
- * puis ce qui sera mis à jour, puis la barre « Dernière modification · Annuler · Enregistrer ».
+ * en cartes repliables, toutes fermées à l'arrivée (« Tout déplier / Tout replier » au-dessus), chacune avec sa zone
+ * « Ce qui sera mis à jour », puis la barre « Dernière modification · Annuler · Enregistrer ».
+ * Feature flag « Confidentialité du potentiel » : tag dans l'en-tête de la carte Potentiel (« Visible par l'évalué »,
+ * masquée par défaut pour l'évalué) ; inactif, la carte garde l'ancien comportement (voir `BaremesService`).
  * Les cartes modifient un brouillon ; « Enregistrer » l'envoie au service (→ « Enregistré ✓ », date mise à jour),
  * « Annuler » revient aux dernières valeurs enregistrées.
  */
@@ -25,13 +20,8 @@ const MISES_A_JOUR = [
   selector: 'app-notes-evaluation-page',
   imports: [
     BaremeCardComponent,
-    SocLabsSettingsCard,
-    SocLabsIconTile,
     SocButton,
     SocButtonRightIcon,
-    LucideClipboardCheck,
-    LucideChartColumn,
-    LucideDownload,
     LucideClock,
     LucideCheck,
   ],
@@ -48,28 +38,13 @@ const MISES_A_JOUR = [
             [bareme]="bareme"
             [ouverte]="!!ouvertes()[definition.id]"
             [modifie]="estModifie(definition.id)"
+            [tag]="tagDe(definition)"
             (changer)="changer(definition.id, $event)"
             (ouvertureChange)="ouvrir(definition.id, $event)"
           />
         }
       }
 
-      <soc-labs-settings-card title="Ce qui sera mis à jour automatiquement" data-testid="mises-a-jour">
-        <ul class="maj">
-          @for (ligne of misesAJour; track ligne.titre) {
-            <li class="maj__ligne">
-              <soc-labs-icon-tile [size]="32" decorative>
-                @switch (ligne.icone) {
-                  @case ('resultats') { <svg lucideClipboardCheck class="size-full" [strokeWidth]="2"></svg> }
-                  @case ('kpi') { <svg lucideChartColumn class="size-full" [strokeWidth]="2"></svg> }
-                  @default { <svg lucideDownload class="size-full" [strokeWidth]="2"></svg> }
-                }
-              </soc-labs-icon-tile>
-              <p>{{ ligne.titre }} — {{ ligne.texte }}</p>
-            </li>
-          }
-        </ul>
-      </soc-labs-settings-card>
 
       <div class="pied" data-testid="pied">
         @if (derniereModification(); as modif) {
@@ -95,9 +70,11 @@ const MISES_A_JOUR = [
 })
 export class NotesEvaluationPageComponent {
   private readonly service = inject(BaremesService);
+  private readonly flags = inject(FeatureFlagsService);
 
   protected readonly definitions = this.service.getDefinitions();
-  protected readonly misesAJour = MISES_A_JOUR;
+  /** Tag « Confidentialité du potentiel » de la carte Potentiel (flag inactif : plus de carte `confidentialite`). */
+  private readonly tagConfidentialite = this.flags.libelle('confidentialite-potentiel');
 
   /** Dernières valeurs enregistrées et brouillon en cours. */
   private readonly enregistres = signal<BaremeNote[]>([]);
@@ -122,6 +99,10 @@ export class NotesEvaluationPageComponent {
 
   protected baremeDe(id: string): BaremeNote | undefined {
     return this.brouillon().find((b) => b.id === id);
+  }
+
+  protected tagDe(definition: DefinitionNote): string | undefined {
+    return definition.interrupteur === 'confidentialite' ? this.tagConfidentialite : undefined;
   }
 
   protected estModifie(id: NoteId): boolean {

@@ -15,29 +15,6 @@
   justify-content: flex-end;
 }
 
-.maj {
-  display: flex;
-  flex-direction: column;
-  list-style: none;
-}
-
-.maj__ligne {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--bridges-position-gap-md);
-  padding: var(--bridges-position-padding-md) 0;
-  font-family: var(--bridges-shape-text-body-font);
-  font-size: var(--bridges-size-text-text-size-sm);
-  color: var(--bridges-color-text-primary);
-
-  & + & {
-    border-top: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
-  }
-
-  p {
-    padding-top: var(--bridges-position-padding-2xs);
-  }
-}
 
 .pied {
   display: flex;
