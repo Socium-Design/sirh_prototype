@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { FeatureFlagsService } from '../../../../../core/feature-flags/feature-flags.service';
 import { NotesEvaluationPageComponent } from './notes-evaluation-page.component';
 
 describe('NotesEvaluationPageComponent', () => {
@@ -46,7 +47,7 @@ describe('NotesEvaluationPageComponent', () => {
     ]);
     expect(cartes.every((c) => texte(c.querySelector('[data-region="overline"]')) === 'BARÈME')).toBeTrue();
     expect(cartes.map((c) => texte(c.querySelector('[data-testid="interrupteur"]')))).toEqual([
-      'Visible sur l’évaluation', 'Visible sur l’évaluation', 'Visible sur l’évaluation', 'Activer le barème', 'Activer le barème',
+      'Visible sur l’évaluation', "Visible par l'évalué", 'Visible sur l’évaluation', 'Activer le barème', 'Activer le barème',
     ]);
     expect(texte(carte('objectif').querySelector('[data-testid="regle"]'))).toContain('Règle de calcul');
   });
@@ -231,13 +232,170 @@ describe('NotesEvaluationPageComponent', () => {
     });
   });
 
-  it('« Ce qui sera mis à jour automatiquement » : 3 lignes avec icône', () => {
-    const bloc = el().querySelector('[data-testid="mises-a-jour"]')!;
-    expect(texte(bloc.querySelector('[data-region="title"]'))).toBe('Ce qui sera mis à jour automatiquement');
-    const lignes = [...bloc.querySelectorAll('li')];
-    expect(lignes.length).toBe(3);
-    expect(lignes.every((l) => !!l.querySelector('soc-labs-icon-tile svg'))).toBeTrue();
-    expect(texte(lignes[0])).toBe("Résultats d'évaluation — Notes affichées aux managers, employés et RH sur toutes les campagnes, y compris archivées.");
-    expect(texte(lignes[2])).toContain('Exports Excel / PDF — Tout nouvel export');
+  describe('« Ce qui sera mis à jour » dans chaque carte', () => {
+    const zone = (note: string) => carte(note).querySelector('[data-testid="impact"]') as HTMLElement;
+    const boutonZone = (note: string) => zone(note).querySelector('button') as HTMLButtonElement;
+    const lignes = (note: string) => [...zone(note).querySelectorAll('li')].map(texte);
+    const ouvrirZone = (note: string) => {
+      boutonZone(note).click();
+      fixture.detectChanges();
+    };
+
+    it('plus de bloc autonome en bas de page', () => {
+      expect(el().querySelector('[data-testid="mises-a-jour"]')).toBeNull();
+      expect(texte(el())).not.toContain('Ce qui sera mis à jour automatiquement');
+    });
+
+    it('une zone par carte, sous la règle de calcul, fermée par défaut (bouton aria-expanded)', () => {
+      toutDeplier();
+      for (const note of ['finale', 'potentiel', 'performance', 'objectif', 'competence']) {
+        const details = carte(note).querySelector('[data-region="details"]')!;
+        expect(details.contains(zone(note))).withContext(note).toBeTrue();
+        expect(carte(note).querySelector('[data-region="footnote"]')!.compareDocumentPosition(details) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(texte(boutonZone(note))).toBe('Ce qui sera mis à jour');
+        expect(boutonZone(note).getAttribute('aria-expanded')).withContext(note).toBe('false');
+        expect(zone(note).querySelector('li')).toBeNull();
+      }
+    });
+
+    it('Note finale : les 3 lignes de l’ancien bloc, avec icône', () => {
+      toutDeplier();
+      ouvrirZone('finale');
+      expect(boutonZone('finale').getAttribute('aria-expanded')).toBe('true');
+      expect(lignes('finale')).toEqual([
+        "Résultats d'évaluation — Notes affichées aux managers, employés et RH sur toutes les campagnes, y compris archivées.",
+        "Tableaux de bord & KPI — Moyennes, comparatifs et graphiques recalculés sur la nouvelle échelle au moment de l'affichage.",
+        'Exports Excel / PDF — Tout nouvel export utilise le dénominateur en vigueur au moment de la génération.',
+      ]);
+      expect([...zone('finale').querySelectorAll('li')].every((l) => !!l.querySelector('soc-labs-icon-tile svg'))).toBeTrue();
+    });
+
+    it('Note Performance, Note objectif, Note compétence', () => {
+      toutDeplier();
+      ouvrirZone('performance');
+      expect(lignes('performance')).toEqual([
+        "Résultats d'évaluation — Note Performance affichée aux managers, employés et RH",
+        'Matrice 9-box — Axe Performance',
+        'Exports Excel / PDF',
+      ]);
+      // Carte désactivée : la zone reste lisible et utilisable (hors du corps grisé).
+      expect(zone('objectif').closest('[inert]')).toBeNull();
+      ouvrirZone('objectif');
+      expect(lignes('objectif')).toEqual([
+        'En-tête de la section Objectifs — moyenne affichée dans ce barème',
+        'Exports Excel / PDF — en-têtes de section',
+      ]);
+      ouvrirZone('competence');
+      expect(lignes('competence')).toEqual([
+        'En-tête de la section Compétences — moyenne affichée dans ce barème',
+        'Exports Excel / PDF — en-têtes de section',
+      ]);
+    });
+  });
+
+  describe('confidentialité du potentiel (flag actif par défaut)', () => {
+    const zone = () => carte('potentiel').querySelector('[data-testid="impact"]') as HTMLElement;
+    const boutonZone = () => zone().querySelector('button') as HTMLButtonElement;
+    const message = () => carte('potentiel').querySelector('[data-testid="message-confidentialite"]');
+    const lignes = () => [...zone().querySelectorAll('li')].map(texte);
+    const LIGNES_MASQUE = [
+      'Question de type potentiel dans le formulaire',
+      'En-tête et barre latérale des sections contenant du potentiel (moyenne)',
+      'Écran de soumission',
+      "Carte Note Potentiel du détail de l'évaluation",
+      'Colonne Potentiel du profil employé',
+      'Historique de la 9-box',
+      'Grille 9-box (repère non placé)',
+      "PDF de l'évaluation",
+      'Export Excel (tiret « – »)',
+    ];
+
+    it('carte Potentiel masquée pour l’évalué par défaut, tag « Confidentialité du potentiel », résumé « Masquée pour l’évalué »', () => {
+      expect(interrupteur('potentiel').getAttribute('aria-checked')).toBe('false');
+      expect(texte(carte('potentiel').querySelector('[data-region="tags"]'))).toBe('Confidentialité du potentiel');
+      expect(resume('potentiel')).toBe("Masquée pour l'évalué · /20 · 2 décimales");
+      expect(el().querySelectorAll('[data-region="tags"]').length).toBe(1);
+    });
+
+    it('désactivée : barème toujours modifiable, message pour managers et RH', () => {
+      deplier('potentiel');
+      expect(carte('potentiel').querySelector('[data-region="body"]')!.hasAttribute('inert')).toBeFalse();
+      expect(texte(message())).toBe("Les managers et les RH continuent de voir cette note. L'évalué voit un cadenas à la place.");
+      chip('potentiel', 10).click();
+      fixture.detectChanges();
+      expect(apercu('potentiel')).toContain('8,20 / 10');
+      expect(resume('potentiel')).toBe('');
+      deplier('potentiel');
+      expect(resume('potentiel')).toBe("Masquée pour l'évalué · /10 · 2 décimales");
+    });
+
+    it('zone : liste « Masqué pour l’évalué » (cadenas) puis la portée', () => {
+      deplier('potentiel');
+      boutonZone().click();
+      fixture.detectChanges();
+      expect(texte(zone().querySelector('[data-testid="impact-masque"]'))).toBe("Masqué pour l'évalué");
+      expect(zone().querySelector('[data-testid="impact-masque"] svg')).not.toBeNull();
+      expect(lignes()).toEqual(LIGNES_MASQUE);
+      expect(texte(zone())).toContain("S'applique à toutes les évaluations, passées comprises.");
+    });
+
+    it('activée : message absent, zone « Note Potentiel affichée … », résumé habituel', () => {
+      interrupteur('potentiel').click();
+      fixture.detectChanges();
+      expect(resume('potentiel')).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
+      deplier('potentiel');
+      expect(message()).toBeNull();
+      boutonZone().click();
+      fixture.detectChanges();
+      expect(zone().querySelector('[data-testid="impact-masque"]')).toBeNull();
+      expect(lignes()).toEqual([
+        "Résultats d'évaluation — Note Potentiel affichée aux managers, employés et RH",
+        'Matrice 9-box — Axe Potentiel',
+        'Exports Excel / PDF',
+      ]);
+    });
+
+    it('désactiver l’interrupteur ouvre la carte et la zone pour montrer l’impact', () => {
+      interrupteur('potentiel').click(); // activée
+      fixture.detectChanges();
+      expect(ouverte('potentiel')).toBeFalse();
+      expect(boutonZone().getAttribute('aria-expanded')).toBe('false');
+      interrupteur('potentiel').click(); // désactivée
+      fixture.detectChanges();
+      expect(ouverte('potentiel')).toBeTrue();
+      expect(boutonZone().getAttribute('aria-expanded')).toBe('true');
+      expect(lignes()).toEqual(LIGNES_MASQUE);
+    });
+
+    it('les autres interrupteurs n’ouvrent pas la zone', () => {
+      toutDeplier();
+      interrupteur('finale').click();
+      fixture.detectChanges();
+      const boutonFinale = carte('finale').querySelector('[data-testid="impact"] button')!;
+      expect(boutonFinale.getAttribute('aria-expanded')).toBe('false');
+    });
+  });
+});
+
+describe('NotesEvaluationPageComponent — flag « Confidentialité du potentiel » inactif', () => {
+  let fixture: ComponentFixture<NotesEvaluationPageComponent>;
+  const carte = (note: string) => (fixture.nativeElement as HTMLElement).querySelector(`[data-note="${note}"]`) as HTMLElement;
+
+  beforeEach(fakeAsync(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: FeatureFlagsService, useValue: { actif: () => false, libelle: () => 'Confidentialité du potentiel' } }],
+    });
+    fixture = TestBed.createComponent(NotesEvaluationPageComponent);
+    fixture.detectChanges();
+    tick(300);
+    fixture.detectChanges();
+  }));
+
+  it('comportement actuel : Potentiel visible par l’évalué par défaut, sans tag', () => {
+    expect(carte('potentiel').querySelector('[data-testid="interrupteur"] [role="switch"]')!.getAttribute('aria-checked')).toBe('true');
+    expect(carte('potentiel').querySelector('[data-region="tags"]')).toBeNull();
+    expect(carte('potentiel').querySelector('[data-region="summary"]')!.textContent!.trim()).toBe(
+      '/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement',
+    );
   });
 });

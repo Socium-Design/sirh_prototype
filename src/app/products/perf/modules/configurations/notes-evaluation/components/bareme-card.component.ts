@@ -1,6 +1,38 @@
-import { Component, computed, input, output } from '@angular/core';
-import { SocInputNumber, SocSelect, SocSelectableChips, SocSwitch, type SelectOption } from '@socium-design/angular-components';
-import { SocLabsSettingsCard, SocLabsSettingsCardAction, SocLabsSettingsCardFootnote } from '../../../../../../shared/labs/labs';
+import { Component, computed, input, output, signal } from '@angular/core';
+import {
+  LucideChartColumn,
+  LucideClipboardCheck,
+  LucideDownload,
+  LucideFileSpreadsheet,
+  LucideFileText,
+  LucideGrid3x3,
+  LucideIdCard,
+  LucideLayoutList,
+  LucideListChecks,
+  LucideLock,
+  LucideRotateCcwClock,
+  LucideSend,
+  LucideUserRound,
+} from '@lucide/angular';
+import {
+  SocAccordion,
+  SocInputNumber,
+  SocMessage,
+  SocMessageContent,
+  SocSelect,
+  SocSelectableChips,
+  SocSwitch,
+  SocTag,
+  type SelectOption,
+} from '@socium-design/angular-components';
+import {
+  SocLabsIconTile,
+  SocLabsSettingsCard,
+  SocLabsSettingsCardAction,
+  SocLabsSettingsCardDetails,
+  SocLabsSettingsCardFootnote,
+  SocLabsSettingsCardTags,
+} from '../../../../../../shared/labs/labs';
 import type { BaremeNote, Decimales, DefinitionNote } from '../../models/bareme.model';
 import {
   CHOIX_RAPIDES,
@@ -9,9 +41,17 @@ import {
   SCORE_APERCU,
   erreurDenominateur,
   estDesactive,
+  estMasqueePourEvalue,
   noteSurBareme,
   resumeBareme,
 } from '../../services/bareme';
+
+/** Libellé de l'interrupteur d'en-tête, selon son rôle. */
+const LIBELLES_INTERRUPTEUR = {
+  visibilite: 'Visible sur l’évaluation',
+  confidentialite: "Visible par l'évalué",
+  activation: 'Activer le barème',
+} as const;
 
 const OPTIONS_DECIMALES: SelectOption[] = [
   { value: '0', label: '0 décimale (ex : 4/5)' },
@@ -25,10 +65,41 @@ const OPTIONS_DECIMALES: SelectOption[] = [
  * Présentationnelle : la page possède les valeurs et l'ouverture, la carte émet chaque changement (`changer`,
  * `ouvertureChange`). Repliable (design_system_angular#54) : fermée, l'en-tête montre le résumé du barème et un badge
  * « Modifié » / « Erreur » ; une valeur invalide garde la carte ouverte (`lockExpanded`).
+ * Sous la règle de calcul, la zone dépliable « Ce qui sera mis à jour » (`soc-accordion` du kit dans le slot
+ * `socLabsSettingsCardDetails`, design_system_angular#63) ; fermée par défaut, elle s'ouvre d'elle-même (carte comprise)
+ * quand on masque la note Potentiel pour l'évalué, pour montrer l'impact.
  */
 @Component({
   selector: 'app-bareme-card',
-  imports: [SocLabsSettingsCard, SocLabsSettingsCardAction, SocLabsSettingsCardFootnote, SocSwitch, SocSelectableChips, SocInputNumber, SocSelect],
+  imports: [
+    SocLabsSettingsCard,
+    SocLabsSettingsCardAction,
+    SocLabsSettingsCardFootnote,
+    SocLabsSettingsCardDetails,
+    SocLabsSettingsCardTags,
+    SocLabsIconTile,
+    SocSwitch,
+    SocSelectableChips,
+    SocInputNumber,
+    SocSelect,
+    SocAccordion,
+    SocMessage,
+    SocMessageContent,
+    SocTag,
+    LucideClipboardCheck,
+    LucideChartColumn,
+    LucideDownload,
+    LucideGrid3x3,
+    LucideLayoutList,
+    LucideListChecks,
+    LucideSend,
+    LucideIdCard,
+    LucideUserRound,
+    LucideRotateCcwClock,
+    LucideFileText,
+    LucideFileSpreadsheet,
+    LucideLock,
+  ],
   styleUrl: './bareme-card.component.scss',
   template: `
     @let def = definition();
@@ -47,13 +118,22 @@ const OPTIONS_DECIMALES: SelectOption[] = [
       [badgeTone]="badge()?.ton ?? 'information'"
       [attr.data-note]="def.id"
     >
+      @if (tag()) {
+        <soc-tag socLabsSettingsCardTags color="purple" data-testid="tag">{{ tag() }}</soc-tag>
+      }
       <soc-switch
         socLabsSettingsCardAction
-        [label]="def.interrupteur === 'activation' ? 'Activer le barème' : 'Visible sur l’évaluation'"
+        [label]="libelleInterrupteur()"
         [checked]="b.actif"
-        (checkedChange)="changer.emit({ actif: $event })"
+        (checkedChange)="basculer($event)"
         data-testid="interrupteur"
       />
+
+      @if (masquee()) {
+        <soc-message variant="inline" status="info" data-testid="message-confidentialite">
+          <span socMessageContent>Les managers et les RH continuent de voir cette note. L'évalué voit un cadenas à la place.</span>
+        </soc-message>
+      }
 
       <div class="bareme__groupe">
         <p class="bareme__label" [id]="def.id + '-choix'">Choix rapide</p>
@@ -110,6 +190,42 @@ const OPTIONS_DECIMALES: SelectOption[] = [
         <p class="bareme__regle-titre">Règle de calcul</p>
         <p>{{ def.regle }}</p>
       </div>
+
+      <soc-accordion socLabsSettingsCardDetails label="Ce qui sera mis à jour" [(open)]="impactOuvert" data-testid="impact">
+        @let masquage = masquee() ? def.masquage : undefined;
+        @if (masquage) {
+          <p class="maj__titre" data-testid="impact-masque">
+            <svg lucideLock class="maj__cadenas" [strokeWidth]="2" aria-hidden="true"></svg>
+            Masqué pour l'évalué
+          </p>
+        }
+        <ul class="maj">
+          @for (ligne of masquage?.lignes ?? def.misesAJour; track ligne.titre) {
+            <li class="maj__ligne">
+              <soc-labs-icon-tile [size]="32" decorative>
+                @switch (ligne.icone) {
+                  @case ('resultats') { <svg lucideClipboardCheck class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('kpi') { <svg lucideChartColumn class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('ninebox') { <svg lucideGrid3x3 class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('section') { <svg lucideLayoutList class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('formulaire') { <svg lucideListChecks class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('soumission') { <svg lucideSend class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('detail') { <svg lucideIdCard class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('profil') { <svg lucideUserRound class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('historique') { <svg lucideRotateCcwClock class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('pdf') { <svg lucideFileText class="size-full" [strokeWidth]="2"></svg> }
+                  @case ('excel') { <svg lucideFileSpreadsheet class="size-full" [strokeWidth]="2"></svg> }
+                  @default { <svg lucideDownload class="size-full" [strokeWidth]="2"></svg> }
+                }
+              </soc-labs-icon-tile>
+              <p>{{ ligne.titre }}@if (ligne.texte) { — {{ ligne.texte }}}</p>
+            </li>
+          }
+        </ul>
+        @if (masquage) {
+          <p class="maj__portee">{{ masquage.portee }}</p>
+        }
+      </soc-accordion>
     </soc-labs-settings-card>
   `,
 })
@@ -120,6 +236,8 @@ export class BaremeCardComponent {
   readonly ouverte = input(false);
   /** Réglage différent du dernier enregistré : badge « Modifié ». */
   readonly modifie = input(false);
+  /** Tag permanent de l'en-tête (feature flag « Confidentialité du potentiel » sur la carte Potentiel). */
+  readonly tag = input<string>();
   readonly changer = output<Partial<BaremeNote>>();
   readonly ouvertureChange = output<boolean>();
 
@@ -132,6 +250,11 @@ export class BaremeCardComponent {
   protected readonly score = SCORE_APERCU;
   protected readonly optionsDecimales = OPTIONS_DECIMALES;
 
+  /** Zone « Ce qui sera mis à jour » ouverte : fermée par défaut, jamais enregistrée. */
+  protected readonly impactOuvert = signal(false);
+
+  protected readonly libelleInterrupteur = computed(() => LIBELLES_INTERRUPTEUR[this.definition().interrupteur]);
+  protected readonly masquee = computed(() => estMasqueePourEvalue(this.definition(), this.bareme()));
   protected readonly desactive = computed(() => estDesactive(this.definition(), this.bareme()));
   protected readonly erreur = computed(() => (this.desactive() ? null : erreurDenominateur(this.bareme().denominateur)));
   protected readonly resume = computed(() => resumeBareme(this.definition(), this.bareme()));
@@ -143,6 +266,15 @@ export class BaremeCardComponent {
     const { denominateur, decimales } = this.bareme();
     return erreurDenominateur(denominateur) ? '—' : `${noteSurBareme(SCORE_APERCU, denominateur!, decimales)} / ${denominateur}`;
   });
+
+  /** Masquer la note pour l'évalué ouvre la carte et la zone « Ce qui sera mis à jour », pour montrer l'impact. */
+  protected basculer(actif: boolean): void {
+    this.changer.emit({ actif });
+    if (!actif && this.definition().interrupteur === 'confidentialite') {
+      this.impactOuvert.set(true);
+      this.ouvertureChange.emit(true);
+    }
+  }
 
   /**
    * Aperçu recalculé à chaque frappe : `soc-input-number` n'émet `valueChange` qu'à la validation du champ (`change`),

@@ -73,3 +73,50 @@
   font-weight: var(--bridges-shape-text-label-weight);
   color: var(--bridges-color-text-primary);
 }
+
+// « Ce qui sera mis à jour » (zone dépliable sous la règle de calcul).
+.maj {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+
+.maj__ligne {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bridges-position-gap-md);
+  padding: var(--bridges-position-padding-md) 0;
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+
+  & + & {
+    border-top: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
+  }
+
+  p {
+    padding-top: var(--bridges-position-padding-2xs);
+  }
+}
+
+.maj__titre {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-xs);
+  font-family: var(--bridges-shape-text-label-font);
+  font-weight: var(--bridges-shape-text-label-weight);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+}
+
+.maj__cadenas {
+  width: var(--bridges-size-icon-sm);
+  height: var(--bridges-size-icon-sm);
+}
+
+.maj__portee {
+  padding-top: var(--bridges-position-padding-sm);
+  font-family: var(--bridges-shape-text-body-font);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+}
