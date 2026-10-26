@@ -23,8 +23,13 @@ export class BaremesService {
     this.enregistreCourant = configuration;
   }
 
+  /**
+   * Flag « Confidentialité du potentiel » inactif : la note Potentiel garde l'ancien comportement (« Visible sur
+   * l'évaluation », ni message, ni résumé « Masquée pour l'évalué », ni liste des éléments masqués).
+   */
   getDefinitions(): DefinitionNote[] {
-    return DEFINITIONS_NOTES;
+    if (this.flags.actif('confidentialite-potentiel')) return DEFINITIONS_NOTES;
+    return DEFINITIONS_NOTES.map((d) => (d.interrupteur === 'confidentialite' ? { ...d, interrupteur: 'visibilite', masquage: undefined } : d));
   }
 
   getConfiguration(): Observable<ConfigurationNotes> {

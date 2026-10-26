@@ -379,7 +379,17 @@ describe('NotesEvaluationPageComponent', () => {
 
 describe('NotesEvaluationPageComponent — flag « Confidentialité du potentiel » inactif', () => {
   let fixture: ComponentFixture<NotesEvaluationPageComponent>;
-  const carte = (note: string) => (fixture.nativeElement as HTMLElement).querySelector(`[data-note="${note}"]`) as HTMLElement;
+  const el = () => fixture.nativeElement as HTMLElement;
+  const carte = () => el().querySelector('[data-note="potentiel"]') as HTMLElement;
+  const texte = (e: Element | null) => e?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+  const interrupteur = () => carte().querySelector('[data-testid="interrupteur"] [role="switch"]') as HTMLButtonElement;
+  const resume = () => texte(carte().querySelector('[data-region="summary"]'));
+  const zone = () => carte().querySelector('[data-testid="impact"]') as HTMLElement;
+  const LIGNES_ACTIVE = [
+    "Résultats d'évaluation — Note Potentiel affichée aux managers, employés et RH",
+    'Matrice 9-box — Axe Potentiel',
+    'Exports Excel / PDF',
+  ];
 
   beforeEach(fakeAsync(() => {
     TestBed.configureTestingModule({
@@ -391,11 +401,28 @@ describe('NotesEvaluationPageComponent — flag « Confidentialité du potentiel
     fixture.detectChanges();
   }));
 
-  it('comportement actuel : Potentiel visible par l’évalué par défaut, sans tag', () => {
-    expect(carte('potentiel').querySelector('[data-testid="interrupteur"] [role="switch"]')!.getAttribute('aria-checked')).toBe('true');
-    expect(carte('potentiel').querySelector('[data-region="tags"]')).toBeNull();
-    expect(carte('potentiel').querySelector('[data-region="summary"]')!.textContent!.trim()).toBe(
-      '/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement',
-    );
+  it('ancien comportement : « Visible sur l’évaluation », activée par défaut, sans tag, résumé habituel', () => {
+    expect(texte(carte().querySelector('[data-testid="interrupteur"]'))).toBe('Visible sur l’évaluation');
+    expect(texte(el())).not.toContain("Visible par l'évalué");
+    expect(interrupteur().getAttribute('aria-checked')).toBe('true');
+    expect(carte().querySelector('[data-region="tags"]')).toBeNull();
+    expect(resume()).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
+  });
+
+  it('interrupteur coupé : ni message, ni « Masquée pour l’évalué », ni cadenas ; la zone garde le contenu « activé » et reste fermée', () => {
+    interrupteur().click();
+    fixture.detectChanges();
+    expect(interrupteur().getAttribute('aria-checked')).toBe('false');
+    expect(resume()).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
+    expect(carte().getAttribute('data-expanded')).toBe('false');
+    expect(zone().querySelector('button')!.getAttribute('aria-expanded')).toBe('false');
+    (carte().querySelector('[data-region="toggle"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(carte().querySelector('[data-testid="message-confidentialite"]')).toBeNull();
+    zone().querySelector('button')!.click();
+    fixture.detectChanges();
+    expect(zone().querySelector('[data-testid="impact-masque"]')).toBeNull();
+    expect([...zone().querySelectorAll('li')].map(texte)).toEqual(LIGNES_ACTIVE);
+    expect(texte(zone())).not.toContain("S'applique à toutes les évaluations");
   });
 });

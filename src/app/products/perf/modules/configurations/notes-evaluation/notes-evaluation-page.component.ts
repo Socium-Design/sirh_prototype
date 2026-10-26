@@ -11,8 +11,8 @@ import { BaremeCardComponent } from './components/bareme-card.component';
  * Perfs > Configurations > Notes d'évaluation : barèmes des 5 notes (finale, potentiel, performance, objectif, compétence)
  * en cartes repliables, toutes fermées à l'arrivée (« Tout déplier / Tout replier » au-dessus), chacune avec sa zone
  * « Ce qui sera mis à jour », puis la barre « Dernière modification · Annuler · Enregistrer ».
- * Feature flag « Confidentialité du potentiel » : tag dans l'en-tête de la carte Potentiel (masquée par défaut pour
- * l'évalué, voir `BaremesService`).
+ * Feature flag « Confidentialité du potentiel » : tag dans l'en-tête de la carte Potentiel (« Visible par l'évalué »,
+ * masquée par défaut pour l'évalué) ; inactif, la carte garde l'ancien comportement (voir `BaremesService`).
  * Les cartes modifient un brouillon ; « Enregistrer » l'envoie au service (→ « Enregistré ✓ », date mise à jour),
  * « Annuler » revient aux dernières valeurs enregistrées.
  */
@@ -73,8 +73,8 @@ export class NotesEvaluationPageComponent {
   private readonly flags = inject(FeatureFlagsService);
 
   protected readonly definitions = this.service.getDefinitions();
-  /** Tag « Confidentialité du potentiel » de la carte Potentiel, flag actif seulement. */
-  private readonly tagConfidentialite = this.flags.actif('confidentialite-potentiel') ? this.flags.libelle('confidentialite-potentiel') : undefined;
+  /** Tag « Confidentialité du potentiel » de la carte Potentiel (flag inactif : plus de carte `confidentialite`). */
+  private readonly tagConfidentialite = this.flags.libelle('confidentialite-potentiel');
 
   /** Dernières valeurs enregistrées et brouillon en cours. */
   private readonly enregistres = signal<BaremeNote[]>([]);
