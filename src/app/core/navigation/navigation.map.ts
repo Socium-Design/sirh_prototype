@@ -31,6 +31,9 @@ export const NAV_ROUTES: Record<string, string> = {
   'workspace-tableau-de-bord': '/workspace/tableau-de-bord',
   // Page à onglets (Populations, Gestion des tableaux de bord) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
   'workspace-configurations': '/workspace/configuration',
+  // Pas encore d'item « Entreprises » dans le menu Workspace du kit (design_system_angular#69) : la page s'ouvre par son
+  // URL ; l'entrée sert dès que le preset aura l'item (liste + « Fonctionnalités et options » de chaque entreprise).
+  'workspace-entreprises': '/workspace/entreprises',
   // Page à onglets (Configuration des objectifs, Notes d'évaluation, Parcours de validation) : comme Workspace.
   'perfs-configurations': '/perf/configurations',
   'job-offres': '/job/offres',
