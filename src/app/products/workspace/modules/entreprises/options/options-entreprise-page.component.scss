@@ -1,86 +1,24 @@
-.options {
+.page {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
-  gap: var(--bridges-position-gap-xl);
-  align-items: start;
-}
-
-.options__produits {
-  position: sticky;
-  top: var(--bridges-position-padding-lg);
-}
-
-.options__contenu {
   display: flex;
-  min-width: 0;
   flex-direction: column;
-  gap: var(--bridges-position-gap-lg);
+  gap: var(--bridges-position-gap-xl);
 }
 
-.options__outils {
+.page__modification {
+  margin: 0;
+  color: var(--bridges-color-text-secondary);
+  font-size: var(--bridges-size-text-text-size-sm);
+}
+
+/* Sélecteur réservé au prototype : comparer les variantes. */
+.variante {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--bridges-position-gap-md);
-}
-
-.options__recherche {
-  flex: 1 1 280px;
-  max-width: 420px;
-}
-
-.options__filtres {
-  display: flex;
-  flex-wrap: wrap;
   gap: var(--bridges-position-gap-sm);
 }
 
-.options__modification {
-  margin: 0;
+.variante__libelle {
   color: var(--bridges-color-text-secondary);
   font-size: var(--bridges-size-text-text-size-sm);
-}
-
-.options__groupe {
-  border: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
-  border-radius: var(--bridges-shape-figure-radius-md);
-  background: var(--bridges-color-surface-neutral-white);
-  padding: var(--bridges-position-padding-sm) var(--bridges-position-padding-lg);
-}
-
-.options__titre-groupe {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--bridges-position-gap-md);
-  margin: 0;
-  padding: var(--bridges-position-padding-xs) 0 var(--bridges-position-padding-sm);
-  border-bottom: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
-  color: var(--bridges-color-text-primary);
-  font-family: var(--bridges-shape-text-heading-2-font);
-  font-size: var(--bridges-size-text-text-size-lg);
-  font-weight: var(--bridges-shape-text-heading-2-weight);
-}
-
-.options__compteur-groupe {
-  color: var(--bridges-color-text-secondary);
-  font-family: var(--bridges-shape-text-body-font);
-  font-size: var(--bridges-size-text-text-size-sm);
-  font-weight: var(--bridges-shape-text-body-weight);
-}
-
-/* Lignes de premier niveau séparées par un filet. */
-.options__liste > soc-labs-option-row + soc-labs-option-row {
-  border-top: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
-}
-
-@media (max-width: 960px) {
-  .options {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .options__produits {
-    position: static;
-  }
 }

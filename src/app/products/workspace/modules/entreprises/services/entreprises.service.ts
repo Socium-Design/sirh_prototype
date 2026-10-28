@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, delay, of } from 'rxjs';
-import { ENTREPRISES } from '../../../../../../mocks/data/entreprises.mock';
-import { ETATS_OPTIONS_ENTREPRISE, OPTIONS_ENTREPRISE } from '../../../../../../mocks/data/options-entreprise.mock';
-import type { Entreprise } from '../models/entreprise.model';
-import type { EtatOptionsEntreprise, OptionEntreprise } from '../models/option-entreprise.model';
+import { ENTREPRISES, MODULES_ENTREPRISE } from '../../../../../../mocks/data/entreprises.mock';
+import { ETATS_OPTIONS_ENTREPRISE, OPTIONS_ENTREPRISE, PRODUITS_OPTIONS } from '../../../../../../mocks/data/options-entreprise.mock';
+import type { Entreprise, ModuleEntreprise } from '../models/entreprise.model';
+import type { EtatOptionsEntreprise, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
 
 /**
  * Accès aux entreprises clientes et à leurs options. Simule un appel HTTP sur le mock partagé ; les écritures
@@ -23,9 +23,19 @@ export class EntreprisesService {
     return of(entreprise && { ...entreprise }).pipe(delay(200));
   }
 
+  /** Nom complet d'une pastille de module (« CO » → « Core RH (Workspace) »). */
+  libelleModule(module: ModuleEntreprise): string {
+    return MODULES_ENTREPRISE[module];
+  }
+
   setActive(id: string, active: boolean): void {
     const entreprise = this.entreprises.find((e) => e.id === id);
     if (entreprise) entreprise.active = active;
+  }
+
+  /** Produits qui portent des options, dans l'ordre d'affichage. */
+  produitsOptions(): { id: ProduitOption; libelle: string }[] {
+    return PRODUITS_OPTIONS;
   }
 
   getOptions(): Observable<OptionEntreprise[]> {

@@ -1,0 +1,39 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xl);
+  container-type: inline-size;
+}
+
+.catalogue {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bridges-position-gap-xl);
+  align-items: start;
+}
+
+/* 2 colonnes dès que la zone de contenu est assez large (grand écran). */
+@container (min-width: 960px) {
+  .catalogue {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.catalogue__carte soc-card {
+  height: auto;
+}
+
+.catalogue__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* Le contenu de `soc-card` est en `items-start` : la liste des tuiles reprend toute la largeur. */
+.catalogue__tuiles {
+  display: flex;
+  width: 100%;
+  align-self: stretch;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-sm);
+}

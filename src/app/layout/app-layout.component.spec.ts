@@ -12,7 +12,7 @@ describe('AppLayoutComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: '', component: AppLayoutComponent, children: [{ path: 'workspace/employes', component: StubPage }, { path: 'perf/configurations', component: StubPage }, { path: 'a-venir/:id', component: StubPage }] },
+          { path: '', component: AppLayoutComponent, children: [{ path: 'workspace/employes', component: StubPage }, { path: 'workspace/entreprises', component: StubPage }, { path: 'workspace/entreprises/:id/options', component: StubPage }, { path: 'perf/configurations', component: StubPage }, { path: 'a-venir/:id', component: StubPage }] },
         ]),
       ],
     });
@@ -39,9 +39,21 @@ describe('AppLayoutComponent', () => {
 
   it('un clic sur un item sans page mène à « bientôt disponible »', async () => {
     const { root, router, harness } = await setup('/workspace/employes');
-    const structures = [...root.querySelectorAll('soc-side-navigation button')].find((b) => b.textContent?.trim() === 'Structures') as HTMLButtonElement;
-    structures.click();
+    const pays = [...root.querySelectorAll('soc-side-navigation button')].find((b) => b.textContent?.trim() === 'Pays') as HTMLButtonElement;
+    pays.click();
     await harness.fixture.whenStable();
-    expect(router.url).toBe('/a-venir/workspace-structures');
+    expect(router.url).toBe('/a-venir/workspace-pays');
+  });
+
+  it('« Entreprises » mène à la liste et reste actif sur la page des options d’une entreprise', async () => {
+    const { root, router, harness } = await setup('/workspace/employes');
+    ([...root.querySelectorAll('soc-side-navigation button')].find((b) => b.textContent?.trim() === 'Entreprises') as HTMLButtonElement).click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    expect(router.url).toBe('/workspace/entreprises');
+    expect(selected(root)).toBe('Entreprises');
+    await harness.navigateByUrl('/workspace/entreprises/ent-1/options?variante=b');
+    harness.detectChanges();
+    expect(selected(root)).toBe('Entreprises');
   });
 });

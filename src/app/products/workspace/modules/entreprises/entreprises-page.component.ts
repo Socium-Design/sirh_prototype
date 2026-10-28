@@ -17,7 +17,6 @@ import {
   type DataTableColumn,
 } from '@socium-design/angular-components';
 import { LucideLogIn, LucidePencil, LucidePuzzle } from '@lucide/angular';
-import { MODULES_ENTREPRISE } from '../../../../../mocks/data/entreprises.mock';
 import { SocLabsIconButton, SocLabsSwitchHiddenLabel, SocLabsTag } from '../../../../shared/labs/labs';
 import type { Entreprise } from './models/entreprise.model';
 import { EntreprisesService } from './services/entreprises.service';
@@ -152,7 +151,7 @@ export class EntreprisesPageComponent {
   }));
 
   protected libelleModule(module: Entreprise['modules'][number]): string {
-    return MODULES_ENTREPRISE[module];
+    return this.service.libelleModule(module);
   }
 
   protected libelleActive(e: Entreprise): string {
