@@ -44,13 +44,27 @@ export function estActive(option: OptionEntreprise, actives: ReadonlySet<string>
   return actives.has(option.id) && (!option.parentId || actives.has(option.parentId));
 }
 
-const normaliser = (texte: string) =>
+/** Mots d'un texte, sans accents ni casse (« Étape d'intégration » → `etape`, `d`, `integration`). */
+const mots = (texte: string): string[] =>
   texte
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
 
-/** L'option passe-t-elle le filtre rapide et la recherche (libellé et description, sans tenir compte des accents) ? */
+/**
+ * Recherche par début de mot : chaque mot saisi doit commencer un mot du libellé ou de la description (« formation »
+ * trouve « Formations » et « formation », pas « information » ; « etape mat » trouve « Étape Matériel »).
+ */
+export function correspondRecherche(option: OptionEntreprise, recherche: string): boolean {
+  const saisis = mots(recherche);
+  if (!saisis.length) return true;
+  const texte = mots(`${option.libelle} ${option.description}`);
+  return saisis.every((q) => texte.some((m) => m.startsWith(q)));
+}
+
+/** L'option passe-t-elle le filtre rapide et la recherche (début des mots du libellé et de la description) ? */
 export function correspond(
   option: OptionEntreprise,
   options: OptionEntreprise[],
@@ -58,8 +72,7 @@ export function correspond(
   filtre: FiltreOptions,
   recherche: string,
 ): boolean {
-  const q = normaliser(recherche.trim());
-  if (q && !normaliser(`${option.libelle} ${option.description}`).includes(q)) return false;
+  if (!correspondRecherche(option, recherche)) return false;
   const offre = offreDe(option, options);
   switch (filtre) {
     case 'payantes':

@@ -12,7 +12,7 @@ describe('AppLayoutComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
-          { path: '', component: AppLayoutComponent, children: [{ path: 'workspace/employes', component: StubPage }, { path: 'workspace/entreprises', component: StubPage }, { path: 'workspace/entreprises/:id/options', component: StubPage }, { path: 'perf/configurations', component: StubPage }, { path: 'a-venir/:id', component: StubPage }] },
+          { path: '', component: AppLayoutComponent, children: [{ path: 'workspace/employes', component: StubPage }, { path: 'workspace/entreprises', component: StubPage }, { path: 'workspace/configuration', component: StubPage }, { path: 'workspace/configuration/tableaux-de-bord', component: StubPage }, { path: 'workspace/entreprises/:id/options', component: StubPage }, { path: 'perf/configurations', component: StubPage }, { path: 'a-venir/:id', component: StubPage }] },
         ]),
       ],
     });
@@ -55,5 +55,17 @@ describe('AppLayoutComponent', () => {
     await harness.navigateByUrl('/workspace/entreprises/ent-1/options?variante=b');
     harness.detectChanges();
     expect(selected(root)).toBe('Entreprises');
+  });
+
+  it('« Configurations » reste dans le menu Workspace et garde l’accès à Configuration > Tableaux de bord', async () => {
+    const { root, router, harness } = await setup('/workspace/configuration/tableaux-de-bord');
+    expect(selected(root)).toBe('Configurations');
+    for (const libelle of ['Postes', 'Structures', 'Organigramme', 'Configurations']) {
+      expect([...root.querySelectorAll('soc-side-navigation button')].some((b) => b.textContent?.trim() === libelle)).withContext(libelle).toBeTrue();
+    }
+    await harness.navigateByUrl('/workspace/employes');
+    ([...root.querySelectorAll('soc-side-navigation button')].find((b) => b.textContent?.trim() === 'Configurations') as HTMLButtonElement).click();
+    await harness.fixture.whenStable();
+    expect(router.url.startsWith('/workspace/configuration')).toBeTrue();
   });
 });

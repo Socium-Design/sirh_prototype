@@ -1,24 +1,22 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { map, switchMap } from 'rxjs';
 import { SessionService } from '../../../../../core/session/session.service';
 import type { EtatOptionsEntreprise, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
 import { EntreprisesService } from '../services/entreprises.service';
-import { TAGS_OFFRE, compter, correspond, estActive, offreDe, type FiltreOptions } from './options-entreprise';
+import { TAGS_OFFRE, compter, estActive, offreDe, type FiltreOptions } from './options-entreprise';
 
 /**
- * État partagé de « Fonctionnalités et options » (fourni par la page, injecté par chaque variante) : options, brouillon
- * des options cochées, recherche et filtres, enregistrement, panneau de détail. Les variantes (liste, catalogue, offre)
- * ne diffèrent que par la présentation.
+ * État de « Fonctionnalités et options », fourni par la page : options, brouillon des options cochées, recherche et
+ * filtres, enregistrement, panneau de détail.
  */
 @Injectable()
 export class OptionsEntrepriseStore {
   private readonly service = inject(EntreprisesService);
   private readonly session = inject(SessionService);
   private readonly document = inject(DOCUMENT);
-  private readonly injector = inject(Injector);
 
   readonly entrepriseId = toSignal(inject(ActivatedRoute).paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   readonly entreprise = toSignal(toObservable(this.entrepriseId).pipe(switchMap((id) => this.service.getById(id))));
@@ -50,10 +48,6 @@ export class OptionsEntrepriseStore {
   }
 
   readonly estActive = (option: OptionEntreprise): boolean => estActive(option, this.actives());
-
-  /** L'option passe-t-elle le filtre rapide et la recherche courants ? */
-  readonly correspond = (option: OptionEntreprise, filtre: FiltreOptions = this.filtre()): boolean =>
-    correspond(option, this.options(), this.actives(), filtre, this.recherche());
 
   readonly offre = (option: OptionEntreprise) => offreDe(option, this.options());
 
@@ -107,8 +101,8 @@ export class OptionsEntrepriseStore {
   }
 
   /**
-   * Fermeture du panneau : le focus revient sur l'élément qui l'a ouvert ; après un clic sur une tuile (hors bouton, le
-   * focus était sur la page), sur le libellé de l'option.
+   * Fermeture du panneau : le focus revient sur l'élément qui l'a ouvert, à défaut (focus resté sur la page) sur le
+   * libellé de l'option.
    */
   fermerDetail(): void {
     const option = this.detail();
@@ -117,19 +111,6 @@ export class OptionsEntrepriseStore {
     this.declencheurDetail = null;
     if (declencheur && declencheur !== this.document.body) declencheur.focus();
     else if (option) this.document.querySelector<HTMLElement>(`[data-option="${option.id}"] [data-part="label"]`)?.focus();
-  }
-
-  /** Après un rendu (l'élément peut changer de section), place le focus sur le premier élément trouvé. */
-  focaliser(...selecteurs: string[]): void {
-    afterNextRender(
-      () => {
-        for (const s of selecteurs) {
-          const el = this.document.querySelector<HTMLElement>(s);
-          if (el) return el.focus();
-        }
-      },
-      { injector: this.injector },
-    );
   }
 
   libelleProduit(produit: ProduitOption): string {

@@ -1,9 +1,9 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { SocSearchBar, SocSelectableChips } from '@socium-design/angular-components';
 import { FILTRES_OPTIONS } from '../options-entreprise';
 import { OptionsEntrepriseStore } from '../options-entreprise.store';
 
-/** Barre d'outils : recherche (libellé et description) et, si `filtres`, filtres rapides. */
+/** Barre d'outils : recherche (début des mots du libellé et de la description) et filtres rapides. */
 @Component({
   selector: 'app-options-outils',
   imports: [SocSearchBar, SocSelectableChips],
@@ -29,23 +29,19 @@ import { OptionsEntrepriseStore } from '../options-entreprise.store';
   template: `
     <soc-search-bar
       class="recherche"
-      [placeholder]="placeholder()"
+      placeholder="Rechercher une option (libellé ou description)"
       [value]="store.recherche()"
       (valueChange)="store.recherche.set($event)"
       data-testid="recherche"
     />
-    @if (filtres()) {
-      <div class="filtres" role="group" aria-label="Filtrer les options" data-testid="filtres">
-        @for (f of liste; track f.id) {
-          <soc-selectable-chips [label]="f.libelle" [selected]="store.filtre() === f.id" (click)="store.filtre.set(f.id)" />
-        }
-      </div>
-    }
+    <div class="filtres" role="group" aria-label="Filtrer les options" data-testid="filtres">
+      @for (f of liste; track f.id) {
+        <soc-selectable-chips [label]="f.libelle" [selected]="store.filtre() === f.id" (click)="store.filtre.set(f.id)" />
+      }
+    </div>
   `,
 })
 export class OptionsOutilsComponent {
-  readonly filtres = input(true);
-  readonly placeholder = input('Rechercher une option (libellé ou description)');
   protected readonly store = inject(OptionsEntrepriseStore);
   protected readonly liste = FILTRES_OPTIONS;
 }

@@ -1,72 +1,118 @@
 import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { SocBreadcrumb, SocDrawer, SocDrawerDetailItem, SocPageActions, SocPageBreadcrumb, SocPageDetails } from '@socium-design/angular-components';
-import { map } from 'rxjs';
-import { SocLabsChangesBar, SocLabsPillToggle, type LabsPillOption } from '../../../../../shared/labs/labs';
-import type { OptionEntreprise } from '../models/option-entreprise.model';
+import { Router } from '@angular/router';
+import {
+  SocBreadcrumb,
+  SocDrawer,
+  SocDrawerDetailItem,
+  SocMessage,
+  SocMessageContent,
+  SocPageBreadcrumb,
+  SocPageDetails,
+} from '@socium-design/angular-components';
+import {
+  SocLabsChangesBar,
+  SocLabsNavList,
+  SocLabsOptionRow,
+  SocLabsOptionRowTags,
+  type LabsNavListItem,
+} from '../../../../../shared/labs/labs';
+import type { OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
+import { OptionsOutilsComponent } from './components/options-outils.component';
+import { TagOffreComponent } from './components/tag-offre.component';
+import { MESSAGE_OPTION_PAYANTE, grouperOptions } from './options-entreprise';
 import { OptionsEntrepriseStore } from './options-entreprise.store';
-import { VueCatalogueComponent } from './variantes/vue-catalogue.component';
-import { VueListeComponent } from './variantes/vue-liste.component';
-import { VueOffreComponent } from './variantes/vue-offre.component';
-
-/** Variantes explorées (`?variante=a|b|liste`, `a` par défaut). */
-export type VarianteOptions = 'a' | 'b' | 'liste';
-
-const VARIANTES: LabsPillOption<VarianteOptions>[] = [
-  { value: 'a', label: 'A' },
-  { value: 'b', label: 'B' },
-  { value: 'liste', label: 'Liste' },
-];
 
 const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR') : '—');
 
 /**
- * Workspace > Entreprises > {entreprise} > Fonctionnalités et options — remplace la page des « feature flags ». Trois
- * présentations des mêmes données et de la même logique (`OptionsEntrepriseStore`) : A — catalogue (cartes par produit,
- * tuiles), B — l'offre du client d'abord, Liste — première version. Le sélecteur « Variante » sert à les comparer
- * (prototype uniquement). Communs : en-tête, panneau de détail (`soc-drawer`), barre de modifications.
+ * Workspace > Entreprises > {entreprise} > Fonctionnalités et options — remplace la page des « feature flags ».
+ * Colonne gauche : produits (compteur activées / total). Barre d'outils : recherche (début des mots du libellé et de la
+ * description) et filtres rapides. Liste groupée par produit (`soc-labs-option-row`), sous-options imbriquées et
+ * désactivées tant que le parent est coupé. Une option payante s'active après une confirmation dans la ligne. Les
+ * changements s'appliquent à l'enregistrement (`soc-labs-changes-bar`). Clic sur un libellé : détail dans un `soc-drawer`.
+ * L'état (options, brouillon, filtres, enregistrement, détail) est dans `OptionsEntrepriseStore`.
  */
 @Component({
   selector: 'app-options-entreprise-page',
   imports: [
     SocPageDetails,
     SocPageBreadcrumb,
-    SocPageActions,
     SocBreadcrumb,
+    SocMessage,
+    SocMessageContent,
     SocDrawer,
     SocDrawerDetailItem,
+    SocLabsNavList,
+    SocLabsOptionRow,
+    SocLabsOptionRowTags,
     SocLabsChangesBar,
-    SocLabsPillToggle,
-    VueListeComponent,
-    VueCatalogueComponent,
-    VueOffreComponent,
+    OptionsOutilsComponent,
+    TagOffreComponent,
   ],
   providers: [OptionsEntrepriseStore],
   styleUrl: './options-entreprise-page.component.scss',
   template: `
     <soc-page-details title="Fonctionnalités et options" [topStatusLabel]="store.entreprise()?.nom ?? ''" [description]="store.charge() ? store.resume() : ''">
       <soc-breadcrumb socPageBreadcrumb [items]="breadcrumb()" />
-      <div socPageActions class="variante" data-testid="variante">
-        <span class="variante__libelle" aria-hidden="true">Variante</span>
-        <soc-labs-pill-toggle ariaLabel="Variante (prototype)" size="sm" [options]="variantes" [value]="variante()" (valueChange)="changerVariante($event)" />
-      </div>
 
-      <div class="page" [attr.data-variante]="variante()">
-        <p class="page__modification" data-testid="derniere-modification">
-          Dernière modification par {{ store.derniereModification().par }} le {{ dateFr(store.derniereModification().le) }}
-        </p>
-        @switch (variante()) {
-          @case ('b') {
-            <app-options-vue-offre />
+      <div class="options">
+        <aside class="options__produits">
+          <soc-labs-nav-list ariaLabel="Produits" [items]="produitsNav()" [value]="store.produit()" (valueChange)="store.produit.set($any($event))" />
+        </aside>
+
+        <div class="options__contenu">
+          <app-options-outils />
+          <p class="options__modification" data-testid="derniere-modification">
+            Dernière modification par {{ store.derniereModification().par }} le {{ dateFr(store.derniereModification().le) }}
+          </p>
+          <p class="sr-only" aria-live="polite">{{ annonce() }}</p>
+
+          @for (groupe of groupes(); track groupe.produit) {
+            <section class="options__groupe" [attr.aria-labelledby]="'groupe-' + groupe.produit" [attr.data-produit]="groupe.produit">
+              <h2 class="options__titre-groupe" [id]="'groupe-' + groupe.produit">
+                {{ groupe.libelle }}
+                <span class="options__compteur-groupe">{{ compteurProduit(groupe.produit) }}</span>
+              </h2>
+              <div role="list" class="options__liste">
+                @for (ligne of groupe.lignes; track ligne.option.id) {
+                  <soc-labs-option-row
+                    [label]="ligne.option.libelle"
+                    [description]="ligne.option.description"
+                    [checked]="store.actives().has(ligne.option.id)"
+                    (checkedChange)="store.basculer(ligne.option, $event)"
+                    [isNew]="!!ligne.option.nouveau"
+                    [confirmMessage]="ligne.option.offre === 'payant' ? messagePayante : undefined"
+                    (labelClick)="store.ouvrirDetail(ligne.option)"
+                    [attr.data-option]="ligne.option.id"
+                  >
+                    @if (ligne.option.offre) {
+                      <app-tag-offre socLabsOptionRowTags [offre]="ligne.option.offre" />
+                    }
+                    @for (sous of ligne.sousOptions; track sous.id) {
+                      <soc-labs-option-row
+                        [label]="sous.libelle"
+                        [description]="sous.description"
+                        [checked]="store.estActive(sous)"
+                        (checkedChange)="store.basculer(sous, $event)"
+                        [disabled]="!store.actives().has(ligne.option.id)"
+                        [disabledReason]="'Activez d’abord « ' + ligne.option.libelle + ' ».'"
+                        [isNew]="!!sous.nouveau"
+                        (labelClick)="store.ouvrirDetail(sous)"
+                        [attr.data-option]="sous.id"
+                      />
+                    }
+                  </soc-labs-option-row>
+                }
+              </div>
+            </section>
+          } @empty {
+            @if (store.charge()) {
+              <soc-message variant="inline" status="info" data-testid="vide">
+                <span socMessageContent>Aucune option ne correspond à votre recherche.</span>
+              </soc-message>
+            }
           }
-          @case ('liste') {
-            <app-options-vue-liste />
-          }
-          @default {
-            <app-options-vue-catalogue />
-          }
-        }
+        </div>
       </div>
 
       <soc-labs-changes-bar
@@ -98,20 +144,9 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
 export class OptionsEntreprisePageComponent {
   protected readonly store = inject(OptionsEntrepriseStore);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  protected readonly variantes = VARIANTES;
+  protected readonly messagePayante = MESSAGE_OPTION_PAYANTE;
   protected readonly dateFr = dateFr;
-
-  protected readonly variante = toSignal(
-    this.route.queryParamMap.pipe(
-      map((p) => {
-        const v = p.get('variante');
-        return v === 'b' || v === 'liste' ? v : 'a';
-      }),
-    ),
-    { initialValue: 'a' as VarianteOptions },
-  );
 
   protected readonly breadcrumb = computed(() => [
     { label: 'Entreprises', onClick: () => this.router.navigateByUrl('/workspace/entreprises') },
@@ -119,9 +154,33 @@ export class OptionsEntreprisePageComponent {
     { label: 'Fonctionnalités et options' },
   ]);
 
-  protected changerVariante(variante: VarianteOptions | null): void {
-    if (!variante) return;
-    this.router.navigate([], { relativeTo: this.route, queryParams: { variante }, queryParamsHandling: 'merge', replaceUrl: true });
+  protected readonly produitsNav = computed<LabsNavListItem[]>(() => {
+    const item = (id: ProduitOption | 'tous', label: string): LabsNavListItem => {
+      const { activees, total } = this.store.compteur(id);
+      return { id, label, count: `${activees} / ${total}`, countLabel: `${activees} ${activees > 1 ? 'activées' : 'activée'} sur ${total}` };
+    };
+    return [item('tous', 'Tous les produits'), ...this.store.produits.map((p) => item(p.id, p.libelle))];
+  });
+
+  protected readonly groupes = computed(() =>
+    grouperOptions(
+      this.store.options(),
+      this.store.produits,
+      this.store.actives(),
+      this.store.filtre(),
+      this.store.recherche(),
+      this.store.produit(),
+    ),
+  );
+
+  protected readonly annonce = computed(() => {
+    const n = this.groupes().reduce((t, g) => t + g.lignes.length + g.lignes.reduce((s, l) => s + l.sousOptions.length, 0), 0);
+    return n ? `${n} ${n > 1 ? 'options affichées' : 'option affichée'}` : 'Aucune option ne correspond à votre recherche.';
+  });
+
+  protected compteurProduit(produit: ProduitOption): string {
+    const { activees, total } = this.store.compteur(produit);
+    return `${activees} / ${total} activées`;
   }
 
   protected sousOptionsDe(option: OptionEntreprise): string {
