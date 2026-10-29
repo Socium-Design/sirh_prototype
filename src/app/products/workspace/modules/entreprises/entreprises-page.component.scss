@@ -1,0 +1,14 @@
+.modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bridges-position-gap-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-sm);
+}
