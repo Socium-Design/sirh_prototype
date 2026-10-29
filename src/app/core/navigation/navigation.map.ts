@@ -31,7 +31,7 @@ export const NAV_ROUTES: Record<string, string> = {
   'workspace-tableau-de-bord': '/workspace/tableau-de-bord',
   // Page à onglets (Populations, Gestion des tableaux de bord) : l'item reste en surbrillance sur tous les onglets et leurs sous-pages.
   'workspace-configurations': '/workspace/configuration',
-  // Item « Entreprises » du menu Workspace de production (design_system_angular#71, archive vendor/) : liste, puis
+  // Item « Entreprises » du menu Workspace de production (design_system_angular#71, publié en 0.3.5) : liste, puis
   // « Fonctionnalités et options » de chaque entreprise (l'item reste en surbrillance).
   'workspace-entreprises': '/workspace/entreprises',
   // Page à onglets (Configuration des objectifs, Notes d'évaluation, Parcours de validation) : comme Workspace.
