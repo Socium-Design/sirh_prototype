@@ -68,4 +68,21 @@ describe('AppLayoutComponent', () => {
     await harness.fixture.whenStable();
     expect(router.url.startsWith('/workspace/configuration')).toBeTrue();
   });
+
+  it('menu Workspace identique à la production, dans l’ordre ; un item sans page mène à « bientôt disponible »', async () => {
+    const { root, router, harness } = await setup('/workspace/employes');
+    const sections = [...root.querySelectorAll('soc-side-nav-section')].map((s) => [...s.querySelectorAll('button')].map((b) => b.textContent!.trim()).filter(Boolean));
+    const titres = ['MENU PRINCIPAL', 'GESTION ENTREPRISE', 'PARAMÈTRES DE PAIE', 'MON ESPACE'];
+    expect(sections.map((s) => s[0])).toEqual(titres);
+    const libelles = sections.flatMap((s) => s.slice(1));
+    expect(libelles).toEqual([
+      'Accueil', 'Tableau de bord', 'Rapports RH', 'Entreprises', 'Imports / Exports', 'Pays', 'Historique', 'Template',
+      'Infos générales', 'Demandes reçues', 'Applications', 'Employés', 'Permissions', 'Postes', 'Structures', 'Organigramme', 'Configurations',
+      'Paramètres de paie', 'Rubriques de paie', 'Bulletin de paie', "Template d'état de paie", 'Contrôle du cycle de paie',
+      'Profil', 'Mes tâches',
+    ]);
+    ([...root.querySelectorAll('soc-side-navigation button')].find((b) => b.textContent?.trim() === 'Contrôle du cycle de paie') as HTMLButtonElement).click();
+    await harness.fixture.whenStable();
+    expect(router.url).toBe('/a-venir/workspace-controle-du-cycle-de-paie');
+  });
 });
