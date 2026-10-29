@@ -51,7 +51,7 @@ describe('OptionsEntreprisePageComponent', () => {
   });
 
   it('compteurs « activées / total » par produit, « Tous les produits » en premier', () => {
-    const items = [...el().querySelectorAll('soc-labs-nav-list button')].map((b) => b.querySelector('span')!.textContent!.trim());
+    const items = [...el().querySelectorAll('soc-labs-nav-list button')].map((b) => b.querySelector('span.truncate')!.textContent!.trim());
     expect(items).toEqual(['Tous les produits', 'Workspace', 'Recrutement', 'Workflow', 'Performance', 'Doc', 'Payroll']);
     expect(nav('Tous les produits').querySelector('[data-part="count"]')!.textContent!.trim()).toBe('13 / 64');
     expect(nav('Workspace').querySelector('[data-part="count"]')!.textContent!.trim()).toBe('6 / 23');
@@ -213,5 +213,22 @@ describe('OptionsEntreprisePageComponent', () => {
     expect(texte).toContain('Étape Documents (activée)');
     expect(texte).not.toContain('Mise en ligne');
     expect(texte.replace(/\s+/g, ' ')).toContain('Ajoutée le 19 juin 2023');
+  });
+
+  it('icônes de produit du kit (barre de produits) dans la navigation et les en-têtes de groupe, masquées aux lecteurs d’écran', () => {
+    const icone = (racine: Element) => racine.querySelector('soc-app-icon-glyph');
+    expect(nav('Tous les produits').querySelector('[data-part="icon"]')!.childElementCount).toBe(0);
+    for (const libelle of ['Workspace', 'Recrutement', 'Workflow', 'Performance', 'Doc', 'Payroll']) {
+      const bouton = nav(libelle);
+      expect(icone(bouton)?.querySelector('svg')).withContext(libelle).not.toBeNull();
+      expect(bouton.querySelector('[data-part="icon"]')!.getAttribute('aria-hidden')).toBe('true');
+    }
+    const titres = [...el().querySelectorAll('.options__titre-groupe')];
+    expect(titres.length).toBe(6);
+    for (const titre of titres) {
+      expect(icone(titre)!.getAttribute('aria-hidden')).withContext(titre.textContent!).toBe('true');
+      expect(icone(titre)!.querySelector('svg')).not.toBeNull();
+    }
+    expect(titres[0].textContent!.replace(/\s+/g, ' ').trim()).toBe('Workspace 6 / 23 activées');
   });
 });

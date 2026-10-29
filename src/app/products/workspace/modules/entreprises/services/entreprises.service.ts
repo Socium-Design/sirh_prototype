@@ -3,7 +3,7 @@ import { Observable, delay, of } from 'rxjs';
 import { ENTREPRISES, MODULES_ENTREPRISE } from '../../../../../../mocks/data/entreprises.mock';
 import { ETATS_OPTIONS_ENTREPRISE, OPTIONS_ENTREPRISE, PRODUITS_OPTIONS } from '../../../../../../mocks/data/options-entreprise.mock';
 import type { Entreprise, ModuleEntreprise } from '../models/entreprise.model';
-import type { EtatOptionsEntreprise, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
+import type { EtatOptionsEntreprise, OptionEntreprise, ProduitInfo, ProduitOption } from '../models/option-entreprise.model';
 
 /**
  * Accès aux entreprises clientes et à leurs options. Simule un appel HTTP sur le mock partagé ; les écritures
@@ -34,7 +34,7 @@ export class EntreprisesService {
   }
 
   /** Produits qui portent des options, dans l'ordre d'affichage. */
-  produitsOptions(): { id: ProduitOption; libelle: string }[] {
+  produitsOptions(): ProduitInfo[] {
     return PRODUITS_OPTIONS;
   }
 

@@ -1,13 +1,13 @@
-import type { EtatOptionsEntreprise, OptionEntreprise, ProduitOption } from '../../app/products/workspace/modules/entreprises/models/option-entreprise.model';
+import type { EtatOptionsEntreprise, OptionEntreprise, ProduitInfo } from '../../app/products/workspace/modules/entreprises/models/option-entreprise.model';
 
 /** Produits, dans l'ordre de la colonne de navigation de « Fonctionnalités et options ». */
-export const PRODUITS_OPTIONS: { id: ProduitOption; libelle: string }[] = [
-  { id: 'workspace', libelle: 'Workspace' },
-  { id: 'recrutement', libelle: 'Recrutement' },
-  { id: 'workflow', libelle: 'Workflow' },
-  { id: 'performance', libelle: 'Performance' },
-  { id: 'doc', libelle: 'Doc' },
-  { id: 'payroll', libelle: 'Payroll' },
+export const PRODUITS_OPTIONS: ProduitInfo[] = [
+  { id: 'workspace', libelle: 'Workspace', icone: 'workspace' },
+  { id: 'recrutement', libelle: 'Recrutement', icone: 'job' },
+  { id: 'workflow', libelle: 'Workflow', icone: 'workflow' },
+  { id: 'performance', libelle: 'Performance', icone: 'performance' },
+  { id: 'doc', libelle: 'Doc', icone: 'doc' },
+  { id: 'payroll', libelle: 'Payroll', icone: 'payroll' },
 ];
 
 /**

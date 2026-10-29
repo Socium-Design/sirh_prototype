@@ -1,4 +1,5 @@
-import type { OffreOption, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
+import type { AppIconName } from '@socium-design/angular-components';
+import type { OffreOption, OptionEntreprise, ProduitInfo, ProduitOption } from '../models/option-entreprise.model';
 
 /** Filtres rapides de la barre d'outils. */
 export type FiltreOptions = 'toutes' | 'payantes' | 'standard' | 'customisations' | 'activees' | 'nouveautes';
@@ -38,6 +39,7 @@ export interface LigneOption {
 export interface GroupeOptions {
   produit: ProduitOption;
   libelle: string;
+  icone: AppIconName;
   lignes: LigneOption[];
 }
 
@@ -106,7 +108,7 @@ export function correspond(
  */
 export function grouperOptions(
   options: OptionEntreprise[],
-  produits: { id: ProduitOption; libelle: string }[],
+  produits: ProduitInfo[],
   actives: ReadonlySet<string>,
   filtre: FiltreOptions,
   recherche: string,
@@ -123,7 +125,7 @@ export function grouperOptions(
         const enfantsOk = parentOk && filtre !== 'activees' ? enfants : enfants.filter(ok);
         if (parentOk || enfantsOk.length) lignes.push({ option, sousOptions: enfantsOk });
       }
-      return { produit: p.id, libelle: p.libelle, lignes };
+      return { produit: p.id, libelle: p.libelle, icone: p.icone, lignes };
     })
     .filter((g) => g.lignes.length > 0);
 }

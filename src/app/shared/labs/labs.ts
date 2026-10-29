@@ -11,7 +11,7 @@
  * ses slots détails et tags — design_system_angular#63, publiés en 0.3.4 —, `soc-labs-icon-tile`) ; Workspace > Entreprises
  * (`soc-switch[socLabsSwitchHiddenLabel]`, `soc-labs-tag`, `soc-labs-icon-button`) et « Fonctionnalités et options »
  * (`soc-labs-option-row`, `soc-labs-nav-list`, `soc-labs-changes-bar`, `soc-labs-tag`) — design_system_angular#70, pas
- * encore publiée ; menu Workspace (item « Entreprises ») : design_system_angular#71. Archive `vendor/…-0.3.5-labs.3.tgz`.
+ * encore publiée ; menu Workspace (item « Entreprises ») : design_system_angular#71. Archive `vendor/…-0.3.5-labs.4.tgz`.
  */
 export {
   LABS_CHART_TYPE_LABELS,

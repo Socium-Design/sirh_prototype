@@ -1,6 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  type AppIconName,
+  SocAppIconGlyph,
   SocBreadcrumb,
   SocDrawer,
   SocDrawerDetailItem,
@@ -38,6 +40,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
   imports: [
     SocPageDetails,
     SocPageBreadcrumb,
+    SocAppIconGlyph,
     SocBreadcrumb,
     SocMessage,
     SocMessageContent,
@@ -75,7 +78,10 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
           @for (groupe of groupes(); track groupe.produit) {
             <section class="options__groupe" [attr.aria-labelledby]="'groupe-' + groupe.produit" [attr.data-produit]="groupe.produit">
               <h2 class="options__titre-groupe" [id]="'groupe-' + groupe.produit">
-                {{ groupe.libelle }}
+                <span class="options__nom-groupe">
+                  <soc-app-icon-glyph class="options__icone-groupe" [name]="groupe.icone" aria-hidden="true" />
+                  {{ groupe.libelle }}
+                </span>
                 <span class="options__compteur-groupe">{{ compteurProduit(groupe.produit) }}</span>
               </h2>
               <div role="list" class="options__liste">
@@ -169,11 +175,11 @@ export class OptionsEntreprisePageComponent {
   ]);
 
   protected readonly produitsNav = computed<LabsNavListItem[]>(() => {
-    const item = (id: ProduitOption | 'tous', label: string): LabsNavListItem => {
+    const item = (id: ProduitOption | 'tous', label: string, icon?: AppIconName): LabsNavListItem => {
       const { activees, total } = this.store.compteur(id);
-      return { id, label, count: `${activees} / ${total}`, countLabel: `${activees} ${activees > 1 ? 'activées' : 'activée'} sur ${total}` };
+      return { id, label, icon, count: `${activees} / ${total}`, countLabel: `${activees} ${activees > 1 ? 'activées' : 'activée'} sur ${total}` };
     };
-    return [item('tous', 'Tous les produits'), ...this.store.produits.map((p) => item(p.id, p.libelle))];
+    return [item('tous', 'Tous les produits'), ...this.store.produits.map((p) => item(p.id, p.libelle, p.icone))];
   });
 
   protected readonly groupes = computed(() =>

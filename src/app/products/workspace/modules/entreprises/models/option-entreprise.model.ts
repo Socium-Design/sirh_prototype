@@ -1,5 +1,14 @@
+import type { AppIconName } from '@socium-design/angular-components';
+
 /** Produits qui portent des options (colonne de navigation de « Fonctionnalités et options »). */
 export type ProduitOption = 'workspace' | 'recrutement' | 'workflow' | 'performance' | 'doc' | 'payroll';
+
+/** Produit de la colonne de navigation, avec l'icône de la barre de produits du kit (« Recrutement » → Job). */
+export interface ProduitInfo {
+  id: ProduitOption;
+  libelle: string;
+  icone: AppIconName;
+}
 
 /**
  * Offre commerciale d'une option. Classement PROVISOIRE, à valider avec les Sales. `null` : sous-option, qui suit

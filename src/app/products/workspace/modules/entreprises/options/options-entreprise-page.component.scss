@@ -51,6 +51,22 @@
   font-weight: var(--bridges-shape-text-heading-2-weight);
 }
 
+.options__nom-groupe {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-sm);
+}
+
+/* Glyphe de la barre de produits du kit, décoratif. */
+.options__icone-groupe {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--bridges-size-icon-md);
+  height: var(--bridges-size-icon-md);
+  align-items: center;
+  justify-content: center;
+}
+
 .options__compteur-groupe {
   color: var(--bridges-color-text-secondary);
   font-family: var(--bridges-shape-text-body-font);
