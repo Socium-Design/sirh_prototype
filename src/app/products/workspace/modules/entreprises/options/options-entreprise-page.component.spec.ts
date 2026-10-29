@@ -215,19 +215,22 @@ describe('OptionsEntreprisePageComponent', () => {
     expect(texte.replace(/\s+/g, ' ')).toContain('Ajoutée le 19 juin 2023');
   });
 
-  it('icônes de produit du kit (barre de produits) dans la navigation et les en-têtes de groupe, masquées aux lecteurs d’écran', () => {
+  it('icônes de produit du kit en pastille « sélectionnée » (barre de produits) dans la navigation et les en-têtes de groupe, masquées aux lecteurs d’écran', () => {
     const icone = (racine: Element) => racine.querySelector('soc-app-icon-glyph');
     expect(nav('Tous les produits').querySelector('[data-part="icon"]')!.childElementCount).toBe(0);
     for (const libelle of ['Workspace', 'Recrutement', 'Workflow', 'Performance', 'Doc', 'Payroll']) {
       const bouton = nav(libelle);
       expect(icone(bouton)?.querySelector('svg')).withContext(libelle).not.toBeNull();
       expect(bouton.querySelector('[data-part="icon"]')!.getAttribute('aria-hidden')).toBe('true');
+      expect(bouton.querySelector('[data-part="icon"]')!.className).withContext(libelle).toContain('appicon-bg-selected');
+      expect(icone(bouton)!.querySelector('[class*="appicon-icon-accent"]')).withContext(libelle).not.toBeNull();
     }
     const titres = [...el().querySelectorAll('.options__titre-groupe')];
     expect(titres.length).toBe(6);
     for (const titre of titres) {
       expect(icone(titre)!.getAttribute('aria-hidden')).withContext(titre.textContent!).toBe('true');
       expect(icone(titre)!.querySelector('svg')).not.toBeNull();
+      expect(icone(titre)!.querySelector('[class*="appicon-icon-selected"]')).withContext(titre.textContent!).not.toBeNull();
     }
     expect(titres[0].textContent!.replace(/\s+/g, ' ').trim()).toBe('Workspace 6 / 23 activées');
   });

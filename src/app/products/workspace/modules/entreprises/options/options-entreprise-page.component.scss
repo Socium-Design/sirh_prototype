@@ -57,14 +57,16 @@
   gap: var(--bridges-position-gap-sm);
 }
 
-/* Glyphe de la barre de produits du kit, décoratif. */
+/* Pastille de l'icône sélectionnée de la barre de produits du kit (fond bleu, glyphe blanc et vert), décorative. */
 .options__icone-groupe {
   display: inline-flex;
   flex-shrink: 0;
-  width: var(--bridges-size-icon-md);
-  height: var(--bridges-size-icon-md);
+  width: var(--bridges-size-icon-xl);
+  height: var(--bridges-size-icon-xl);
   align-items: center;
   justify-content: center;
+  border-radius: var(--index-navigation-appicon-radius);
+  background: var(--index-navigation-appicon-bg-selected);
 }
 
 .options__compteur-groupe {

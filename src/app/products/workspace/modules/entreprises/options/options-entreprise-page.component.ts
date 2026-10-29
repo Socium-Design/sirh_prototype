@@ -62,7 +62,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
 
       <div class="options">
         <aside class="options__produits">
-          <soc-labs-nav-list ariaLabel="Produits" [items]="produitsNav()" [value]="store.produit()" (valueChange)="store.produit.set($any($event))" />
+          <soc-labs-nav-list ariaLabel="Produits" iconAppearance="tile" [items]="produitsNav()" [value]="store.produit()" (valueChange)="store.produit.set($any($event))" />
         </aside>
 
         <div class="options__contenu">
@@ -79,7 +79,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
             <section class="options__groupe" [attr.aria-labelledby]="'groupe-' + groupe.produit" [attr.data-produit]="groupe.produit">
               <h2 class="options__titre-groupe" [id]="'groupe-' + groupe.produit">
                 <span class="options__nom-groupe">
-                  <soc-app-icon-glyph class="options__icone-groupe" [name]="groupe.icone" aria-hidden="true" />
+                  <soc-app-icon-glyph class="options__icone-groupe" [name]="groupe.icone" [selected]="true" aria-hidden="true" />
                   {{ groupe.libelle }}
                 </span>
                 <span class="options__compteur-groupe">{{ compteurProduit(groupe.produit) }}</span>
