@@ -66,7 +66,7 @@ describe('OptionsEntreprisePageComponent', () => {
     expect(nav('Payroll').getAttribute('aria-current')).toBe('true');
   });
 
-  it('filtres rapides : Payantes, Customisations, Nouvelles, Activées', () => {
+  it('filtres rapides : Payantes, Customisations, Nouveautés, Activées', () => {
     filtre('Payantes').click();
     fixture.detectChanges();
     const tags = [...el().querySelectorAll('[data-part="tags"]')].map((t) => t.textContent!.trim());
@@ -74,13 +74,31 @@ describe('OptionsEntreprisePageComponent', () => {
     filtre('Customisations').click();
     fixture.detectChanges();
     expect(lignes()).toBe(2);
-    filtre('Nouvelles').click();
+    expect(el().querySelector('[data-testid="explication-filtre"]')).toBeNull();
+    filtre('Nouveautés').click();
     fixture.detectChanges();
-    expect([...el().querySelectorAll('[data-part="new"]')].length).toBe(3);
+    expect(el().querySelectorAll('[data-testid="badge-nouveau"]').length).toBe(3);
     expect(lignes()).toBe(3);
+    expect(el().querySelector('[data-testid="explication-filtre"]')!.textContent!.trim()).toBe('Options ajoutées ces 30 derniers jours.');
     filtre('Activées').click();
     fixture.detectChanges();
     expect(lignes()).toBe(13);
+    expect(el().querySelector('[data-testid="explication-filtre"]')).toBeNull();
+  });
+
+  it('badge « Nouveau · {date} » focalisable, avec infobulle « Ajoutée le … À vérifier … »', () => {
+    expect(el().querySelector('[data-testid="filtres"]')!.textContent).not.toContain('Nouvelles');
+    const row = ligne('performance-objectifs-strategiques-de-l-entreprise');
+    const badge = row.querySelector('[data-testid="badge-nouveau"]') as HTMLElement;
+    expect(badge.querySelector('soc-tag')!.textContent!.trim()).toBe('Nouveau · 15 oct.');
+    expect(badge.tabIndex).toBe(0);
+    badge.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    fixture.detectChanges();
+    const id = row.querySelector('soc-tooltip')!.getAttribute('aria-describedby')!;
+    const infobulle = document.getElementById(id)!.textContent!.replace(/\s+/g, ' ').trim();
+    expect(infobulle).toBe("Ajoutée le 15 octobre 2026. À vérifier : si elle est standard, vous pouvez l'activer pour ce client.");
+    expect(badge.querySelector('.sr-only')!.textContent).toContain('Ajoutée le 15 octobre 2026.');
+    expect(ligne('workspace-intranet').querySelector('[data-testid="badge-nouveau"]')).toBeNull();
   });
 
   it('recherche par début de mot dans le libellé et la description, sans accents ni casse ; état vide', () => {
@@ -184,7 +202,7 @@ describe('OptionsEntreprisePageComponent', () => {
     flush();
   }));
 
-  it('clic sur le libellé : panneau latéral avec description, offre, produit, sous-options, mise en ligne', () => {
+  it('clic sur le libellé : panneau latéral avec description, offre, produit, sous-options, « Ajoutée le {date} »', () => {
     (ligne('workspace-parcours-d-integration-onboarding').querySelector('[data-part="label"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     const drawer = el().querySelector('soc-drawer') as HTMLElement;
@@ -193,6 +211,7 @@ describe('OptionsEntreprisePageComponent', () => {
     expect(texte).toContain('Payant');
     expect(texte).toContain('Workspace');
     expect(texte).toContain('Étape Documents (activée)');
-    expect(texte).toContain('Mise en ligne');
+    expect(texte).not.toContain('Mise en ligne');
+    expect(texte.replace(/\s+/g, ' ')).toContain('Ajoutée le 19 juin 2023');
   });
 });

@@ -24,6 +24,12 @@
   font-size: var(--bridges-size-text-text-size-sm);
 }
 
+.options__explication {
+  margin: 0;
+  color: var(--bridges-color-text-primary);
+  font-size: var(--bridges-size-text-text-size-sm);
+}
+
 .options__groupe {
   border: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
   border-radius: var(--bridges-shape-figure-radius-md);

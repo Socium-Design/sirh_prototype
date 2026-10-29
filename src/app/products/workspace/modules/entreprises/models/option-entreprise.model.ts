@@ -15,9 +15,9 @@ export interface OptionEntreprise {
   offre: OffreOption | null;
   /** Option parente (sous-option, désactivée tant que le parent est coupé). */
   parentId?: string;
-  /** Badge « Nouveau ». */
+  /** Ajoutée ces 30 derniers jours : badge « Nouveau · {date} » et filtre « Nouveautés ». */
   nouveau?: boolean;
-  /** Date ISO de mise en ligne. */
+  /** Date ISO d'ajout de l'option (« Ajoutée le … »). */
   miseEnLigne: string;
 }
 

@@ -1,7 +1,7 @@
 import type { OffreOption, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
 
 /** Filtres rapides de la barre d'outils. */
-export type FiltreOptions = 'toutes' | 'payantes' | 'standard' | 'customisations' | 'activees' | 'nouvelles';
+export type FiltreOptions = 'toutes' | 'payantes' | 'standard' | 'customisations' | 'activees' | 'nouveautes';
 
 export const FILTRES_OPTIONS: { id: FiltreOptions; libelle: string }[] = [
   { id: 'toutes', libelle: 'Toutes' },
@@ -9,7 +9,7 @@ export const FILTRES_OPTIONS: { id: FiltreOptions; libelle: string }[] = [
   { id: 'standard', libelle: 'Standard' },
   { id: 'customisations', libelle: 'Customisations' },
   { id: 'activees', libelle: 'Activées' },
-  { id: 'nouvelles', libelle: 'Nouvelles' },
+  { id: 'nouveautes', libelle: 'Nouveautés' },
 ];
 
 /** Tag d'offre : texte toujours présent, la couleur n'est qu'un repère (orange 6,3:1, neutre 9,4:1, violet 5,0:1). */
@@ -18,6 +18,14 @@ export const TAGS_OFFRE: Record<OffreOption, { libelle: string; couleur: 'orange
   standard: { libelle: 'Standard', couleur: 'neutral' },
   customisation: { libelle: 'Customisation client', couleur: 'purple' },
 };
+
+/** Ligne d'explication affichée au-dessus de la liste quand le filtre « Nouveautés » est actif. */
+export const EXPLICATION_NOUVEAUTES = 'Options ajoutées ces 30 derniers jours.';
+
+/** Date ISO (`AAAA-MM-JJ`) en français, lue en UTC pour ne pas changer de jour selon le fuseau. */
+export const dateCourte = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+export const dateLongue = (iso: string) =>
+  new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 export const MESSAGE_OPTION_PAYANTE = "Option payante : vérifiez qu'elle a été vendue au client.";
 
@@ -83,7 +91,7 @@ export function correspond(
       return offre === 'customisation';
     case 'activees':
       return estActive(option, actives);
-    case 'nouvelles':
+    case 'nouveautes':
       return !!option.nouveau;
     default:
       return true;

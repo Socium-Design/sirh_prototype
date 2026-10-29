@@ -17,9 +17,10 @@ import {
   type LabsNavListItem,
 } from '../../../../../shared/labs/labs';
 import type { OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
+import { BadgeNouveauComponent } from './components/badge-nouveau.component';
 import { OptionsOutilsComponent } from './components/options-outils.component';
 import { TagOffreComponent } from './components/tag-offre.component';
-import { MESSAGE_OPTION_PAYANTE, grouperOptions } from './options-entreprise';
+import { EXPLICATION_NOUVEAUTES, MESSAGE_OPTION_PAYANTE, dateLongue, grouperOptions } from './options-entreprise';
 import { OptionsEntrepriseStore } from './options-entreprise.store';
 
 const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR') : '—');
@@ -48,6 +49,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
     SocLabsChangesBar,
     OptionsOutilsComponent,
     TagOffreComponent,
+    BadgeNouveauComponent,
   ],
   providers: [OptionsEntrepriseStore],
   styleUrl: './options-entreprise-page.component.scss',
@@ -65,6 +67,9 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
           <p class="options__modification" data-testid="derniere-modification">
             Dernière modification par {{ store.derniereModification().par }} le {{ dateFr(store.derniereModification().le) }}
           </p>
+          @if (store.filtre() === 'nouveautes') {
+            <p class="options__explication" data-testid="explication-filtre">{{ explicationNouveautes }}</p>
+          }
           <p class="sr-only" aria-live="polite">{{ annonce() }}</p>
 
           @for (groupe of groupes(); track groupe.produit) {
@@ -80,11 +85,13 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                     [description]="ligne.option.description"
                     [checked]="store.actives().has(ligne.option.id)"
                     (checkedChange)="store.basculer(ligne.option, $event)"
-                    [isNew]="!!ligne.option.nouveau"
                     [confirmMessage]="ligne.option.offre === 'payant' ? messagePayante : undefined"
                     (labelClick)="store.ouvrirDetail(ligne.option)"
                     [attr.data-option]="ligne.option.id"
                   >
+                    @if (ligne.option.nouveau) {
+                      <app-badge-nouveau socLabsOptionRowTags [date]="ligne.option.miseEnLigne" />
+                    }
                     @if (ligne.option.offre) {
                       <app-tag-offre socLabsOptionRowTags [offre]="ligne.option.offre" />
                     }
@@ -96,10 +103,13 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                         (checkedChange)="store.basculer(sous, $event)"
                         [disabled]="!store.actives().has(ligne.option.id)"
                         [disabledReason]="'Activez d’abord « ' + ligne.option.libelle + ' ».'"
-                        [isNew]="!!sous.nouveau"
                         (labelClick)="store.ouvrirDetail(sous)"
                         [attr.data-option]="sous.id"
-                      />
+                      >
+                        @if (sous.nouveau) {
+                          <app-badge-nouveau socLabsOptionRowTags [date]="sous.miseEnLigne" />
+                        }
+                      </soc-labs-option-row>
                     }
                   </soc-labs-option-row>
                 }
@@ -136,7 +146,9 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
         @if (sousOptionsDe(d)) {
           <soc-drawer-detail-item label="Sous-options" [value]="sousOptionsDe(d)" />
         }
-        <soc-drawer-detail-item label="Mise en ligne" [value]="dateFr(d.miseEnLigne)" />
+        @if (d.miseEnLigne) {
+          <soc-drawer-detail-item label="Ajoutée le" [value]="dateLongue(d.miseEnLigne)" data-testid="date-ajout" />
+        }
       </soc-drawer>
     }
   `,
@@ -147,6 +159,8 @@ export class OptionsEntreprisePageComponent {
 
   protected readonly messagePayante = MESSAGE_OPTION_PAYANTE;
   protected readonly dateFr = dateFr;
+  protected readonly dateLongue = dateLongue;
+  protected readonly explicationNouveautes = EXPLICATION_NOUVEAUTES;
 
   protected readonly breadcrumb = computed(() => [
     { label: 'Entreprises', onClick: () => this.router.navigateByUrl('/workspace/entreprises') },
