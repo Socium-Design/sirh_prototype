@@ -78,6 +78,10 @@ issue GAP-DS associée) et la section « Labs (expérimental) » de `docs/genera
 | `soc-labs-option-row` | Workspace > Entreprises > Fonctionnalités et options — lignes d'options (interrupteur, description sur une ligne, tags d’offre, badge « Nouveau · {date} » composé dans le prototype), sous-options imbriquées, confirmation dans la ligne d'une option payante (design_system_angular#65, PR #70, publiée en 0.3.5 avec le menu Workspace de #71) |
 | `soc-switch[socLabsSwitchHiddenLabel]` | Workspace > Entreprises — interrupteur « Entreprise active » de chaque ligne ; utilisé aussi par `soc-labs-option-row` (#65, PR #70) |
 | `soc-labs-changes-bar` | Fonctionnalités et options — barre « N modifications non enregistrées » / Annuler / Enregistrer (#66, PR #70) |
+| `soc-labs-grouped-table` | Perfs > Objectifs — liste groupée par collaborateur (groupes repliables, sous-objectifs dépliables, « Tout déplier » piloté par la page) (design_system_angular#75, PR pas encore publiée : archive `vendor/…-0.3.6-labs.1.tgz`) |
+| `soc-labs-progress-ring` | Perfs > Objectifs — colonne « Progression » (pourcentage à côté de l'anneau, valeur > 100 %) (#74) |
+| `soc-labs-timeline` | Perfs > Objectifs > détail — section « Historiques » (légende + chronologie) (#76) |
+| `soc-labs-population-picker` | Perfs > Objectifs > création — « Population concernée » : Personne nommée / Structure / Poste, un mode à la fois, aperçu « N employé(s) concerné(s) » (#77) |
 | `soc-labs-nav-list` | Fonctionnalités et options — colonne des produits avec icône du produit en pastille « sélectionnée » de l’AppSwitch (`iconAppearance="tile"`) et compteurs « activées / total » (#67, PR #70) |
 | `soc-labs-tag` | Fonctionnalités et options — tag « Standard » (ton neutre) ; Entreprises — pastilles de modules (#68, PR #70) |
 

@@ -12,6 +12,9 @@
  * (`soc-switch[socLabsSwitchHiddenLabel]`, `soc-labs-tag`, `soc-labs-icon-button`) et « Fonctionnalités et options »
  * (`soc-labs-option-row`, `soc-labs-nav-list`, `soc-labs-changes-bar`, `soc-labs-tag`) — design_system_angular#70 ;
  * menu Workspace de production (item « Entreprises ») : design_system_angular#71. Publiés en 0.3.5.
+ * Perfs > Objectifs : `soc-labs-grouped-table` (#75), `soc-labs-progress-ring` (#74), `soc-labs-timeline` (#76),
+ * `soc-labs-population-picker` (#77) — PR design_system_angular « Labs : composants de Perfs > Objectifs », pas encore
+ * publiée : archive `vendor/socium-design-angular-components-0.3.6-labs.1.tgz`.
  */
 export {
   LABS_CHART_TYPE_LABELS,
@@ -20,6 +23,7 @@ export {
   SocLabsCompactField,
   SocLabsDropZone,
   SocLabsFullscreenOverlay,
+  SocLabsGroupedTable,
   SocLabsIconButton,
   SocLabsInlineEdit,
   SocLabsListRow,
@@ -31,6 +35,8 @@ export {
   SocLabsOverlayBadge,
   SocLabsIconTile,
   SocLabsPillToggle,
+  SocLabsPopulationPicker,
+  SocLabsProgressRing,
   SocLabsSettingsCard,
   SocLabsSettingsCardAction,
   SocLabsSettingsCardDetails,
@@ -38,6 +44,7 @@ export {
   SocLabsSettingsCardTags,
   SocLabsSwitchHiddenLabel,
   SocLabsTag,
+  SocLabsTimeline,
   SocLabsWorkspaceActions,
   SocLabsWorkspaceBack,
   SocLabsWorkspaceHint,
@@ -51,6 +58,16 @@ export {
   SocLabsWidgetCardFooter,
   SocLabsWidgetCardIcon,
   type LabsChartType,
+  type LabsGroupedTableColumn,
+  type LabsGroupedTableGroup,
+  type LabsGroupedTableCellContext,
+  type LabsGroupedTableGroupContext,
+  type LabsPopulationMode,
+  type LabsPopulationPerson,
+  type LabsTimelineEvent,
+  type LabsTimelineLegendItem,
+  type LabsTimelineTone,
+  type LabsTagColor,
   type LabsCompactFieldOption,
   type LabsNavListItem,
   type LabsPillOption,

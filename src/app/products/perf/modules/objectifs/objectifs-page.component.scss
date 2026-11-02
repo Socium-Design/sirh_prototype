@@ -1,0 +1,105 @@
+.barre {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-md);
+  margin-block: var(--bridges-position-gap-md);
+}
+
+.barre__recherche {
+  max-width: calc(var(--bridges-size-icon-lg) * 14);
+}
+
+.barre__filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bridges-position-gap-sm);
+}
+
+/* Comme les filtres des cartes de widget : l'hôte du filtre est en `display: contents`, on dimensionne une enveloppe, en
+   multiple d'un token du kit. */
+.barre__filtre {
+  flex: 1 1 calc(var(--bridges-size-icon-lg) * 6);
+  min-width: 0;
+  max-width: calc(var(--bridges-size-icon-lg) * 9);
+}
+
+.barre__vue {
+  flex: 1 1 calc(var(--bridges-size-icon-lg) * 8);
+  max-width: calc(var(--bridges-size-icon-lg) * 11);
+}
+
+.barre__vue > soc-table-filter-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.barre__ou {
+  color: var(--bridges-color-text-secondary);
+  font-size: var(--bridges-size-text-text-size-sm);
+}
+
+.barre__vue {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-2xs);
+}
+
+.groupe {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-lg);
+}
+
+.groupe soc-avatar {
+  flex: 1;
+  min-width: 0;
+}
+
+.groupe__total {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+  white-space: nowrap;
+}
+
+.objectif__titre {
+  display: block;
+  color: var(--bridges-color-text-primary);
+  font-weight: var(--bridges-shape-text-label-weight);
+  text-decoration: none;
+  border-radius: var(--bridges-shape-figure-radius-sm);
+
+  &:hover {
+    color: var(--bridges-color-text-action);
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: var(--bridges-shape-line-thick) solid var(--bridges-color-border-focus);
+    outline-offset: var(--bridges-position-gap-2xs);
+  }
+}
+
+.objectif__type {
+  display: block;
+  font-size: var(--bridges-size-text-text-size-tiny);
+  color: var(--bridges-color-text-secondary);
+}
+
+.objectif__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-xs);
+  white-space: nowrap;
+}
+
+.pied {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--bridges-position-gap-md);
+  margin-top: var(--bridges-position-gap-md);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+}

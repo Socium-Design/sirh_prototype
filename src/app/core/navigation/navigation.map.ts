@@ -34,6 +34,8 @@ export const NAV_ROUTES: Record<string, string> = {
   // Item « Entreprises » du menu Workspace de production (design_system_angular#71, publié en 0.3.5) : liste, puis
   // « Fonctionnalités et options » de chaque entreprise (l'item reste en surbrillance).
   'workspace-entreprises': '/workspace/entreprises',
+  // Liste groupée par collaborateur, puis détail, création et modification d'un objectif (l'item reste en surbrillance).
+  'perfs-objectifs': '/perf/objectifs',
   // Page à onglets (Configuration des objectifs, Notes d'évaluation, Parcours de validation) : comme Workspace.
   'perfs-configurations': '/perf/configurations',
   'job-offres': '/job/offres',

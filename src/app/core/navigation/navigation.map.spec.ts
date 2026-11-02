@@ -32,6 +32,12 @@ describe('navigation.map', () => {
     expect(navItemFromUrl('/perf/configurations/notes-evaluation')).toBe('perfs-configurations');
   });
 
+  it('keeps Objectifs highlighted on the detail, creation and edit pages', () => {
+    expect(navItemFromUrl('/perf/objectifs/obj-1')).toBe('perfs-objectifs');
+    expect(navItemFromUrl('/perf/objectifs/nouveau?employe=2')).toBe('perfs-objectifs');
+    expect(navItemFromUrl('/perf/objectifs/obj-1/modifier')).toBe('perfs-objectifs');
+  });
+
   it('highlights the item of a coming-soon page', () => {
     expect(navItemFromUrl('/a-venir/workspace-structures')).toBe('workspace-structures');
   });
@@ -41,7 +47,8 @@ describe('navigation.map', () => {
     expect(routeForNavItem('workspace-structures')).toBe('/a-venir/workspace-structures');
     expect(routeForNavItem('workspace-configurations')).toBe('/workspace/configuration');
     expect(routeForNavItem('perfs-configurations')).toBe('/perf/configurations');
-    expect(routeForNavItem('perfs-objectifs')).toBe('/a-venir/perfs-objectifs');
+    expect(routeForNavItem('perfs-objectifs')).toBe('/perf/objectifs');
+    expect(routeForNavItem('perfs-evaluations')).toBe('/a-venir/perfs-evaluations');
   });
 
   it('opens a built product home, or the coming-soon accueil of an unbuilt product', () => {
