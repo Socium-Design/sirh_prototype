@@ -1,0 +1,41 @@
+.formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-lg);
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xs);
+}
+
+.avertissement {
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-warning);
+}
+
+.periode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--bridges-position-gap-md);
+  min-width: 0;
+}
+
+.periode__titre {
+  grid-column: 1 / -1;
+  margin-bottom: var(--bridges-position-gap-xs);
+  font-size: var(--bridges-size-text-text-size-sm);
+  font-weight: var(--bridges-shape-text-label-weight);
+  color: var(--bridges-color-text-primary);
+}
+
+.obligatoire {
+  color: var(--bridges-color-text-danger);
+}
+
+.evaluer {
+  display: flex;
+  align-items: center;
+  gap: var(--bridges-position-gap-2xs);
+}

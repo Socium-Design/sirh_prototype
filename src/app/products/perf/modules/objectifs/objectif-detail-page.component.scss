@@ -1,0 +1,28 @@
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-lg);
+}
+
+.lien {
+  color: var(--bridges-color-text-primary);
+  font-weight: var(--bridges-shape-text-label-weight);
+  text-decoration: none;
+  border-radius: var(--bridges-shape-figure-radius-sm);
+
+  &:hover {
+    color: var(--bridges-color-text-action);
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: var(--bridges-shape-line-thick) solid var(--bridges-color-border-focus);
+    outline-offset: var(--bridges-position-gap-2xs);
+  }
+}
+
+.vide {
+  padding: var(--bridges-position-padding-sm) var(--bridges-position-padding-md);
+  font-size: var(--bridges-size-text-text-size-sm);
+  color: var(--bridges-color-text-primary);
+}
