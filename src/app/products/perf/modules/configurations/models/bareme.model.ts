@@ -6,10 +6,9 @@ export type Decimales = 0 | 1 | 2;
 
 /**
  * Ce que fait l'interrupteur d'en-tête d'une carte : « Visible sur l'évaluation » (la note reste paramétrable même
- * masquée), « Visible par l'évalué » (désactivé : managers et RH voient la note, l'évalué un cadenas ; barème
- * toujours modifiable) ou « Activer le barème » (désactivé : la note s'affiche sur 100 et la carte est grisée).
+ * masquée) ou « Activer le barème » (désactivé : la note s'affiche sur 100 et la carte est grisée).
  */
-export type InterrupteurBareme = 'visibilite' | 'confidentialite' | 'activation';
+export type InterrupteurBareme = 'visibilite' | 'activation';
 
 /** Icône d'une ligne de « Ce qui sera mis à jour ». */
 export type IconeMiseAJour =
@@ -51,15 +50,23 @@ export interface DefinitionNote {
   mentionDesactive?: string;
   /** Zone « Ce qui sera mis à jour » de la carte. */
   misesAJour: LigneMiseAJour[];
-  /** Contenu de cette zone quand la note est masquée pour l'évalué (interrupteur `confidentialite` seulement). */
+  /**
+   * Présent : la carte a, en plus, l'interrupteur « Visible par l'évalué » (note Potentiel), et la zone « Ce qui sera
+   * mis à jour » montre ce contenu quand la note est masquée pour l'évalué.
+   */
   masquage?: MasquagePourEvalue;
 }
 
 /** Réglage d'une note, modifiable par l'administrateur. */
 export interface BaremeNote {
   id: NoteId;
-  /** Visible sur l'évaluation (`visibilite`), visible par l'évalué (`confidentialite`) ou barème activé (`activation`). */
+  /** Interrupteur d'en-tête : visible sur l'évaluation (`visibilite`) ou barème activé (`activation`). */
   actif: boolean;
+  /**
+   * « Visible par l'évalué » (notes avec `masquage` seulement) ; activé par défaut. Coupé : managers et RH voient
+   * toujours la note, l'évalué voit un cadenas à la place.
+   */
+  visibleParEvalue?: boolean;
   /** Entier de 1 à 1000 ; `null` = champ vidé (invalide). */
   denominateur: number | null;
   decimales: Decimales;

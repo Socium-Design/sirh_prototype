@@ -39,9 +39,12 @@ export function baremeValide(definition: DefinitionNote, bareme: BaremeNote): bo
   return estDesactive(definition, bareme) || erreurDenominateur(bareme.denominateur) === null;
 }
 
-/** Une note « Visible par l'évalué » (note Potentiel) dont l'interrupteur est coupé : masquée pour l'évalué seulement. */
+/**
+ * Note visible sur l'évaluation dont l'interrupteur « Visible par l'évalué » (note Potentiel) est coupé : masquée pour
+ * l'évalué seulement. Note retirée de l'évaluation : le réglage ne s'applique pas.
+ */
 export function estMasqueePourEvalue(definition: DefinitionNote, bareme: BaremeNote): boolean {
-  return definition.interrupteur === 'confidentialite' && !bareme.actif;
+  return !!definition.masquage && bareme.actif && bareme.visibleParEvalue === false;
 }
 
 /**

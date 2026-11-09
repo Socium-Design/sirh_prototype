@@ -1,8 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { LucideCheck, LucideClock } from '@lucide/angular';
 import { SocButton, SocButtonRightIcon } from '@socium-design/angular-components';
-import { FeatureFlagsService } from '../../../../../core/feature-flags/feature-flags.service';
-import type { BaremeNote, DefinitionNote, DerniereModification, NoteId } from '../models/bareme.model';
+import type { BaremeNote, DerniereModification, NoteId } from '../models/bareme.model';
 import { BaremesService } from '../services/baremes.service';
 import { baremeValide, formaterDateModification } from '../services/bareme';
 import { BaremeCardComponent } from './components/bareme-card.component';
@@ -11,8 +10,7 @@ import { BaremeCardComponent } from './components/bareme-card.component';
  * Perfs > Configurations > Notes d'évaluation : barèmes des 5 notes (finale, potentiel, performance, objectif, compétence)
  * en cartes repliables, toutes fermées à l'arrivée (« Tout déplier / Tout replier » au-dessus), chacune avec sa zone
  * « Ce qui sera mis à jour », puis la barre « Dernière modification · Annuler · Enregistrer ».
- * Feature flag « Confidentialité du potentiel » : tag dans l'en-tête de la carte Potentiel (« Visible par l'évalué »,
- * masquée par défaut pour l'évalué) ; inactif, la carte garde l'ancien comportement (voir `BaremesService`).
+ * La carte Potentiel a en plus l'interrupteur « Visible par l'évalué » (activé par défaut) dans son contenu.
  * Les cartes modifient un brouillon ; « Enregistrer » l'envoie au service (→ « Enregistré ✓ », date mise à jour),
  * « Annuler » revient aux dernières valeurs enregistrées.
  */
@@ -38,7 +36,6 @@ import { BaremeCardComponent } from './components/bareme-card.component';
             [bareme]="bareme"
             [ouverte]="!!ouvertes()[definition.id]"
             [modifie]="estModifie(definition.id)"
-            [tag]="tagDe(definition)"
             (changer)="changer(definition.id, $event)"
             (ouvertureChange)="ouvrir(definition.id, $event)"
           />
@@ -70,11 +67,8 @@ import { BaremeCardComponent } from './components/bareme-card.component';
 })
 export class NotesEvaluationPageComponent {
   private readonly service = inject(BaremesService);
-  private readonly flags = inject(FeatureFlagsService);
 
   protected readonly definitions = this.service.getDefinitions();
-  /** Tag « Confidentialité du potentiel » de la carte Potentiel (flag inactif : plus de carte `confidentialite`). */
-  private readonly tagConfidentialite = this.flags.libelle('confidentialite-potentiel');
 
   /** Dernières valeurs enregistrées et brouillon en cours. */
   private readonly enregistres = signal<BaremeNote[]>([]);
@@ -99,10 +93,6 @@ export class NotesEvaluationPageComponent {
 
   protected baremeDe(id: string): BaremeNote | undefined {
     return this.brouillon().find((b) => b.id === id);
-  }
-
-  protected tagDe(definition: DefinitionNote): string | undefined {
-    return definition.interrupteur === 'confidentialite' ? this.tagConfidentialite : undefined;
   }
 
   protected estModifie(id: NoteId): boolean {

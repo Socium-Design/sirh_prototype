@@ -22,7 +22,7 @@ export const DEFINITIONS_NOTES: DefinitionNote[] = [
     id: 'potentiel',
     titre: 'Note Potentiel',
     libelleDenominateur: 'Dénominateur de la note potentiel',
-    interrupteur: 'confidentialite',
+    interrupteur: 'visibilite',
     regle:
       'Moyenne pondérée du bloc Compétences (hors compétences additionnelles) et des sections contenant des questions « potentiel ». Les objectifs n’entrent jamais dans cet axe. Un bloc vide est retiré du calcul.',
     misesAJour: [
@@ -87,13 +87,13 @@ export const DEFINITIONS_NOTES: DefinitionNote[] = [
 ];
 
 /**
- * Réglages enregistrés (les barèmes objectif et compétence, nouveaux, sont désactivés par défaut). Feature flag
- * « Confidentialité du potentiel » actif : la note Potentiel est en plus masquée pour l'évalué (`BaremesService`).
+ * Réglages enregistrés (les barèmes objectif et compétence, nouveaux, sont désactivés par défaut). La note Potentiel
+ * est visible par l'évalué par défaut : rien ne change pour les clients existants.
  */
 export const CONFIGURATION_NOTES: ConfigurationNotes = {
   baremes: [
     { id: 'finale', actif: true, denominateur: 20, decimales: 2, appliquerAuxFinalisees: false },
-    { id: 'potentiel', actif: true, denominateur: 20, decimales: 2, appliquerAuxFinalisees: false },
+    { id: 'potentiel', actif: true, visibleParEvalue: true, denominateur: 20, decimales: 2, appliquerAuxFinalisees: false },
     { id: 'performance', actif: true, denominateur: 20, decimales: 2, appliquerAuxFinalisees: false },
     { id: 'objectif', actif: false, denominateur: 5, decimales: 1, appliquerAuxFinalisees: false },
     { id: 'competence', actif: false, denominateur: 5, decimales: 1, appliquerAuxFinalisees: false },

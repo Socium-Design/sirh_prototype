@@ -22,7 +22,6 @@ import {
   SocSelect,
   SocSelectableChips,
   SocSwitch,
-  SocTag,
   type SelectOption,
 } from '@socium-design/angular-components';
 import {
@@ -31,7 +30,6 @@ import {
   SocLabsSettingsCardAction,
   SocLabsSettingsCardDetails,
   SocLabsSettingsCardFootnote,
-  SocLabsSettingsCardTags,
 } from '../../../../../../shared/labs/labs';
 import type { BaremeNote, Decimales, DefinitionNote } from '../../models/bareme.model';
 import {
@@ -49,7 +47,6 @@ import {
 /** Libellé de l'interrupteur d'en-tête, selon son rôle. */
 const LIBELLES_INTERRUPTEUR = {
   visibilite: 'Visible sur l’évaluation',
-  confidentialite: "Visible par l'évalué",
   activation: 'Activer le barème',
 } as const;
 
@@ -68,6 +65,8 @@ const OPTIONS_DECIMALES: SelectOption[] = [
  * Sous la règle de calcul, la zone dépliable « Ce qui sera mis à jour » (`soc-accordion` du kit dans le slot
  * `socLabsSettingsCardDetails`, design_system_angular#63) ; fermée par défaut, elle s'ouvre d'elle-même (carte comprise)
  * quand on masque la note Potentiel pour l'évalué, pour montrer l'impact.
+ * Note Potentiel (définition avec `masquage`) : interrupteur « Visible par l'évalué » en haut du contenu, activé par
+ * défaut ; grisé quand « Visible sur l'évaluation » est coupé (le réglage ne s'applique pas).
  */
 @Component({
   selector: 'app-bareme-card',
@@ -76,7 +75,6 @@ const OPTIONS_DECIMALES: SelectOption[] = [
     SocLabsSettingsCardAction,
     SocLabsSettingsCardFootnote,
     SocLabsSettingsCardDetails,
-    SocLabsSettingsCardTags,
     SocLabsIconTile,
     SocSwitch,
     SocSelectableChips,
@@ -85,7 +83,6 @@ const OPTIONS_DECIMALES: SelectOption[] = [
     SocAccordion,
     SocMessage,
     SocMessageContent,
-    SocTag,
     LucideClipboardCheck,
     LucideChartColumn,
     LucideDownload,
@@ -118,21 +115,32 @@ const OPTIONS_DECIMALES: SelectOption[] = [
       [badgeTone]="badge()?.ton ?? 'information'"
       [attr.data-note]="def.id"
     >
-      @if (tag()) {
-        <soc-tag socLabsSettingsCardTags color="purple" data-testid="tag">{{ tag() }}</soc-tag>
-      }
       <soc-switch
         socLabsSettingsCardAction
         [label]="libelleInterrupteur()"
         [checked]="b.actif"
-        (checkedChange)="basculer($event)"
+        (checkedChange)="changer.emit({ actif: $event })"
         data-testid="interrupteur"
       />
 
-      @if (masquee()) {
-        <soc-message variant="inline" status="info" data-testid="message-confidentialite">
-          <span socMessageContent>Les managers et les RH continuent de voir cette note. L'évalué voit un cadenas à la place.</span>
-        </soc-message>
+      @if (def.masquage) {
+        <div class="bareme__evalue" data-testid="visible-par-evalue">
+          <soc-switch
+            label="Visible par l'évalué"
+            [checked]="b.visibleParEvalue !== false"
+            [disabled]="!b.actif"
+            (checkedChange)="basculerVisibleParEvalue($event)"
+          />
+          @if (!b.actif) {
+            <p class="bareme__aide" data-testid="aide-evalue">La note n'apparaît pas sur l'évaluation.</p>
+          } @else if (masquee()) {
+            <soc-message variant="inline" status="info" data-testid="message-confidentialite">
+              <span socMessageContent>Les managers et les RH continuent de voir cette note. L'évalué voit un cadenas à la place.</span>
+            </soc-message>
+          } @else {
+            <p class="bareme__aide" data-testid="aide-evalue">L'évalué voit sa note Potentiel sur son évaluation.</p>
+          }
+        </div>
       }
 
       <div class="bareme__groupe">
@@ -236,8 +244,6 @@ export class BaremeCardComponent {
   readonly ouverte = input(false);
   /** Réglage différent du dernier enregistré : badge « Modifié ». */
   readonly modifie = input(false);
-  /** Tag permanent de l'en-tête (feature flag « Confidentialité du potentiel » sur la carte Potentiel). */
-  readonly tag = input<string>();
   readonly changer = output<Partial<BaremeNote>>();
   readonly ouvertureChange = output<boolean>();
 
@@ -267,13 +273,10 @@ export class BaremeCardComponent {
     return erreurDenominateur(denominateur) ? '—' : `${noteSurBareme(SCORE_APERCU, denominateur!, decimales)} / ${denominateur}`;
   });
 
-  /** Masquer la note pour l'évalué ouvre la carte et la zone « Ce qui sera mis à jour », pour montrer l'impact. */
-  protected basculer(actif: boolean): void {
-    this.changer.emit({ actif });
-    if (!actif && this.definition().interrupteur === 'confidentialite') {
-      this.impactOuvert.set(true);
-      this.ouvertureChange.emit(true);
-    }
+  /** Masquer la note pour l'évalué ouvre la zone « Ce qui sera mis à jour », pour montrer l'impact. */
+  protected basculerVisibleParEvalue(visible: boolean): void {
+    this.changer.emit({ visibleParEvalue: visible });
+    if (!visible) this.impactOuvert.set(true);
   }
 
   /**
