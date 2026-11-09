@@ -120,3 +120,12 @@
   font-size: var(--bridges-size-text-text-size-sm);
   color: var(--bridges-color-text-primary);
 }
+
+// « Visible par l'évalué » (note Potentiel), en haut du contenu, séparé du barème.
+.bareme__evalue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bridges-position-gap-xs);
+  padding-bottom: var(--bridges-position-padding-lg);
+  border-bottom: var(--bridges-shape-figure-border-stroke-default) solid var(--bridges-color-border-subtle);
+}

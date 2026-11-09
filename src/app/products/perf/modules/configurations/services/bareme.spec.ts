@@ -73,11 +73,16 @@ describe('Barèmes des notes', () => {
     });
 
     it('note Potentiel masquée pour l’évalué : « Masquée pour l’évalué · /20 · 2 décimales », carte toujours modifiable', () => {
-      const potentiel = bareme({ id: 'potentiel', actif: false, denominateur: 20, decimales: 2 });
+      const potentiel = bareme({ id: 'potentiel', visibleParEvalue: false, denominateur: 20, decimales: 2 });
       expect(resumeBareme(definition('potentiel'), potentiel)).toBe("Masquée pour l'évalué · /20 · 2 décimales");
       expect(estMasqueePourEvalue(definition('potentiel'), potentiel)).toBeTrue();
       expect(estDesactive(definition('potentiel'), potentiel)).toBeFalse();
-      expect(estMasqueePourEvalue(definition('finale'), bareme({ id: 'finale', actif: false }))).toBeFalse();
+    });
+
+    it('masquage pour l’évalué : seulement la note Potentiel, et seulement si elle est visible sur l’évaluation', () => {
+      expect(estMasqueePourEvalue(definition('potentiel'), bareme({ id: 'potentiel', visibleParEvalue: true }))).toBeFalse();
+      expect(estMasqueePourEvalue(definition('potentiel'), bareme({ id: 'potentiel', actif: false, visibleParEvalue: false }))).toBeFalse();
+      expect(estMasqueePourEvalue(definition('finale'), bareme({ id: 'finale', visibleParEvalue: false }))).toBeFalse();
     });
 
     it('barème objectif / compétence désactivé : « affichage sur 100 »', () => {

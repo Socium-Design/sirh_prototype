@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { FeatureFlagsService } from '../../../../../core/feature-flags/feature-flags.service';
 import { NotesEvaluationPageComponent } from './notes-evaluation-page.component';
 
 describe('NotesEvaluationPageComponent', () => {
@@ -47,7 +46,7 @@ describe('NotesEvaluationPageComponent', () => {
     ]);
     expect(cartes.every((c) => texte(c.querySelector('[data-region="overline"]')) === 'BARÈME')).toBeTrue();
     expect(cartes.map((c) => texte(c.querySelector('[data-testid="interrupteur"]')))).toEqual([
-      'Visible sur l’évaluation', "Visible par l'évalué", 'Visible sur l’évaluation', 'Activer le barème', 'Activer le barème',
+      'Visible sur l’évaluation', 'Visible sur l’évaluation', 'Visible sur l’évaluation', 'Activer le barème', 'Activer le barème',
     ]);
     expect(texte(carte('objectif').querySelector('[data-testid="regle"]'))).toContain('Règle de calcul');
   });
@@ -293,11 +292,17 @@ describe('NotesEvaluationPageComponent', () => {
     });
   });
 
-  describe('confidentialité du potentiel (flag actif par défaut)', () => {
+  describe('« Visible par l’évalué » (carte Potentiel)', () => {
     const zone = () => carte('potentiel').querySelector('[data-testid="impact"]') as HTMLElement;
     const boutonZone = () => zone().querySelector('button') as HTMLButtonElement;
     const message = () => carte('potentiel').querySelector('[data-testid="message-confidentialite"]');
+    const aide = () => texte(carte('potentiel').querySelector('[data-testid="aide-evalue"]'));
+    const evalue = () => carte('potentiel').querySelector('[data-testid="visible-par-evalue"] [role="switch"]') as HTMLButtonElement;
     const lignes = () => [...zone().querySelectorAll('li')].map(texte);
+    const masquer = () => {
+      evalue().click();
+      fixture.detectChanges();
+    };
     const LIGNES_MASQUE = [
       'Question de type potentiel dans le formulaire',
       'En-tête et barre latérale des sections contenant du potentiel (moyenne)',
@@ -309,120 +314,94 @@ describe('NotesEvaluationPageComponent', () => {
       "PDF de l'évaluation",
       'Export Excel (tiret « – »)',
     ];
+    const LIGNES_VISIBLE = [
+      "Résultats d'évaluation — Note Potentiel affichée aux managers, employés et RH",
+      'Matrice 9-box — Axe Potentiel',
+      'Exports Excel / PDF',
+    ];
 
-    it('carte Potentiel masquée pour l’évalué par défaut, tag « Confidentialité du potentiel », résumé « Masquée pour l’évalué »', () => {
-      expect(interrupteur('potentiel').getAttribute('aria-checked')).toBe('false');
-      expect(texte(carte('potentiel').querySelector('[data-region="tags"]'))).toBe('Confidentialité du potentiel');
-      expect(resume('potentiel')).toBe("Masquée pour l'évalué · /20 · 2 décimales");
-      expect(el().querySelectorAll('[data-region="tags"]').length).toBe(1);
-    });
+    beforeEach(() => deplier('potentiel'));
 
-    it('désactivée : barème toujours modifiable, message pour managers et RH', () => {
+    it('activé par défaut, sans tag : résumé habituel, zone « Note Potentiel affichée … »', () => {
+      expect(el().querySelector('[data-region="tags"]')).toBeNull();
+      expect(el().querySelectorAll('[data-testid="visible-par-evalue"]').length).toBe(1);
+      expect(texte(carte('potentiel').querySelector('[data-testid="visible-par-evalue"] soc-switch'))).toBe("Visible par l'évalué");
+      expect(evalue().getAttribute('aria-checked')).toBe('true');
+      expect(evalue().disabled).toBeFalse();
+      expect(aide()).toBe("L'évalué voit sa note Potentiel sur son évaluation.");
+      expect(message()).toBeNull();
       deplier('potentiel');
-      expect(carte('potentiel').querySelector('[data-region="body"]')!.hasAttribute('inert')).toBeFalse();
-      expect(texte(message())).toBe("Les managers et les RH continuent de voir cette note. L'évalué voit un cadenas à la place.");
-      chip('potentiel', 10).click();
-      fixture.detectChanges();
-      expect(apercu('potentiel')).toContain('8,20 / 10');
-      expect(resume('potentiel')).toBe('');
-      deplier('potentiel');
-      expect(resume('potentiel')).toBe("Masquée pour l'évalué · /10 · 2 décimales");
-    });
-
-    it('zone : liste « Masqué pour l’évalué » (cadenas) puis la portée', () => {
+      expect(resume('potentiel')).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
       deplier('potentiel');
       boutonZone().click();
       fixture.detectChanges();
+      expect(zone().querySelector('[data-testid="impact-masque"]')).toBeNull();
+      expect(lignes()).toEqual(LIGNES_VISIBLE);
+    });
+
+    it('désactivé : message managers / RH, zone ouverte avec la liste « Masqué pour l’évalué », résumé « Masquée pour l’évalué »', () => {
+      expect(boutonZone().getAttribute('aria-expanded')).toBe('false');
+      masquer();
+      expect(evalue().getAttribute('aria-checked')).toBe('false');
+      expect(texte(message())).toBe("Les managers et les RH continuent de voir cette note. L'évalué voit un cadenas à la place.");
+      expect(boutonZone().getAttribute('aria-expanded')).toBe('true');
       expect(texte(zone().querySelector('[data-testid="impact-masque"]'))).toBe("Masqué pour l'évalué");
       expect(zone().querySelector('[data-testid="impact-masque"] svg')).not.toBeNull();
       expect(lignes()).toEqual(LIGNES_MASQUE);
       expect(texte(zone())).toContain("S'applique à toutes les évaluations, passées comprises.");
+      expect(interrupteur('potentiel').getAttribute('aria-checked')).toBe('true');
+      expect(badge('potentiel')).toBe('Modifié');
+      deplier('potentiel');
+      expect(resume('potentiel')).toBe("Masquée pour l'évalué · /20 · 2 décimales");
     });
 
-    it('activée : message absent, zone « Note Potentiel affichée … », résumé habituel', () => {
+    it('désactivé : barème toujours modifiable', () => {
+      masquer();
+      expect(carte('potentiel').querySelector('[data-region="body"]')!.hasAttribute('inert')).toBeFalse();
+      chip('potentiel', 10).click();
+      fixture.detectChanges();
+      expect(apercu('potentiel')).toContain('8,20 / 10');
+    });
+
+    it('« Visible sur l’évaluation » coupé : « Visible par l’évalué » grisé, mention, pas de masquage', () => {
+      masquer();
       interrupteur('potentiel').click();
       fixture.detectChanges();
-      expect(resume('potentiel')).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
-      deplier('potentiel');
+      expect(evalue().disabled).toBeTrue();
+      expect(aide()).toBe("La note n'apparaît pas sur l'évaluation.");
       expect(message()).toBeNull();
-      boutonZone().click();
-      fixture.detectChanges();
       expect(zone().querySelector('[data-testid="impact-masque"]')).toBeNull();
-      expect(lignes()).toEqual([
-        "Résultats d'évaluation — Note Potentiel affichée aux managers, employés et RH",
-        'Matrice 9-box — Axe Potentiel',
-        'Exports Excel / PDF',
-      ]);
+      expect(lignes()).toEqual(LIGNES_VISIBLE);
+      deplier('potentiel');
+      expect(resume('potentiel')).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
     });
 
-    it('désactiver l’interrupteur ouvre la carte et la zone pour montrer l’impact', () => {
-      interrupteur('potentiel').click(); // activée
+    it('rétablir « Visible sur l’évaluation » retrouve le réglage « Visible par l’évalué »', () => {
+      masquer();
+      interrupteur('potentiel').click();
       fixture.detectChanges();
-      expect(ouverte('potentiel')).toBeFalse();
-      expect(boutonZone().getAttribute('aria-expanded')).toBe('false');
-      interrupteur('potentiel').click(); // désactivée
+      interrupteur('potentiel').click();
       fixture.detectChanges();
-      expect(ouverte('potentiel')).toBeTrue();
-      expect(boutonZone().getAttribute('aria-expanded')).toBe('true');
-      expect(lignes()).toEqual(LIGNES_MASQUE);
+      expect(evalue().disabled).toBeFalse();
+      expect(evalue().getAttribute('aria-checked')).toBe('false');
+      expect(message()).not.toBeNull();
     });
 
-    it('les autres interrupteurs n’ouvrent pas la zone', () => {
+    it('« Annuler » revient à « Visible par l’évalué » activé', () => {
+      masquer();
+      bouton('annuler').click();
+      fixture.detectChanges();
+      expect(evalue().getAttribute('aria-checked')).toBe('true');
+      expect(message()).toBeNull();
+    });
+
+    it('les interrupteurs d’en-tête n’ouvrent pas la zone', () => {
       toutDeplier();
+      interrupteur('potentiel').click();
       interrupteur('finale').click();
       fixture.detectChanges();
-      const boutonFinale = carte('finale').querySelector('[data-testid="impact"] button')!;
-      expect(boutonFinale.getAttribute('aria-expanded')).toBe('false');
+      expect(boutonZone().getAttribute('aria-expanded')).toBe('false');
+      expect(carte('finale').querySelector('[data-testid="impact"] button')!.getAttribute('aria-expanded')).toBe('false');
     });
-  });
-});
-
-describe('NotesEvaluationPageComponent — flag « Confidentialité du potentiel » inactif', () => {
-  let fixture: ComponentFixture<NotesEvaluationPageComponent>;
-  const el = () => fixture.nativeElement as HTMLElement;
-  const carte = () => el().querySelector('[data-note="potentiel"]') as HTMLElement;
-  const texte = (e: Element | null) => e?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-  const interrupteur = () => carte().querySelector('[data-testid="interrupteur"] [role="switch"]') as HTMLButtonElement;
-  const resume = () => texte(carte().querySelector('[data-region="summary"]'));
-  const zone = () => carte().querySelector('[data-testid="impact"]') as HTMLElement;
-  const LIGNES_ACTIVE = [
-    "Résultats d'évaluation — Note Potentiel affichée aux managers, employés et RH",
-    'Matrice 9-box — Axe Potentiel',
-    'Exports Excel / PDF',
-  ];
-
-  beforeEach(fakeAsync(() => {
-    TestBed.configureTestingModule({
-      providers: [{ provide: FeatureFlagsService, useValue: { actif: () => false, libelle: () => 'Confidentialité du potentiel' } }],
-    });
-    fixture = TestBed.createComponent(NotesEvaluationPageComponent);
-    fixture.detectChanges();
-    tick(300);
-    fixture.detectChanges();
-  }));
-
-  it('ancien comportement : « Visible sur l’évaluation », activée par défaut, sans tag, résumé habituel', () => {
-    expect(texte(carte().querySelector('[data-testid="interrupteur"]'))).toBe('Visible sur l’évaluation');
-    expect(texte(el())).not.toContain("Visible par l'évalué");
-    expect(interrupteur().getAttribute('aria-checked')).toBe('true');
-    expect(carte().querySelector('[data-region="tags"]')).toBeNull();
-    expect(resume()).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
-  });
-
-  it('interrupteur coupé : ni message, ni « Masquée pour l’évalué », ni cadenas ; la zone garde le contenu « activé » et reste fermée', () => {
-    interrupteur().click();
-    fixture.detectChanges();
-    expect(interrupteur().getAttribute('aria-checked')).toBe('false');
-    expect(resume()).toBe('/20 · 2 décimales · appliqué aux nouvelles évaluations uniquement');
-    expect(carte().getAttribute('data-expanded')).toBe('false');
-    expect(zone().querySelector('button')!.getAttribute('aria-expanded')).toBe('false');
-    (carte().querySelector('[data-region="toggle"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    expect(carte().querySelector('[data-testid="message-confidentialite"]')).toBeNull();
-    zone().querySelector('button')!.click();
-    fixture.detectChanges();
-    expect(zone().querySelector('[data-testid="impact-masque"]')).toBeNull();
-    expect([...zone().querySelectorAll('li')].map(texte)).toEqual(LIGNES_ACTIVE);
-    expect(texte(zone())).not.toContain("S'applique à toutes les évaluations");
   });
 });
