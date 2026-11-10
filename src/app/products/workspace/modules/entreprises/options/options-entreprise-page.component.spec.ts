@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { OPTIONS_ENTREPRISE } from '../../../../../../mocks/data/options-entreprise.mock';
+import { messagePrerequis, prerequisManquants } from './options-entreprise';
 import { OptionsEntreprisePageComponent } from './options-entreprise-page.component';
 
 describe('OptionsEntreprisePageComponent', () => {
@@ -53,7 +55,7 @@ describe('OptionsEntreprisePageComponent', () => {
   it('compteurs « activées / total » par produit, « Tous les produits » en premier', () => {
     const items = [...el().querySelectorAll('soc-labs-nav-list button')].map((b) => b.querySelector('span.truncate')!.textContent!.trim());
     expect(items).toEqual(['Tous les produits', 'Workspace', 'Recrutement', 'Workflow', 'Performance', 'Doc', 'Payroll']);
-    expect(nav('Tous les produits').querySelector('[data-part="count"]')!.textContent!.trim()).toBe('13 / 64');
+    expect(nav('Tous les produits').querySelector('[data-part="count"]')!.textContent!.trim()).toBe('13 / 65');
     expect(nav('Workspace').querySelector('[data-part="count"]')!.textContent!.trim()).toBe('6 / 23');
     expect(nav('Workspace').textContent).toContain('6 activées sur 23');
   });
@@ -135,7 +137,7 @@ describe('OptionsEntreprisePageComponent', () => {
 
   it('inventaire Sales : chaque option a son tag d’offre, sous-options comprises', () => {
     const rangees = [...el().querySelectorAll('soc-labs-option-row[data-option]')];
-    expect(rangees.length).toBe(64);
+    expect(rangees.length).toBe(65);
     for (const rangee of rangees) {
       const tags = rangee.querySelector(':scope > [data-part="row"] [data-part="tags"]')?.textContent ?? '';
       expect(/Payant|Standard/.test(tags)).withContext(rangee.getAttribute('data-option')!).toBeTrue();
@@ -173,6 +175,85 @@ describe('OptionsEntreprisePageComponent', () => {
     expect(texte).toContain('Payant');
     expect(texte).not.toContain('Suit l');
     expect(texte).toContain('Parcours de départ (offboarding)');
+  });
+
+  describe('prérequis des étapes (avertir sans bloquer)', () => {
+    const DOC_ONB = 'workspace-parcours-d-integration-onboarding--etape-documents';
+    const DOC_OFF = 'workspace-parcours-de-depart-offboarding--etape-documents';
+    const FORMATIONS = 'workspace-parcours-d-integration-onboarding--etape-formations';
+    const EVALUATIONS = 'workspace-parcours-d-integration-onboarding--etape-evaluations';
+    const alerte = (id: string) =>
+      ligne(id).querySelector(':scope > [data-part="row"] [data-testid="alerte-prerequis"]')?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+    const confirmer = (id: string) => {
+      (ligne(id).querySelector('[data-part="confirm-ok"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+
+    it('Teranga (sans module Doc) : alerte sur les deux étapes Documents, citant module et option', () => {
+      const attendu = "Nécessite le module Doc et l'option « Demandes de documents », non activés pour cette entreprise. Vérifiez avec les Sales.";
+      expect(alerte(DOC_ONB)).toBe(attendu);
+      expect(alerte(DOC_OFF)).toBe(attendu);
+      expect(ligne(DOC_ONB).querySelector('soc-message')!.getAttribute('status')).toBe('warning');
+    });
+
+    it('aucune alerte quand tous les prérequis sont activés (Évaluations, Formations), ni sur le parent', () => {
+      expect(alerte(EVALUATIONS)).toBeNull();
+      expect(alerte(FORMATIONS)).toBeNull();
+      expect(alerte('workspace-parcours-d-integration-onboarding')).toBeNull();
+      expect(el().querySelectorAll('[data-testid="alerte-prerequis"]').length).toBe(2);
+    });
+
+    it('l’étape reste cochable malgré l’alerte', () => {
+      expect(interrupteur(DOC_ONB).disabled).toBeFalse();
+      interrupteur(DOC_ONB).click();
+      fixture.detectChanges();
+      expect(interrupteur(DOC_ONB).getAttribute('aria-checked')).toBe('false');
+      expect(barre()).toBe('1 modification non enregistrée');
+      expect(alerte(DOC_ONB)).not.toBeNull();
+    });
+
+    it('en direct : décocher l’option Formations fait apparaître l’alerte, la recocher la retire', () => {
+      interrupteur('performance-module-formations').click();
+      fixture.detectChanges();
+      expect(alerte(FORMATIONS)).toBe("Nécessite l'option « Module Formations », non activée pour cette entreprise. Vérifiez avec les Sales.");
+      interrupteur('performance-module-formations').click();
+      fixture.detectChanges();
+      confirmer('performance-module-formations');
+      expect(alerte(FORMATIONS)).toBeNull();
+    });
+
+    it('en direct : cocher « Demandes de documents » ne laisse que le module manquant', () => {
+      interrupteur('doc-demandes-de-documents').click();
+      fixture.detectChanges();
+      confirmer('doc-demandes-de-documents');
+      expect(alerte(DOC_ONB)).toBe('Nécessite le module Doc, non activé pour cette entreprise. Vérifiez avec les Sales.');
+    });
+
+    it('« Demandes de documents » : description des Sales, sans date d’ajout ni badge « Nouveau »', () => {
+      const option = 'doc-demandes-de-documents';
+      expect(ligne(option).querySelector('[data-testid="badge-nouveau"]')).toBeNull();
+      (ligne(option).querySelector('[data-part="label"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const dialogue = el().querySelector('soc-drawer [role="dialog"]') ?? document.querySelector('[role="dialog"][aria-modal]');
+      const texte = dialogue!.textContent!.replace(/\s+/g, ' ');
+      expect(texte).toContain(
+        'Permet aux employés de demander des documents RH (attestation, contrat…) et aux RH de demander aux employés les pièces de leur dossier (certificat de domicile, casier judiciaire…).',
+      );
+      expect(texte).not.toContain('Ajoutée le');
+      expect(document.querySelector('[data-testid="date-ajout"]')).toBeNull();
+    });
+
+    it('même alerte dans le panneau latéral de l’étape ; aucune pour une étape sans manque', () => {
+      const ouvrir = (id: string) => {
+        (ligne(id).querySelector('[data-part="label"]') as HTMLButtonElement).click();
+        fixture.detectChanges();
+      };
+      const panneau = () => document.querySelector('[data-testid="alerte-prerequis-detail"]');
+      ouvrir(DOC_OFF);
+      expect(panneau()!.textContent!.replace(/\s+/g, ' ').trim()).toBe(alerte(DOC_OFF)!);
+      ouvrir(EVALUATIONS);
+      expect(panneau()).toBeNull();
+    });
   });
 
   it('une option standard s’active directement', () => {
@@ -275,5 +356,28 @@ describe('OptionsEntreprisePageComponent', () => {
       expect(icone(titre)!.querySelector('[class*="appicon-icon-selected"]')).withContext(titre.textContent!).not.toBeNull();
     }
     expect(titres[0].textContent!.replace(/\s+/g, ' ').trim()).toBe('Workspace 6 / 23 activées');
+  });
+});
+
+describe('Prérequis des options : formulation et calcul', () => {
+  it('cite exactement ce qui manque, avec l’accord', () => {
+    expect(messagePrerequis(['Perf'], [])).toBe('Nécessite le module Perf, non activé pour cette entreprise. Vérifiez avec les Sales.');
+    expect(messagePrerequis([], ['Module Formations'])).toBe(
+      "Nécessite l'option « Module Formations », non activée pour cette entreprise. Vérifiez avec les Sales.",
+    );
+    expect(messagePrerequis(['Perf'], ['Module Formations'])).toBe(
+      "Nécessite le module Perf et l'option « Module Formations », non activés pour cette entreprise. Vérifiez avec les Sales.",
+    );
+    expect(messagePrerequis([], [])).toBeNull();
+  });
+
+  it('Sahel Énergie (sans module Perf) : Évaluations et Formations', () => {
+    const option = (id: string) => OPTIONS_ENTREPRISE.find((o) => o.id === id)!;
+    const actives = new Set<string>();
+    const manques = (id: string) => prerequisManquants(option(id), ['CO', 'WO'], OPTIONS_ENTREPRISE, actives);
+    expect(manques('workspace-parcours-d-integration-onboarding--etape-evaluations')).toEqual({ modules: ['PE'], options: [] });
+    const formations = manques('workspace-parcours-d-integration-onboarding--etape-formations');
+    expect(formations.modules).toEqual(['PE']);
+    expect(formations.options.map((o) => o.id)).toEqual(['performance-module-formations']);
   });
 });
