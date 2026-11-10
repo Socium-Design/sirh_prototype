@@ -83,7 +83,8 @@ export const OPTIONS_ENTREPRISE: OptionEntreprise[] = [
   { id: 'doc-variables-workflow-dans-les-documents', produit: 'doc', libelle: 'Variables Workflow dans les documents', description: "Permet d'insérer des données de demandes Workflow dans les modèles de documents.", offre: 'standard', miseEnLigne: '2024-12-02' },
   { id: 'doc-documents-dans-les-demandes-workflow', produit: 'doc', libelle: 'Documents dans les demandes Workflow', description: 'Permet de générer ou de joindre des documents dans une demande Workflow.', offre: 'standard', miseEnLigne: '2025-04-14' },
   // Flag à créer dans le SIRH : prérequis des étapes Documents (onboarding et offboarding). Offre confirmée par les Sales.
-  { id: 'doc-demandes-de-documents', produit: 'doc', libelle: 'Demandes de documents', description: 'Permet aux employés de demander des documents RH (attestations, certificats…).', offre: 'payant', miseEnLigne: '2026-11-10' },
+  // Pas de date d'ajout tant que le flag n'existe pas (ni « Ajoutée le », ni badge « Nouveau »).
+  { id: 'doc-demandes-de-documents', produit: 'doc', libelle: 'Demandes de documents', description: "Permet aux employés de demander des documents RH (attestation, contrat…) et aux RH de demander aux employés les pièces de leur dossier (certificat de domicile, casier judiciaire…).", offre: 'payant' },
   { id: 'payroll-ordres-de-virement-des-salaires', produit: 'payroll', libelle: 'Ordres de virement des salaires', description: 'Génère les ordres de virement des salaires à envoyer à la banque.', offre: 'payant', miseEnLigne: '2025-09-08' },
 ];
 

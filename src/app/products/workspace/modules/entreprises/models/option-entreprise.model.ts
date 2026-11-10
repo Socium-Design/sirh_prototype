@@ -31,8 +31,11 @@ export interface OptionEntreprise {
   prerequis?: PrerequisOption;
   /** Ajoutée ces 30 derniers jours : badge « Nouveau · {date} » et filtre « Nouveautés ». */
   nouveau?: boolean;
-  /** Date ISO d'ajout de l'option (« Ajoutée le … »). */
-  miseEnLigne: string;
+  /**
+   * Date ISO d'ajout de l'option (« Ajoutée le … »). Absente pour une option dont le flag n'existe pas encore dans le
+   * SIRH : ni date, ni badge « Nouveau ».
+   */
+  miseEnLigne?: string;
 }
 
 export interface PrerequisOption {

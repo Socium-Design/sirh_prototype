@@ -229,6 +229,20 @@ describe('OptionsEntreprisePageComponent', () => {
       expect(alerte(DOC_ONB)).toBe('Nécessite le module Doc, non activé pour cette entreprise. Vérifiez avec les Sales.');
     });
 
+    it('« Demandes de documents » : description des Sales, sans date d’ajout ni badge « Nouveau »', () => {
+      const option = 'doc-demandes-de-documents';
+      expect(ligne(option).querySelector('[data-testid="badge-nouveau"]')).toBeNull();
+      (ligne(option).querySelector('[data-part="label"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const dialogue = el().querySelector('soc-drawer [role="dialog"]') ?? document.querySelector('[role="dialog"][aria-modal]');
+      const texte = dialogue!.textContent!.replace(/\s+/g, ' ');
+      expect(texte).toContain(
+        'Permet aux employés de demander des documents RH (attestation, contrat…) et aux RH de demander aux employés les pièces de leur dossier (certificat de domicile, casier judiciaire…).',
+      );
+      expect(texte).not.toContain('Ajoutée le');
+      expect(document.querySelector('[data-testid="date-ajout"]')).toBeNull();
+    });
+
     it('même alerte dans le panneau latéral de l’étape ; aucune pour une étape sans manque', () => {
       const ouvrir = (id: string) => {
         (ligne(id).querySelector('[data-part="label"]') as HTMLButtonElement).click();

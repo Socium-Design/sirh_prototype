@@ -99,7 +99,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                     (labelClick)="store.ouvrirDetail(ligne.option)"
                     [attr.data-option]="ligne.option.id"
                   >
-                    @if (ligne.option.nouveau) {
+                    @if (ligne.option.nouveau && ligne.option.miseEnLigne) {
                       <app-badge-nouveau socLabsOptionRowTags [date]="ligne.option.miseEnLigne" />
                     }
                     <app-tag-offre socLabsOptionRowTags [offre]="ligne.option.offre" [customisation]="!!ligne.option.customisationClient" />
@@ -119,7 +119,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                         (labelClick)="store.ouvrirDetail(sous)"
                         [attr.data-option]="sous.id"
                       >
-                        @if (sous.nouveau) {
+                        @if (sous.nouveau && sous.miseEnLigne) {
                           <app-badge-nouveau socLabsOptionRowTags [date]="sous.miseEnLigne" />
                         }
                         <app-tag-offre socLabsOptionRowTags [offre]="sous.offre" [customisation]="!!sous.customisationClient" />
