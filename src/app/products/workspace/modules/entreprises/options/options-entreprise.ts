@@ -14,11 +14,13 @@ export const FILTRES_OPTIONS: { id: FiltreOptions; libelle: string }[] = [
 ];
 
 /** Tag d'offre : texte toujours présent, la couleur n'est qu'un repère (orange 6,3:1, neutre 9,4:1, violet 5,0:1). */
-export const TAGS_OFFRE: Record<OffreOption, { libelle: string; couleur: 'orange' | 'neutral' | 'purple' }> = {
+export const TAGS_OFFRE: Record<OffreOption, { libelle: string; couleur: 'orange' | 'neutral' }> = {
   payant: { libelle: 'Payant', couleur: 'orange' },
   standard: { libelle: 'Standard', couleur: 'neutral' },
-  customisation: { libelle: 'Customisation client', couleur: 'purple' },
 };
+
+/** Tag « Customisation client », affiché en plus du tag d'offre (`customisationClient`). */
+export const TAG_CUSTOMISATION = { libelle: 'Customisation client', couleur: 'purple' } as const;
 
 /** Ligne d'explication affichée au-dessus de la liste quand le filtre « Nouveautés » est actif. */
 export const EXPLICATION_NOUVEAUTES = 'Options ajoutées ces 30 derniers jours.';
@@ -41,12 +43,6 @@ export interface GroupeOptions {
   libelle: string;
   icone: AppIconName;
   lignes: LigneOption[];
-}
-
-/** Offre d'une option : une sous-option suit celle de son parent. */
-export function offreDe(option: OptionEntreprise, options: OptionEntreprise[]): OffreOption | null {
-  if (option.offre || !option.parentId) return option.offre;
-  return options.find((o) => o.id === option.parentId)?.offre ?? null;
 }
 
 /** Option réellement active : cochée, et parent actif s'il y en a un. */
@@ -83,14 +79,13 @@ export function correspond(
   recherche: string,
 ): boolean {
   if (!correspondRecherche(option, recherche)) return false;
-  const offre = offreDe(option, options);
   switch (filtre) {
     case 'payantes':
-      return offre === 'payant';
+      return option.offre === 'payant';
     case 'standard':
-      return offre === 'standard';
+      return option.offre === 'standard';
     case 'customisations':
-      return offre === 'customisation';
+      return !!option.customisationClient;
     case 'activees':
       return estActive(option, actives);
     case 'nouveautes':

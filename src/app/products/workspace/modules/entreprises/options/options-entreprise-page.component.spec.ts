@@ -133,6 +133,48 @@ describe('OptionsEntreprisePageComponent', () => {
     );
   });
 
+  it('inventaire Sales : chaque option a son tag d’offre, sous-options comprises', () => {
+    const rangees = [...el().querySelectorAll('soc-labs-option-row[data-option]')];
+    expect(rangees.length).toBe(64);
+    for (const rangee of rangees) {
+      const tags = rangee.querySelector(':scope > [data-part="row"] [data-part="tags"]')?.textContent ?? '';
+      expect(/Payant|Standard/.test(tags)).withContext(rangee.getAttribute('data-option')!).toBeTrue();
+    }
+  });
+
+  it('« Customisation client » s’ajoute au tag d’offre', () => {
+    for (const id of ['workspace-lien-entre-formations-et-competences', 'performance-lien-entre-formations-et-competences']) {
+      const tags = ligne(id).querySelector(':scope > [data-part="row"] [data-part="tags"]')!.textContent!.replace(/\s+/g, ' ');
+      expect(tags).withContext(id).toContain('Payant');
+      expect(tags).withContext(id).toContain('Customisation client');
+    }
+    expect(el().querySelectorAll('soc-tag').length).toBeGreaterThan(0);
+    expect([...el().querySelectorAll('soc-tag')].filter((t) => t.textContent!.includes('Customisation client')).length).toBe(2);
+  });
+
+  it('étape d’un parcours : tag « Payant », rattachée à son parent, activée sans confirmation', fakeAsync(() => {
+    const etape = 'workspace-parcours-d-integration-onboarding--etape-evaluations';
+    expect(ligne('workspace-parcours-d-integration-onboarding').contains(ligne(etape))).toBeTrue();
+    expect(ligne(etape).querySelector(':scope > [data-part="row"] [data-part="tags"]')!.textContent).toContain('Payant');
+    interrupteur(etape).click();
+    fixture.detectChanges();
+    expect(ligne(etape).querySelector('[data-part="confirm"]')).toBeNull();
+    expect(barre()).toBe('1 modification non enregistrée');
+    expect(el().textContent).toContain('14 options activées, dont 4 payantes');
+    flush();
+  }));
+
+  it('panneau d’une étape : son offre, sans « Suit l’option parente »', () => {
+    const etape = 'workspace-parcours-de-depart-offboarding--etape-documents';
+    (ligne(etape).querySelector('[data-part="label"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const dialogue = el().querySelector('soc-drawer [role="dialog"]') ?? document.querySelector('[role="dialog"][aria-modal]');
+    const texte = dialogue!.textContent!.replace(/\s+/g, ' ');
+    expect(texte).toContain('Payant');
+    expect(texte).not.toContain('Suit l');
+    expect(texte).toContain('Parcours de départ (offboarding)');
+  });
+
   it('une option standard s’active directement', () => {
     interrupteur('workspace-plusieurs-comptes-bancaires-par-employe').click();
     fixture.detectChanges();

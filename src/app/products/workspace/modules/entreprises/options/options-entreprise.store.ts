@@ -6,7 +6,7 @@ import { map, switchMap } from 'rxjs';
 import { SessionService } from '../../../../../core/session/session.service';
 import type { EtatOptionsEntreprise, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
 import { EntreprisesService } from '../services/entreprises.service';
-import { TAGS_OFFRE, compter, estActive, offreDe, type FiltreOptions } from './options-entreprise';
+import { TAGS_OFFRE, TAG_CUSTOMISATION, compter, estActive, type FiltreOptions } from './options-entreprise';
 
 /**
  * État de « Fonctionnalités et options », fourni par la page : options, brouillon des options cochées, recherche et
@@ -49,14 +49,13 @@ export class OptionsEntrepriseStore {
 
   readonly estActive = (option: OptionEntreprise): boolean => estActive(option, this.actives());
 
-  readonly offre = (option: OptionEntreprise) => offreDe(option, this.options());
-
   readonly sousOptions = (option: OptionEntreprise): OptionEntreprise[] => this.options().filter((o) => o.parentId === option.id);
 
   readonly resume = computed(() => {
     const actives = this.options().filter((o) => this.estActive(o));
     const n = actives.length;
-    const p = actives.filter((o) => o.offre === 'payant').length;
+    // Options de premier niveau seulement : les étapes d'un parcours payant ne comptent pas en plus.
+    const p = actives.filter((o) => !o.parentId && o.offre === 'payant').length;
     return `${n} ${n > 1 ? 'options activées' : 'option activée'}, dont ${p} ${p > 1 ? 'payantes' : 'payante'}`;
   });
 
@@ -122,9 +121,8 @@ export class OptionsEntrepriseStore {
   }
 
   libelleOffre(option: OptionEntreprise): string {
-    const offre = this.offre(option);
-    const libelle = offre ? TAGS_OFFRE[offre].libelle : '—';
-    return option.parentId ? `Suit l'option parente (${libelle})` : libelle;
+    const libelle = TAGS_OFFRE[option.offre].libelle;
+    return option.customisationClient ? `${libelle} · ${TAG_CUSTOMISATION.libelle}` : libelle;
   }
 
   private appliquerEtat(etat: EtatOptionsEntreprise): void {
