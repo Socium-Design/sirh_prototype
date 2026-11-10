@@ -10,18 +10,17 @@ export interface ProduitInfo {
   icone: AppIconName;
 }
 
-/**
- * Offre commerciale d'une option. Classement PROVISOIRE, à valider avec les Sales. `null` : sous-option, qui suit
- * l'offre de son parent (pas de tag).
- */
-export type OffreOption = 'payant' | 'standard' | 'customisation';
+/** Offre commerciale d'une option (inventaire validé par les Sales), sous-options comprises. */
+export type OffreOption = 'payant' | 'standard';
 
 export interface OptionEntreprise {
   id: string;
   produit: ProduitOption;
   libelle: string;
   description: string;
-  offre: OffreOption | null;
+  offre: OffreOption;
+  /** Option développée sur mesure pour un client : tag « Customisation client », en plus du tag d'offre. */
+  customisationClient?: boolean;
   /** Option parente (sous-option, désactivée tant que le parent est coupé). */
   parentId?: string;
   /** Ajoutée ces 30 derniers jours : badge « Nouveau · {date} » et filtre « Nouveautés ». */

@@ -98,9 +98,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                     @if (ligne.option.nouveau) {
                       <app-badge-nouveau socLabsOptionRowTags [date]="ligne.option.miseEnLigne" />
                     }
-                    @if (ligne.option.offre) {
-                      <app-tag-offre socLabsOptionRowTags [offre]="ligne.option.offre" />
-                    }
+                    <app-tag-offre socLabsOptionRowTags [offre]="ligne.option.offre" [customisation]="!!ligne.option.customisationClient" />
                     @for (sous of ligne.sousOptions; track sous.id) {
                       <soc-labs-option-row
                         [label]="sous.libelle"
@@ -115,6 +113,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                         @if (sous.nouveau) {
                           <app-badge-nouveau socLabsOptionRowTags [date]="sous.miseEnLigne" />
                         }
+                        <app-tag-offre socLabsOptionRowTags [offre]="sous.offre" [customisation]="!!sous.customisationClient" />
                       </soc-labs-option-row>
                     }
                   </soc-labs-option-row>
