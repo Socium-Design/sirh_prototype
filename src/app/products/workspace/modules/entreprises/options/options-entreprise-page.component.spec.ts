@@ -180,6 +180,7 @@ describe('OptionsEntreprisePageComponent', () => {
   describe('prérequis des étapes (avertir sans bloquer)', () => {
     const DOC_ONB = 'workspace-parcours-d-integration-onboarding--etape-documents';
     const DOC_OFF = 'workspace-parcours-de-depart-offboarding--etape-documents';
+    const GENERATION = 'workspace-parcours-de-depart-offboarding--etape-generation-des-documents-de-sortie';
     const FORMATIONS = 'workspace-parcours-d-integration-onboarding--etape-formations';
     const EVALUATIONS = 'workspace-parcours-d-integration-onboarding--etape-evaluations';
     const alerte = (id: string) =>
@@ -200,7 +201,30 @@ describe('OptionsEntreprisePageComponent', () => {
       expect(alerte(EVALUATIONS)).toBeNull();
       expect(alerte(FORMATIONS)).toBeNull();
       expect(alerte('workspace-parcours-d-integration-onboarding')).toBeNull();
-      expect(el().querySelectorAll('[data-testid="alerte-prerequis"]').length).toBe(2);
+      expect(el().querySelectorAll('[data-testid="alerte-prerequis"]').length).toBe(3);
+    });
+
+    it('étape « Génération des documents de sortie » : même prérequis et même alerte que les étapes Documents', () => {
+      const attendu = "Nécessite le module Doc et l'option « Demandes de documents », non activés pour cette entreprise. Vérifiez avec les Sales.";
+      expect(alerte(GENERATION)).toBe(attendu);
+      expect(interrupteur(GENERATION).disabled).toBeTrue(); // parcours de départ coupé chez Teranga : règle des sous-options, inchangée
+      interrupteur('workspace-parcours-de-depart-offboarding').click();
+      fixture.detectChanges();
+      confirmer('workspace-parcours-de-depart-offboarding');
+      expect(interrupteur(GENERATION).disabled).toBeFalse();
+      interrupteur(GENERATION).click();
+      fixture.detectChanges();
+      expect(interrupteur(GENERATION).getAttribute('aria-checked')).toBe('true');
+      expect(alerte(GENERATION)).toBe(attendu);
+      interrupteur('doc-demandes-de-documents').click();
+      fixture.detectChanges();
+      confirmer('doc-demandes-de-documents');
+      expect(alerte(GENERATION)).toBe('Nécessite le module Doc, non activé pour cette entreprise. Vérifiez avec les Sales.');
+      (ligne(GENERATION).querySelector('[data-part="label"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(document.querySelector('[data-testid="alerte-prerequis-detail"]')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(
+        alerte(GENERATION)!,
+      );
     });
 
     it('l’étape reste cochable malgré l’alerte', () => {
@@ -369,6 +393,12 @@ describe('Prérequis des options : formulation et calcul', () => {
       "Nécessite le module Perf et l'option « Module Formations », non activés pour cette entreprise. Vérifiez avec les Sales.",
     );
     expect(messagePrerequis([], [])).toBeNull();
+  });
+
+  it('Baobab Assurances (module Doc + « Demandes de documents ») : rien ne manque pour la génération des documents de sortie', () => {
+    const generation = OPTIONS_ENTREPRISE.find((o) => o.id === 'workspace-parcours-de-depart-offboarding--etape-generation-des-documents-de-sortie')!;
+    const manques = prerequisManquants(generation, ['CO', 'PA', 'PE', 'DO'], OPTIONS_ENTREPRISE, new Set(['doc-demandes-de-documents']));
+    expect(manques).toEqual({ modules: [], options: [] });
   });
 
   it('Sahel Énergie (sans module Perf) : Évaluations et Formations', () => {
