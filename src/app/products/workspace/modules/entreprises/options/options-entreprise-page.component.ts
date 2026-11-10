@@ -15,6 +15,7 @@ import {
   SocLabsChangesBar,
   SocLabsNavList,
   SocLabsOptionRow,
+  SocLabsOptionRowMessage,
   SocLabsOptionRowTags,
   type LabsNavListItem,
 } from '../../../../../shared/labs/labs';
@@ -33,6 +34,8 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
  * description) et filtres rapides. Liste groupée par produit (`soc-labs-option-row`), sous-options imbriquées et
  * désactivées tant que le parent est coupé. Une option payante s'active après une confirmation dans la ligne. Les
  * changements s'appliquent à l'enregistrement (`soc-labs-changes-bar`). Clic sur un libellé : détail dans un `soc-drawer`.
+ * Étape dont un prérequis manque (module non souscrit, option non cochée) : alerte `soc-message` dans la ligne
+ * (`socLabsOptionRowMessage`) et dans le panneau, sans bloquer ; elle suit les options cochées sur la page.
  * L'état (options, brouillon, filtres, enregistrement, détail) est dans `OptionsEntrepriseStore`.
  */
 @Component({
@@ -48,6 +51,7 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
     SocDrawerDetailItem,
     SocLabsNavList,
     SocLabsOptionRow,
+    SocLabsOptionRowMessage,
     SocLabsOptionRowTags,
     SocLabsChangesBar,
     OptionsOutilsComponent,
@@ -99,6 +103,11 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                       <app-badge-nouveau socLabsOptionRowTags [date]="ligne.option.miseEnLigne" />
                     }
                     <app-tag-offre socLabsOptionRowTags [offre]="ligne.option.offre" [customisation]="!!ligne.option.customisationClient" />
+                    @if (store.alertePrerequis(ligne.option); as alerte) {
+                      <soc-message socLabsOptionRowMessage variant="inline" status="warning" data-testid="alerte-prerequis">
+                        <span socMessageContent>{{ alerte }}</span>
+                      </soc-message>
+                    }
                     @for (sous of ligne.sousOptions; track sous.id) {
                       <soc-labs-option-row
                         [label]="sous.libelle"
@@ -114,6 +123,11 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
                           <app-badge-nouveau socLabsOptionRowTags [date]="sous.miseEnLigne" />
                         }
                         <app-tag-offre socLabsOptionRowTags [offre]="sous.offre" [customisation]="!!sous.customisationClient" />
+                        @if (store.alertePrerequis(sous); as alerte) {
+                          <soc-message socLabsOptionRowMessage variant="inline" status="warning" data-testid="alerte-prerequis">
+                            <span socMessageContent>{{ alerte }}</span>
+                          </soc-message>
+                        }
                       </soc-labs-option-row>
                     }
                   </soc-labs-option-row>
@@ -141,6 +155,11 @@ const dateFr = (iso: string) => (iso ? new Date(iso).toLocaleDateString('fr-FR')
 
     @if (store.detail(); as d) {
       <soc-drawer [open]="true" [title]="d.libelle" [topline]="store.libelleProduit(d.produit)" (close)="store.fermerDetail()">
+        @if (store.alertePrerequis(d); as alerte) {
+          <soc-message variant="inline" status="warning" data-testid="alerte-prerequis-detail">
+            <span socMessageContent>{{ alerte }}</span>
+          </soc-message>
+        }
         <soc-drawer-detail-item label="Description" [value]="d.description" />
         <soc-drawer-detail-item label="Offre" [value]="store.libelleOffre(d)" />
         <soc-drawer-detail-item label="Produit" [value]="store.libelleProduit(d.produit)" />

@@ -1,4 +1,5 @@
 import type { AppIconName } from '@socium-design/angular-components';
+import type { ModuleEntreprise } from '../models/entreprise.model';
 import type { OffreOption, OptionEntreprise, ProduitInfo, ProduitOption } from '../models/option-entreprise.model';
 
 /** Filtres rapides de la barre d'outils. */
@@ -43,6 +44,53 @@ export interface GroupeOptions {
   libelle: string;
   icone: AppIconName;
   lignes: LigneOption[];
+}
+
+/** Nom court d'un module dans l'alerte des prérequis (« Nécessite le module Perf »). */
+export const NOMS_MODULES: Record<ModuleEntreprise, string> = {
+  CO: 'Workspace',
+  JO: 'Job',
+  PA: 'Payroll',
+  PE: 'Perf',
+  WO: 'Workflow',
+  DO: 'Doc',
+};
+
+/** « a », « a et b », « a, b et c ». */
+const enumerer = (mots: string[]): string => (mots.length < 2 ? mots.join('') : `${mots.slice(0, -1).join(', ')} et ${mots.at(-1)}`);
+
+/**
+ * Alerte des prérequis manquants, en citant exactement ce qui manque :
+ * « Nécessite le module Perf et l'option « Module Formations », non activés pour cette entreprise. Vérifiez avec les
+ * Sales. » ; `null` quand rien ne manque. Les modules sont cités avant les options.
+ */
+export function messagePrerequis(modules: string[], options: string[]): string | null {
+  const total = modules.length + options.length;
+  if (!total) return null;
+  const parties: string[] = [];
+  if (modules.length) parties.push(`${modules.length > 1 ? 'les modules' : 'le module'} ${enumerer(modules)}`);
+  if (options.length) parties.push(`${options.length > 1 ? 'les options' : "l'option"} ${enumerer(options.map((o) => `« ${o} »`))}`);
+  const accord = total > 1 ? (modules.length ? 'non activés' : 'non activées') : modules.length ? 'non activé' : 'non activée';
+  return `Nécessite ${parties.join(' et ')}, ${accord} pour cette entreprise. Vérifiez avec les Sales.`;
+}
+
+/**
+ * Prérequis manquants d'une option : modules que l'entreprise n'a pas souscrits, options non actives dans la page
+ * (brouillon compris : l'alerte suit chaque clic, avant l'enregistrement).
+ */
+export function prerequisManquants(
+  option: OptionEntreprise,
+  modulesEntreprise: readonly ModuleEntreprise[],
+  options: OptionEntreprise[],
+  actives: ReadonlySet<string>,
+): { modules: ModuleEntreprise[]; options: OptionEntreprise[] } {
+  const prerequis = option.prerequis;
+  return {
+    modules: (prerequis?.modules ?? []).filter((m) => !modulesEntreprise.includes(m)),
+    options: (prerequis?.options ?? [])
+      .map((id) => options.find((o) => o.id === id))
+      .filter((o): o is OptionEntreprise => !!o && !estActive(o, actives)),
+  };
 }
 
 /** Option réellement active : cochée, et parent actif s'il y en a un. */

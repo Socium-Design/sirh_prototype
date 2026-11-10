@@ -6,7 +6,16 @@ import { map, switchMap } from 'rxjs';
 import { SessionService } from '../../../../../core/session/session.service';
 import type { EtatOptionsEntreprise, OptionEntreprise, ProduitOption } from '../models/option-entreprise.model';
 import { EntreprisesService } from '../services/entreprises.service';
-import { TAGS_OFFRE, TAG_CUSTOMISATION, compter, estActive, type FiltreOptions } from './options-entreprise';
+import {
+  NOMS_MODULES,
+  TAGS_OFFRE,
+  TAG_CUSTOMISATION,
+  compter,
+  estActive,
+  messagePrerequis,
+  prerequisManquants,
+  type FiltreOptions,
+} from './options-entreprise';
 
 /**
  * État de « Fonctionnalités et options », fourni par la page : options, brouillon des options cochées, recherche et
@@ -48,6 +57,19 @@ export class OptionsEntrepriseStore {
   }
 
   readonly estActive = (option: OptionEntreprise): boolean => estActive(option, this.actives());
+
+  /**
+   * Alerte d'une option dont un prérequis manque (module non souscrit, option non cochée) ; `null` sinon. Suit les
+   * options cochées dans la page, avant l'enregistrement. Ne bloque rien.
+   */
+  readonly alertePrerequis = (option: OptionEntreprise): string | null => {
+    if (!option.prerequis) return null;
+    const manques = prerequisManquants(option, this.entreprise()?.modules ?? [], this.options(), this.actives());
+    return messagePrerequis(
+      manques.modules.map((m) => NOMS_MODULES[m]),
+      manques.options.map((o) => o.libelle),
+    );
+  };
 
   readonly sousOptions = (option: OptionEntreprise): OptionEntreprise[] => this.options().filter((o) => o.parentId === option.id);
 

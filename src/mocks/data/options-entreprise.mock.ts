@@ -13,7 +13,8 @@ export const PRODUITS_OPTIONS: ProduitInfo[] = [
 /**
  * Options (ex-« feature flags ») activables par entreprise, par produit, dans l'ordre d'affichage.
  * Libellés, descriptions, offre et « Customisation client » : inventaire validé par les Sales (Notion, 10/11/2026).
- * Chaque option a son offre, sous-options (`parentId`) comprises. Certaines options existent dans deux produits
+ * Chaque option a son offre, sous-options (`parentId`) comprises. Prérequis des étapes d'onboarding / offboarding
+ * (`prerequis`) : règle validée, avertir sans bloquer. Certaines options existent dans deux produits
  * (Périmètre de données, Lien formations / compétences, Documents dans les demandes Workflow) : une entrée par produit,
  * comme dans l'inventaire.
  */
@@ -28,14 +29,14 @@ export const OPTIONS_ENTREPRISE: OptionEntreprise[] = [
   { id: 'workspace-passerelle-de-donnees', produit: 'workspace', libelle: 'Passerelle de données', description: "Permet d'échanger automatiquement des données avec un système externe (import et export).", offre: 'payant', miseEnLigne: '2025-09-08' },
   { id: 'workspace-protection-des-donnees-sensibles', produit: 'workspace', libelle: 'Protection des données sensibles', description: "Réserve l'accès aux données sensibles des employés (salaire, santé…) aux profils autorisés.", offre: 'standard', miseEnLigne: '2023-02-06' },
   { id: 'workspace-parcours-d-integration-onboarding', produit: 'workspace', libelle: "Parcours d'intégration (onboarding)", description: "Active le parcours d'arrivée d'un nouvel employé, avec ses étapes.", offre: 'payant', miseEnLigne: '2023-06-19' },
-  { id: 'workspace-parcours-d-integration-onboarding--etape-documents', produit: 'workspace', libelle: 'Étape Documents', description: "Ajoute au parcours d'intégration une étape de collecte et de signature de documents.", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', miseEnLigne: '2023-11-13' },
-  { id: 'workspace-parcours-d-integration-onboarding--etape-evaluations', produit: 'workspace', libelle: 'Étape Évaluations', description: "Ajoute une évaluation pendant l'intégration (ex. fin de période d'essai).", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', miseEnLigne: '2024-03-04' },
+  { id: 'workspace-parcours-d-integration-onboarding--etape-documents', produit: 'workspace', libelle: 'Étape Documents', description: "Ajoute au parcours d'intégration une étape de collecte et de signature de documents.", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', prerequis: { modules: ['DO'], options: ['doc-demandes-de-documents'] }, miseEnLigne: '2023-11-13' },
+  { id: 'workspace-parcours-d-integration-onboarding--etape-evaluations', produit: 'workspace', libelle: 'Étape Évaluations', description: "Ajoute une évaluation pendant l'intégration (ex. fin de période d'essai).", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', prerequis: { modules: ['PE'] }, miseEnLigne: '2024-03-04' },
   { id: 'workspace-parcours-d-integration-onboarding--etape-materiel', produit: 'workspace', libelle: 'Étape Matériel', description: "Ajoute une étape d'attribution du matériel au nouvel employé.", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', miseEnLigne: '2024-07-15' },
-  { id: 'workspace-parcours-d-integration-onboarding--etape-formations', produit: 'workspace', libelle: 'Étape Formations', description: "Ajoute des formations à suivre pendant l'intégration.", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', miseEnLigne: '2024-12-02' },
+  { id: 'workspace-parcours-d-integration-onboarding--etape-formations', produit: 'workspace', libelle: 'Étape Formations', description: "Ajoute des formations à suivre pendant l'intégration.", offre: 'payant', parentId: 'workspace-parcours-d-integration-onboarding', prerequis: { modules: ['PE'], options: ['performance-module-formations'] }, miseEnLigne: '2024-12-02' },
   { id: 'workspace-parcours-de-depart-offboarding', produit: 'workspace', libelle: 'Parcours de départ (offboarding)', description: "Active le parcours de départ d'un employé, avec ses étapes.", offre: 'payant', miseEnLigne: '2025-04-14' },
   { id: 'workspace-parcours-de-depart-offboarding--etape-reprise-du-materiel', produit: 'workspace', libelle: 'Étape Reprise du matériel', description: "Ajoute une étape de restitution du matériel par l'employé qui part.", offre: 'payant', parentId: 'workspace-parcours-de-depart-offboarding', miseEnLigne: '2025-09-08' },
   { id: 'workspace-parcours-de-depart-offboarding--etape-generation-des-documents-de-sortie', produit: 'workspace', libelle: 'Étape Génération des documents de sortie', description: 'Génère automatiquement les documents de sortie (certificat de travail, solde de tout compte…).', offre: 'payant', parentId: 'workspace-parcours-de-depart-offboarding', miseEnLigne: '2023-02-06' },
-  { id: 'workspace-parcours-de-depart-offboarding--etape-documents', produit: 'workspace', libelle: 'Étape Documents', description: 'Ajoute une étape de collecte et de signature des documents de départ.', offre: 'payant', parentId: 'workspace-parcours-de-depart-offboarding', miseEnLigne: '2023-06-19' },
+  { id: 'workspace-parcours-de-depart-offboarding--etape-documents', produit: 'workspace', libelle: 'Étape Documents', description: 'Ajoute une étape de collecte et de signature des documents de départ.', offre: 'payant', parentId: 'workspace-parcours-de-depart-offboarding', prerequis: { modules: ['DO'], options: ['doc-demandes-de-documents'] }, miseEnLigne: '2023-06-19' },
   { id: 'workspace-bilan-social-individuel', produit: 'workspace', libelle: 'Bilan social individuel', description: 'Génère pour chaque employé un récapitulatif annuel de sa rémunération et de ses avantages.', offre: 'payant', miseEnLigne: '2023-11-13' },
   { id: 'workspace-intranet', produit: 'workspace', libelle: 'Intranet', description: "Active l'espace d'information interne (actualités, documents partagés).", offre: 'payant', miseEnLigne: '2024-03-04' },
   { id: 'workspace-perimetre-de-donnees-par-utilisateur', produit: 'workspace', libelle: 'Périmètre de données par utilisateur', description: 'Limite les données visibles par un utilisateur à son périmètre (filiale, site, département…).', offre: 'standard', miseEnLigne: '2024-07-15' },
@@ -81,6 +82,8 @@ export const OPTIONS_ENTREPRISE: OptionEntreprise[] = [
   { id: 'doc-variables-de-paie-dans-les-documents', produit: 'doc', libelle: 'Variables de paie dans les documents', description: "Permet d'insérer des données de paie dans les modèles de documents.", offre: 'standard', miseEnLigne: '2024-07-15' },
   { id: 'doc-variables-workflow-dans-les-documents', produit: 'doc', libelle: 'Variables Workflow dans les documents', description: "Permet d'insérer des données de demandes Workflow dans les modèles de documents.", offre: 'standard', miseEnLigne: '2024-12-02' },
   { id: 'doc-documents-dans-les-demandes-workflow', produit: 'doc', libelle: 'Documents dans les demandes Workflow', description: 'Permet de générer ou de joindre des documents dans une demande Workflow.', offre: 'standard', miseEnLigne: '2025-04-14' },
+  // Flag à créer dans le SIRH : prérequis des étapes Documents (onboarding et offboarding). Offre confirmée par les Sales.
+  { id: 'doc-demandes-de-documents', produit: 'doc', libelle: 'Demandes de documents', description: 'Permet aux employés de demander des documents RH (attestations, certificats…).', offre: 'payant', miseEnLigne: '2026-11-10' },
   { id: 'payroll-ordres-de-virement-des-salaires', produit: 'payroll', libelle: 'Ordres de virement des salaires', description: 'Génère les ordres de virement des salaires à envoyer à la banque.', offre: 'payant', miseEnLigne: '2025-09-08' },
 ];
 
@@ -105,7 +108,13 @@ export const ETATS_OPTIONS_ENTREPRISE: Record<string, EtatOptionsEntreprise> = {
     derniereModification: { par: 'Mariama Ndiaye', le: '2026-10-14' },
   },
   'ent-2': {
-    actives: ['workspace-organigramme', 'workspace-bilan-social-individuel', 'performance-referentiel-de-competences', 'payroll-ordres-de-virement-des-salaires'],
+    actives: [
+      'workspace-organigramme',
+      'workspace-bilan-social-individuel',
+      'performance-referentiel-de-competences',
+      'doc-demandes-de-documents',
+      'payroll-ordres-de-virement-des-salaires',
+    ],
     derniereModification: { par: 'Ousmane Fall', le: '2026-09-30' },
   },
   'ent-3': {

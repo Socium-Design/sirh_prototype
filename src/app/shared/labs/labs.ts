@@ -30,6 +30,7 @@ export {
   SocLabsListRowLeading,
   SocLabsNavList,
   SocLabsOptionRow,
+  SocLabsOptionRowMessage,
   SocLabsOptionRowTags,
   SocLabsOverlayBadge,
   SocLabsIconTile,
